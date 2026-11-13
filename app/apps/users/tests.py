@@ -3,6 +3,9 @@ from django.test import TestCase
 from apps.users import services
 
 class CreateUserServiceTests(TestCase):
+
+    # Test create
+    
     def test_create_user_with_hashed_password(self):
         user = services.create_user_service(email='john@doe.com', password='Str@ngPassw8rd2026')
 

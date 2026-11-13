@@ -1,6 +1,5 @@
 import re
 from decimal import Decimal
-from typing import List
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
@@ -16,8 +15,10 @@ def normalize_cnpj(cnpj: str) -> str:
 
 
 def create_company_service(
-    *, name: str, cnpj: str, initial_balance: Decimal
+    user: User, name: str, cnpj: str, initial_balance: Decimal
 ) -> Company:
+    if not user.is_superuser:
+        raise PermissionDenied('no permission')
     cnpj = normalize_cnpj(cnpj)
 
     try:
@@ -66,3 +67,5 @@ def delete_company_service(user: User, company_id: int) -> None:
         Company.objects.get(pk=company_id).delete()
     except ProtectedError:
         raise ValidationError('Company has linked records and cannot be deleted')
+    except Company.DoesNotExist:
+        raise Company.DoesNotExist

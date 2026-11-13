@@ -16,7 +16,8 @@ def list_company_endpoint(request):
 @router.post('/company', response={201: CompanyOut})
 def create_company_endpoint(request, data: CompanyCreateDTO):
     return 201, services.create_company_service(
-        name=data.name, cnpj=data.cnpj, initial_balance=data.initial_balance
+        user=request.user, name=data.name, 
+        cnpj=data.cnpj, initial_balance=data.initial_balance
     )
 
 
