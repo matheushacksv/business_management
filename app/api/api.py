@@ -5,9 +5,14 @@ from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.controller import NinjaJWTDefaultController
 
 from api.endpoints.accounts import router as account_router
+from api.endpoints.attachments import router as attachment_router
 from api.endpoints.companies import router as company_router
 from api.endpoints.contacts import router as contact_router
+from api.endpoints.history import router as history_router
+from api.endpoints.imports import router as import_router
+from api.endpoints.invoices import router as invoice_router
 from api.endpoints.reports import router as report_router
+from api.endpoints.sales import router as sales_router
 from api.endpoints.subgroups import router as subgroup_router
 from api.endpoints.transactions import router as transaction_router
 from api.endpoints.user import router as user_router
@@ -37,3 +42,8 @@ api.add_router('/', contact_router)
 api.add_router('/', account_router)
 api.add_router('/', transaction_router)
 api.add_router('/', report_router)
+api.add_router('/', attachment_router)
+api.add_router('/', invoice_router)
+api.add_router('/', sales_router)
+api.add_router('/', import_router)
+api.add_router('/', history_router)

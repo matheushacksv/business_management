@@ -7,7 +7,7 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import services
 from apps.finance.models import Account, Group, Transaction, TransactionType
-from apps.users.models import User
+from apps.users.models import Role, User
 
 
 def auth_for(user):
@@ -17,7 +17,7 @@ def auth_for(user):
 class TransactionEndpointTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
-        member = User.objects.create_user(email='member@test.com', password='Str@ngPassw8rd2026')
+        member = User.objects.create_user(email='member@test.com', password='Str@ngPassw8rd2026', role=Role.FINANCE)
         self.company = Company.objects.create(name='Company A', cnpj='81585365000127')
         self.other_company = Company.objects.create(name='Company B', cnpj='11222333000181')
         member.companies.add(self.company)

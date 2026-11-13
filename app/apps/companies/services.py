@@ -1,13 +1,14 @@
 import re
 from decimal import Decimal
 
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError, QuerySet
 from django.shortcuts import get_object_or_404
 
 from apps.companies.models import Company
 from apps.users.models import User
+from apps.users.permissions import CHANGE, CREATE, DELETE, check_permission
 
 
 def normalize_cnpj(cnpj: str) -> str:
@@ -17,8 +18,7 @@ def normalize_cnpj(cnpj: str) -> str:
 def create_company_service(
     user: User, name: str, cnpj: str, initial_balance: Decimal
 ) -> Company:
-    if not user.is_superuser:
-        raise PermissionDenied('no permission')
+    check_permission(user, 'companies', CREATE)
     cnpj = normalize_cnpj(cnpj)
 
     try:
@@ -31,7 +31,7 @@ def create_company_service(
 
 
 def list_companies_service(user: User) -> QuerySet[Company]:
-    if user.is_superuser:
+    if user.is_admin:
         return Company.objects.all()
     return user.companies.all()
 
@@ -41,8 +41,7 @@ def get_company_service(user: User, company_id: int) -> Company:
 
 
 def update_company_service(user: User, company_id: int, **fields) -> Company:
-    if not user.is_superuser:
-        raise PermissionDenied('no permission')
+    check_permission(user, 'companies', CHANGE)
     company = get_object_or_404(Company, pk=company_id)
     if 'name' in fields:
         fields['name'] = fields['name'].strip()
@@ -61,8 +60,7 @@ def update_company_service(user: User, company_id: int, **fields) -> Company:
 
 
 def delete_company_service(user: User, company_id: int) -> None:
-    if not user.is_superuser:
-        raise PermissionDenied('no permission')
+    check_permission(user, 'companies', DELETE)
     try:
         Company.objects.get(pk=company_id).delete()
     except ProtectedError:

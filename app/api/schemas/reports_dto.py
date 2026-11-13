@@ -12,7 +12,7 @@ class DREParams(Schema):
 class DRELine(Schema):
     key: str  # 'group:<group>', 'subgroup:<id>' or a result key
     label: str
-    kind: Literal['group', 'subgroup', 'result']
+    kind: Literal['info', 'group', 'subgroup', 'result']
     months: list[Decimal]  # 12 values, January first
     total: Decimal
     percents: list[Decimal | None]  # over operating revenue; null when revenue is 0

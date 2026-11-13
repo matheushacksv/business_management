@@ -60,7 +60,7 @@ class DRESelectorTest(ReportsBase):
         keys = [l['key'] for l in result['lines'] if l['kind'] != 'subgroup']
 
         self.assertEqual(keys, [
-            'group:operating_revenue', 'group:variable_costs', 'contribution_margin',
+            'gross_sales', 'group:operating_revenue', 'group:variable_costs', 'contribution_margin',
             'group:fixed_costs', 'profit_margin', 'group:non_operating_revenue',
             'group:non_operating_expenses', 'net_result',
         ])
@@ -149,7 +149,7 @@ class DRESelectorTest(ReportsBase):
         self.assertEqual(lines['group:operating_revenue']['total'], D('11500.00'))
 
     def test_query_count(self):
-        with self.assertNumQueries(2):  # aggregation + subgroups
+        with self.assertNumQueries(3):  # aggregation + subgroups + gross sales
             selectors.dre_selector(user=self.member, year=2026, search='x')
 
 

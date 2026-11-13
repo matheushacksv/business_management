@@ -7,12 +7,12 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import services
 from apps.finance.models import Group, SubGroup, Transaction, TransactionType
-from apps.users.models import User
+from apps.users.models import Role, User
 
 
 class SubGroupEndpointTests(TestCase):
     def setUp(self):
-        user = User.objects.create_user(email='john@doe.com', password='Str@ngPassw8rd2026')
+        user = User.objects.create_user(email='john@doe.com', password='Str@ngPassw8rd2026', role=Role.ADMIN)
         self.auth = {'Authorization': f'Bearer {AccessToken.for_user(user)}'}  # type:ignore
         self.rent = services.create_subgroup_service(name='Rent', group=Group.FIXED_COSTS)
 

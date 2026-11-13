@@ -5,7 +5,7 @@ from typing import Literal
 from ninja import ModelSchema, Schema
 from pydantic import Field, model_validator
 
-from apps.finance.models import Group, Transaction, TransactionStatus, TransactionType
+from apps.finance.models import Group, SeriesKind, Transaction, TransactionStatus, TransactionType
 
 
 class CreateTransaction(Schema):
@@ -65,6 +65,8 @@ class TransactionFilters(ReportFilters):
 class TransactionOut(ModelSchema):
     group: Group = Field(alias='subgroup.group')
     is_reversal: bool
+    series_id: int | None
+    series_index: int | None
 
     class Meta:
         model = Transaction
@@ -72,3 +74,52 @@ class TransactionOut(ModelSchema):
             'id', 'company', 'subgroup', 'account', 'contact', 'date', 'amount',
             'type', 'status', 'reference', 'notes', 'created_at', 'updated_at',
         ]
+
+
+class CreateSeries(Schema):
+    kind: SeriesKind
+    count: int = Field(ge=1, le=120)
+    first_date: dt.date
+    company_id: int
+    subgroup_id: int
+    type: TransactionType
+    amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)        # recurring
+    total_amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)  # installments
+    status: TransactionStatus = TransactionStatus.PLANNED
+    account_id: int | None = None
+    contact_id: int | None = None
+    reference: str = ''
+    notes: str = ''
+
+
+class PatchSeries(Schema):
+    amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    subgroup_id: int | None = None
+    account_id: int | None = None
+    contact_id: int | None = None
+    reference: str | None = None
+    notes: str | None = None
+
+    @model_validator(mode='after')
+    def reject_null_on_required(self):
+        for field in ('amount', 'subgroup_id', 'reference', 'notes'):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f'{field} cannot be null')
+        return self
+
+
+class SeriesOut(Schema):
+    id: int
+    kind: SeriesKind
+    frequency: str
+    count: int
+    total_amount: Decimal
+    company_id: int
+    created_by_id: int | None
+    created_at: dt.datetime
+    transactions: list[TransactionOut]
+
+
+class SeriesChangeOut(Schema):
+    affected: int
+

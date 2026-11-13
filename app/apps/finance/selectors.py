@@ -42,6 +42,7 @@ def _percent(value: Decimal, base: Decimal) -> Decimal | None:
 # DRE
 
 DRE_LAYOUT = [
+    ('info', 'gross_sales'),
     ('group', Group.OPERATING_REVENUE),
     ('group', Group.VARIABLE_COSTS),
     ('result', 'contribution_margin'),
@@ -53,10 +54,25 @@ DRE_LAYOUT = [
 ]
 
 RESULT_LABELS = {
+    'gross_sales': 'Faturamento Bruto',
     'contribution_margin': 'Margem de Contribuição',
     'profit_margin': 'Margem de Lucro',
     'net_result': 'Resultado Líquido',
 }
+
+
+def _gross_sales(user: User, year: int, company_id=None) -> list[Decimal]:
+    # Spreadsheet "Faturamento Bruto": sales by month (informative; % base stays operating revenue).
+    # Only the company filter applies: the other filters are about transactions.
+    from apps.sales.models import Sale  # local: sales depends on finance
+
+    qs = Sale.objects.filter(company__in=list_companies_service(user=user), date__year=year)
+    if company_id:
+        qs = qs.filter(company_id__in=company_id)
+    months = [ZERO] * 12
+    for row in qs.order_by().values(month=ExtractMonth('date')).annotate(total=Sum('amount')):
+        months[row['month'] - 1] = row['total']
+    return months
 
 
 def dre_selector(*, user: User, year: int, **filters) -> dict:
@@ -99,7 +115,10 @@ def dre_selector(*, user: User, year: int, **filters) -> dict:
         + group_months[Group.NON_OPERATING_REVENUE][m]
         - group_months[Group.NON_OPERATING_EXPENSES][m]
     )
-    results = {'contribution_margin': contribution, 'profit_margin': profit, 'net_result': net}
+    results = {
+        'contribution_margin': contribution, 'profit_margin': profit, 'net_result': net,
+        'gross_sales': _gross_sales(user, year, filters.get('company_id')),
+    }
 
     lines = []
     for kind, key in DRE_LAYOUT:
@@ -108,15 +127,16 @@ def dre_selector(*, user: User, year: int, **filters) -> dict:
                           'months': group_months[key]})
             lines.extend(subgroups_by_group[key])
         else:
-            lines.append({'key': key, 'label': RESULT_LABELS[key], 'kind': 'result', 'months': results[key]})
+            lines.append({'key': key, 'label': RESULT_LABELS[key], 'kind': kind, 'months': results[key]})
 
     
     revenue = group_months[Group.OPERATING_REVENUE]
     revenue_total = sum(revenue, ZERO)
     for line in lines:
         line['total'] = sum(line['months'], ZERO)
-        line['percents'] = [_percent(v, revenue[m]) for m, v in enumerate(line['months'])]
-        line['total_percent'] = _percent(line['total'], revenue_total)
+        informative = line['kind'] == 'info'
+        line['percents'] = [None if informative else _percent(v, revenue[m]) for m, v in enumerate(line['months'])]
+        line['total_percent'] = None if informative else _percent(line['total'], revenue_total)
 
     return {'year': year, 'lines': lines}
 

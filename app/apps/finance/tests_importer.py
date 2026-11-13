@@ -11,12 +11,14 @@ from openpyxl import Workbook
 
 from apps.companies.models import Company
 from apps.finance.importer import import_spreadsheet
+from apps.finance.importer import _installments
 from apps.finance.models import Contact, Group, SubGroup, Transaction, TransactionEvent
+from apps.sales.models import Product, Sale
 
 D = Decimal
 
 
-def build_workbook(path, rows):
+def build_workbook(path, rows, sales=None):
     wb = Workbook()
     plan = wb.active
     plan.title = 'Plano de Contas'
@@ -33,6 +35,13 @@ def build_workbook(path, rows):
                     'Grupo', 'Subgrupo', 'Status', 'Observações', None])
     for row in rows:
         entries.append([None, *row])
+
+    if sales is not None:
+        sheet = wb.create_sheet('Vendas')
+        sheet.append([])
+        sheet.append([None, 'Data', 'Cliente', 'Valor', 'Produto', 'Forma de Pagamento', 'Condições'])
+        for sale in sales:
+            sheet.append([None, *sale])
     wb.save(path)
 
 
@@ -198,7 +207,8 @@ class ImportCommandTest(TestCase):
         output = self.call('--default-company', '81.585.365/0001-27',
                            '--company', 'O HENRIQUECEDOR=11.222.333/0001-81')
 
-        self.assertIn('2 imported, 1 skipped', output)
+        self.assertIn('Transactions: 2 imported', output)
+        self.assertIn('Skipped rows: 1', output)
         self.assertIn('Dry-run', output)
         self.assertFalse(Transaction.objects.exists())
         self.assertFalse(SubGroup.objects.exists())
@@ -231,3 +241,95 @@ class ImportCommandTest(TestCase):
     def test_invalid_mapping_format_errors(self):
         with self.assertRaisesMessage(CommandError, 'NAME=CNPJ'):
             self.call('--default-company', '81585365000127', '--company', 'no-equals-sign')
+
+
+def sale(date=dt.datetime(2024, 9, 3), client='Elos', amount=9138.8, product='ASSESSORIA',
+         method='BOLETO - ASAAS', terms='4 parcelas'):
+    return [date, client, amount, product, method, terms]
+
+
+class SalesImportTest(TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / 'sheet.xlsx'
+        self.default = Company.objects.create(name='Default', cnpj='81585365000127')
+        self.grupo = Company.objects.create(name='Grupo', cnpj='11222333000181')
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_import(self, sales, rows=None):
+        build_workbook(self.path, rows or [row()], sales=sales)
+        return import_spreadsheet(
+            self.path, default_company=self.default, companies={'GRUPO ENRIQUECEDOR': self.grupo}
+        )
+
+    def test_imports_sale(self):
+        result = self.run_import([sale()])
+
+        self.assertEqual(result.sales_created, 1)
+        s = Sale.objects.get()
+        self.assertEqual((s.date, s.amount), (dt.date(2024, 9, 3), D('9138.80')))
+        self.assertEqual(s.contact.name, 'Elos')
+        self.assertEqual(s.product.name, 'ASSESSORIA')
+        self.assertEqual(s.payment_method, 'BOLETO - ASAAS')
+        self.assertEqual(s.payment_terms, '4 parcelas')
+        self.assertEqual(s.installments_count, 4)
+        self.assertEqual(s.company, self.default)
+
+    def test_products_deduplicated_ignoring_case_and_spaces(self):
+        result = self.run_import([sale(product='ASSESSORIAS'), sale(product='assessorias '), sale(product='ADP')])
+
+        self.assertEqual(result.products_created, 2)
+        self.assertEqual(Product.objects.count(), 2)
+
+    def test_sale_contact_shared_with_transactions(self):
+        self.run_import([sale(client='ACME')], rows=[row(contact='Acme')])
+
+        self.assertEqual(Contact.objects.count(), 1)
+        self.assertEqual(Sale.objects.get().contact, Transaction.objects.get().contact)
+
+    def test_monthly_total_rows_without_client_are_kept(self):
+        self.run_import([sale(client=None, product=None, method=None, terms=None, amount=56545.4)])
+
+        s = Sale.objects.get()
+        self.assertIsNone(s.contact)
+        self.assertIsNone(s.product)
+        self.assertEqual(s.amount, D('56545.40'))
+
+    def test_payment_method_matching_company_picks_it(self):
+        self.run_import([sale(method='GRUPO ENRIQUECEDOR'), sale(method='PIX')])
+
+        self.assertEqual(
+            sorted(Sale.objects.values_list('company__name', flat=True)), ['Default', 'Grupo']
+        )
+
+    def test_invalid_sales_are_skipped(self):
+        result = self.run_import([sale(date=None), sale(amount='PAGO'), sale(amount=0), sale()])
+
+        self.assertEqual(result.sales_created, 1)
+        reasons = [s.reason.split(': ')[1] for s in result.skipped if s.reason.startswith('sales')]
+        self.assertEqual(reasons, ['missing date', 'invalid amount', 'zero amount'])
+
+    def test_missing_sales_sheet_is_fine(self):
+        build_workbook(self.path, [row()])
+
+        result = import_spreadsheet(self.path, default_company=self.default, companies={})
+
+        self.assertEqual(result.sales_created, 0)
+
+    def test_refuses_when_sales_exist(self):
+        Sale.objects.create(company=self.default, date=dt.date(2026, 1, 1), amount=D('1'))
+
+        with self.assertRaisesMessage(ValueError, 'already exist'):
+            self.run_import([sale()])
+
+    def test_installments_parsing(self):
+        cases = {
+            '4 parcelas': 4, 'Entrada + 11 parcelas': 12, '1 parcela': 1, 'A vista': 1,
+            'à vista': 1, 'vendas setembro': None, '': None,
+        }
+        for terms, expected in cases.items():
+            with self.subTest(terms=terms):
+                self.assertEqual(_installments(terms), expected)
+
