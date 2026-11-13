@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 from decouple import Csv, config
 
@@ -18,6 +19,8 @@ DEBUG = config('DEBUG', cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
 
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
 # Application definition
 
@@ -32,9 +35,13 @@ INSTALLED_APPS = [
     'ninja_extra',
     # Cors
     'corsheaders',
+    # Audit history
+    'pgtrigger',
+    'pghistory',
     # Local apps
     'apps.users',
     'apps.companies',
+    'apps.finance',
 ]
 
 AUTH_USER_MODEL = 'users.User'

@@ -4,7 +4,12 @@ from ninja_extra import NinjaExtraAPI
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.controller import NinjaJWTDefaultController
 
+from api.endpoints.accounts import router as account_router
 from api.endpoints.companies import router as company_router
+from api.endpoints.contacts import router as contact_router
+from api.endpoints.reports import router as report_router
+from api.endpoints.subgroups import router as subgroup_router
+from api.endpoints.transactions import router as transaction_router
 from api.endpoints.user import router as user_router
 from api.exceptions_handlers import register_exception_handlers
 
@@ -27,3 +32,8 @@ def health(request):
 # Routers
 api.add_router('/', user_router)
 api.add_router('/', company_router)
+api.add_router('/', subgroup_router)
+api.add_router('/', contact_router)
+api.add_router('/', account_router)
+api.add_router('/', transaction_router)
+api.add_router('/', report_router)

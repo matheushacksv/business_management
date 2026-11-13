@@ -1,8 +1,10 @@
 from decimal import Decimal
 
+import pghistory
 from django.db import models
 
 
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class Company(models.Model):
     name = models.CharField(max_length=120)
     cnpj = models.CharField(max_length=14, unique=True)
