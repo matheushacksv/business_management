@@ -14,6 +14,13 @@ def create_subgroup_endpoint(request, data: CreateSubgroup):
     return 201, services.create_subgroup_service(name=data.name, group=data.group)
 
 
+@router.get('/groups', response=list[dict])
+@require_permission('subgroups', VIEW)
+def list_groups_endpoint(request):
+    """The 5 fixed DRE groups (value + label), to fill selects."""
+    return [{'value': value, 'label': label} for value, label in Group.choices]
+
+
 @router.get('/subgroup', response=list[SubgroupOut])
 @require_permission('subgroups', VIEW)
 def list_subgroup_endpoint(request, group: Group | None = None):

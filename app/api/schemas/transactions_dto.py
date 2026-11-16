@@ -67,6 +67,11 @@ class TransactionOut(ModelSchema):
     is_reversal: bool
     series_id: int | None
     series_index: int | None
+    # Names for display (the list query select_related()s them: no extra queries)
+    company_name: str = Field(alias='company.name')
+    subgroup_name: str = Field(alias='subgroup.name')
+    account_name: str | None = Field(None, alias='account.name')
+    contact_name: str | None = Field(None, alias='contact.name')
 
     class Meta:
         model = Transaction

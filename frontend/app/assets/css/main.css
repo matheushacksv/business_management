@@ -1,0 +1,112 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* SORA tokens. Fonts declared here are self-hosted by @nuxt/fonts. */
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Geist', 'Inter', system-ui, sans-serif;
+}
+
+/*
+ * Sora surfaces (both themes):
+ *   --s-panel    glass panel fill        --s-solid    opaque twin (sticky table headers/cells)
+ *   --s-overlay  modal/slideover fill    --s-sidebar  sidebar fill
+ *   --s-result   DRE result rows (opaque) --s-glow-*  static background glow
+ * Panels are SOLID-looking (no backdrop-filter): same look, almost no GPU/RAM cost.
+ */
+
+/* LIGHT: white panels on a cool off-white, sky-600 for contrast on white */
+:root {
+  color-scheme: light; /* native inputs (date picker, scrollbars) follow the theme */
+  --ui-radius: 0.5rem;
+  --ui-primary: var(--ui-color-primary-600);
+
+  --ui-bg: #f6f8fa;
+  --ui-bg-muted: #f1f4f7;
+  --ui-bg-elevated: #e9eef3;
+  --ui-bg-accented: #dfe6ed;
+  --ui-border: rgb(15 23 42 / 0.1);
+  --ui-border-muted: rgb(15 23 42 / 0.06);
+  --ui-border-accented: rgb(15 23 42 / 0.16);
+  --ui-text-dimmed: rgb(15 23 42 / 0.45);
+  --ui-text-muted: rgb(15 23 42 / 0.6);
+  --ui-text-toned: rgb(15 23 42 / 0.72);
+  --ui-text: rgb(15 23 42 / 0.85);
+  --ui-text-highlighted: #0f172a;
+
+  --s-panel: #fff;
+  --s-solid: #fff;
+  --s-overlay: #fff;
+  --s-sidebar: rgb(255 255 255 / 0.7);
+  --s-result: #eef8fe;
+  --s-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --s-glow-1: rgb(14 165 233 / 0.10);
+  --s-glow-2: rgb(2 132 199 / 0.06);
+}
+
+/* DARK (Sora original): solid equivalents of white/4, white/5, white/10 over black */
+.dark {
+  color-scheme: dark;
+  --ui-primary: var(--ui-color-primary-400); /* sky-400 rgb(56 189 248) */
+
+  --ui-bg: #000;
+  --ui-bg-muted: #0a0a0a;      /* white/4 */
+  --ui-bg-elevated: #0d0d0d;   /* white/5 */
+  --ui-bg-accented: #1a1a1a;   /* white/10 */
+  --ui-bg-inverted: #fff;
+  --ui-border: rgb(255 255 255 / 0.1);
+  --ui-border-muted: rgb(255 255 255 / 0.06);
+  --ui-border-accented: rgb(255 255 255 / 0.16);
+  --ui-text-dimmed: rgb(255 255 255 / 0.4);
+  --ui-text-muted: rgb(255 255 255 / 0.6);
+  --ui-text-toned: rgb(255 255 255 / 0.7);
+  --ui-text: rgb(255 255 255 / 0.8);
+  --ui-text-highlighted: #fff;
+
+  --s-panel: rgb(255 255 255 / 0.04);
+  --s-solid: #0a0a0a;
+  --s-overlay: #0d0d0d;
+  --s-sidebar: rgb(0 0 0 / 0.6);
+  --s-result: #06121a;
+  --s-shadow: inset 0 1px 1px rgb(255 255 255 / 0.04), 0 25px 50px -12px rgb(0 0 0 / 0.5);
+  --s-glow-1: rgb(14 165 233 / 0.14);
+  --s-glow-2: rgb(2 132 199 / 0.08);
+}
+
+/* Background: a STATIC glow replacing the design system's WebGL scene. Nothing animates. */
+body {
+  background-color: var(--ui-bg);
+  background-image:
+    radial-gradient(60rem 30rem at 15% -10%, var(--s-glow-1), transparent 60%),
+    radial-gradient(40rem 24rem at 100% 0%, var(--s-glow-2), transparent 60%);
+  background-attachment: fixed;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Sora glass panel, without backdrop-filter */
+.s-panel {
+  background: var(--s-panel);
+  border: 1px solid var(--ui-border);
+  border-radius: 1rem;
+  box-shadow: var(--s-shadow);
+}
+
+/* Sora entrance, lightweight: opacity + translate only (the original also animated a blur filter) */
+@keyframes s-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.s-enter {
+  animation: s-enter 0.4s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-enter { animation: none; }
+}
+
+/* Money columns line up */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -120,7 +120,7 @@ def delete_sale_endpoint(request, sale_id: int):
 def list_receivables_endpoint(request, sale_id: int):
     check_permission(request.user, 'transactions', VIEW)
     sale = services.get_sale_service(user=request.user, sale_id=sale_id)
-    return sale.receivables.select_related('subgroup').order_by('date', 'id')
+    return sale.receivables.select_related('company', 'subgroup', 'account', 'contact').order_by('date', 'id')
 
 
 @router.post('/sale/{sale_id}/receivables', response={201: list[TransactionOut]})

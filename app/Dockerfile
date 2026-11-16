@@ -17,6 +17,7 @@ RUN mkdir -p staticfiles && chown django staticfiles
 
 USER django
 EXPOSE 8000
-HEALTHCHECK CMD curl -k --fail http://localhost:8000/api/health || exit 1
+HEALTHCHECK --interval=10s --timeout=3s --start-period=60s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8000/api/health || exit 1
 
 CMD ["sh", "/usr/local/bin/django_entrypoint.sh"]

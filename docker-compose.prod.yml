@@ -1,0 +1,95 @@
+services:
+
+  database:
+    image: postgres:17-alpine
+    env_file: ./.env
+    networks:
+      default:
+        aliases: [gestao-db]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+       interval: 5s
+       timeout: 5s
+       retries: 5
+       start_period: 20s
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  minio:
+    image: chainguard/minio@sha256:6a1d0b45c8669726bba580ced0bfa4cb9fdeed1ed636dfabd81d1577beb6937b
+    command: server /data --console-address :9001
+    env_file: ./.env
+    networks:
+      default:
+        aliases: [gestao-minio]
+    volumes:
+      - minio_data:/data
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  minio-init:
+    image: chainguard/minio-client:latest-dev
+    env_file: ./.env
+    entrypoint: ["sh", "/minio-entrypoint.sh"]
+    configs:
+      - source: minio_init
+        target: /minio-entrypoint.sh
+    networks: [default]
+    deploy:
+      restart_policy:
+        condition: none
+
+  app-backend:
+    image: gestao-backend:latest
+    env_file: ./.env
+    networks:
+      default:
+        aliases: [gestao-api]
+      traefik:
+        aliases: [gestao-api]
+    deploy:
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.gestao-api.rule=Host(`financeiro.grupoenriquecedor.com.br`) && PathPrefix(`/api`)
+        - traefik.http.routers.gestao-api.priority=10
+        - traefik.http.routers.gestao-api.entrypoints=websecure
+        - traefik.http.routers.gestao-api.tls.certresolver=letsencryptresolver
+        - traefik.http.services.gestao-api.loadbalancer.server.port=8000
+
+  app-frontend:
+     image: gestao-frontend:latest
+     networks: [traefik]
+     deploy:
+       restart_policy:
+         condition: on-failure
+       update_config:
+         order: start-first
+       labels:
+         - traefik.enable=true
+         - traefik.http.routers.gestao.rule=Host(`financeiro.grupoenriquecedor.com.br`)
+         - traefik.http.routers.gestao.priority=1
+         - traefik.http.routers.gestao.entrypoints=websecure
+         - traefik.http.routers.gestao.tls.certresolver=letsencryptresolver
+         - traefik.http.services.gestao.loadbalancer.server.port=8080
+
+configs:
+    minio_init:
+      file: ./cmd/minio_entrypoint.sh
+
+networks:
+  default:
+  traefik:
+    external: true
+    name: OHenriquecedorNet
+
+volumes:
+  postgres_data:
+  minio_data:

@@ -170,3 +170,12 @@ class SubGroupEndpointTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertTrue(SubGroup.objects.filter(pk=self.rent.pk).exists())
+
+    # Groups
+
+    def test_list_groups(self):
+        response = self.client.get('/api/groups', headers=self.auth)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0], {'value': 'operating_revenue', 'label': 'Receitas Operacionais'})
+        self.assertEqual(len(response.json()), 5)

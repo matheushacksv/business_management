@@ -1,0 +1,69 @@
+// pt-BR formatting helpers (auto-imported by Nuxt)
+
+const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const percent = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 })
+
+export const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+/** API decimals come as strings ("1234.50"); never use them in float math beyond display/charts. */
+export function formatMoney(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—'
+  return money.format(Number(value))
+}
+
+export function formatPercent(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return percent.format(Number(value))
+}
+
+/** "2026-01-31" -> "31/01/2026" without timezone shifts (dates are calendar dates). */
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return '—'
+  const [y, m, d] = value.slice(0, 10).split('-')
+  return `${d}/${m}/${y}`
+}
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '—'
+  return new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+/** "2026-03-01" -> "Mar/2026" */
+export function formatMonth(value: string): string {
+  const [y, m] = value.split('-')
+  return `${MONTHS[Number(m) - 1]}/${y}`
+}
+
+export function today(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export const LABELS = {
+  type: { inflow: 'Entrada', outflow: 'Saída' } as Record<string, string>,
+  status: { planned: 'Previsto', realized: 'Realizado' } as Record<string, string>,
+  saleStatus: { active: 'Ativa', completed: 'Concluída', canceled: 'Cancelada' } as Record<string, string>,
+  role: {
+    admin: 'Administrador', finance: 'Financeiro', legal: 'Jurídico', accountant: 'Contador', manager: 'Gestor',
+  } as Record<string, string>,
+  invoiceKind: { service: 'NF de Serviço', product: 'NF de Produto' } as Record<string, string>,
+  action: { insert: 'Criou', update: 'Alterou', delete: 'Excluiu' } as Record<string, string>,
+}
+
+export const TYPE_OPTIONS = [
+  { label: 'Entrada', value: 'inflow' },
+  { label: 'Saída', value: 'outflow' },
+]
+export const STATUS_OPTIONS = [
+  { label: 'Previsto', value: 'planned' },
+  { label: 'Realizado', value: 'realized' },
+]
+export const ROLE_OPTIONS = Object.entries(LABELS.role).map(([value, label]) => ({ value, label }))
+
+/** Same rule as the backend NATURAL_TYPE: revenue groups are inflows, costs/expenses outflows. */
+export const INFLOW_GROUPS = ['operating_revenue', 'non_operating_revenue']
+export function naturalType(group?: string | null): 'inflow' | 'outflow' | null {
+  if (!group) return null
+  return INFLOW_GROUPS.includes(group) ? 'inflow' : 'outflow'
+}
+

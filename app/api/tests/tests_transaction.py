@@ -275,3 +275,16 @@ class TransactionEndpointTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Transaction.objects.filter(pk=self.other_tx.pk).exists())
+
+    def test_output_includes_display_names(self):
+        contact = services.create_contact_service(name='Landlord')
+        tx = self.create(account_id=self.account.pk, contact_id=contact.pk)
+
+        data = self.client.get(f'/api/transaction/{tx.pk}', headers=self.auth_member).json()
+
+        self.assertEqual(
+            (data['company_name'], data['subgroup_name'], data['account_name'], data['contact_name']),
+            ('Company A', 'Rent', 'Itaú', 'Landlord'),
+        )
+        listed = self.client.get('/api/transaction', headers=self.auth_member).json()['items']
+        self.assertIsNone(next(t for t in listed if t['id'] == self.tx.pk)['contact_name'])

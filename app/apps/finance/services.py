@@ -246,7 +246,7 @@ def list_transactions_service(
 
 
 def get_transaction_service(*, user: User, transaction_id: int) -> Transaction:
-    return _transactions_for(user).select_related('subgroup').get(pk=transaction_id)
+    return _transactions_for(user).select_related('company', 'subgroup', 'account', 'contact').get(pk=transaction_id)
 
 
 def update_transaction_service(*, user: User, transaction_id: int, **fields) -> Transaction:

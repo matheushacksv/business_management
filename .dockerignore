@@ -1,5 +1,10 @@
 .env
-frontend
 **/.venv
 **/__pycache__
 **/*.pyc
+**/node_modules
+**/.nuxt
+**/.output
+**/.data
+.git
+sora-design-system

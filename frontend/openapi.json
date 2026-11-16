@@ -1,0 +1,8123 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "API GP",
+  "version": "1.0.0",
+  "description": ""
+ },
+ "paths": {
+  "/api/health": {
+   "get": {
+    "operationId": "api_api_health",
+    "summary": "Health",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     },
+     "503": {
+      "description": "Service Unavailable",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Health"
+    ]
+   }
+  },
+  "/api/me": {
+   "get": {
+    "operationId": "api_endpoints_user_me_endpoint",
+    "summary": "Me Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/user": {
+   "post": {
+    "operationId": "api_endpoints_user_create_user_endpoint",
+    "summary": "Create User Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateUserDTO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_user_list_users_endpoint",
+    "summary": "List Users Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/UserOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/user/{user_id}": {
+   "get": {
+    "operationId": "api_endpoints_user_get_user_endpoint",
+    "summary": "Get User Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "user_id",
+      "schema": {
+       "title": "User Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_user_update_user_endpoint",
+    "summary": "Update User Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "user_id",
+      "schema": {
+       "title": "User Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchUserDTO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/user/deactivate/{user_id}": {
+   "post": {
+    "operationId": "api_endpoints_user_deactivate_user_endpoint",
+    "summary": "Deactivate User Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "user_id",
+      "schema": {
+       "title": "User Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/company": {
+   "get": {
+    "operationId": "api_endpoints_companies_list_company_endpoint",
+    "summary": "List Company Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CompanyOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Companies"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_companies_create_company_endpoint",
+    "summary": "Create Company Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompanyOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Companies"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompanyCreateDTO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/company/{company_id}": {
+   "get": {
+    "operationId": "api_endpoints_companies_get_company_endpoint",
+    "summary": "Get Company Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompanyOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Companies"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_companies_update_company_endpoint",
+    "summary": "Update Company Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompanyOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Companies"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompanyUpdateDTO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_companies_delete_company_endpoint",
+    "summary": "Delete Company Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Companies"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/subgroup": {
+   "post": {
+    "operationId": "api_endpoints_subgroups_create_subgroup_endpoint",
+    "summary": "Create Subgroup Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SubgroupOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Subgroups"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateSubgroup"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_subgroups_list_subgroup_endpoint",
+    "summary": "List Subgroup Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/Group"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/SubgroupOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Subgroups"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/groups": {
+   "get": {
+    "operationId": "api_endpoints_subgroups_list_groups_endpoint",
+    "summary": "List Groups Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "additionalProperties": true,
+          "type": "object"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "description": "The 5 fixed DRE groups (value + label), to fill selects.",
+    "tags": [
+     "Subgroups"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/subgroup/{subgroup_id}": {
+   "get": {
+    "operationId": "api_endpoints_subgroups_get_subgroup_endpoint",
+    "summary": "Get Subgroup Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "subgroup_id",
+      "schema": {
+       "title": "Subgroup Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SubgroupOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Subgroups"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_subgroups_update_subgroup_endpoint",
+    "summary": "Update Subgroup Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "subgroup_id",
+      "schema": {
+       "title": "Subgroup Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SubgroupOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Subgroups"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchSubgroup"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_subgroups_delete_subgroup_endpoint",
+    "summary": "Delete Subgroup Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "subgroup_id",
+      "schema": {
+       "title": "Subgroup Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Subgroups"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/contact": {
+   "post": {
+    "operationId": "api_endpoints_contacts_create_contact_endpoint",
+    "summary": "Create Contact Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ContactOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateContact"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_contacts_list_contacts_endpoint",
+    "summary": "List Contacts Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ContactOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/contact/{contact_id}": {
+   "get": {
+    "operationId": "api_endpoints_contacts_get_contact_endpoint",
+    "summary": "Get Contact Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ContactOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_contacts_update_contact_endpoint",
+    "summary": "Update Contact Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ContactOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchContact"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_contacts_delete_contact_endpoint",
+    "summary": "Delete Contact Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/account": {
+   "post": {
+    "operationId": "api_endpoints_accounts_create_account_endpoint",
+    "summary": "Create Account Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AccountOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Accounts"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateAccount"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_accounts_list_accounts_endpoint",
+    "summary": "List Accounts Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AccountOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Accounts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/account/{account_id}": {
+   "get": {
+    "operationId": "api_endpoints_accounts_get_account_endpoint",
+    "summary": "Get Account Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "account_id",
+      "schema": {
+       "title": "Account Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AccountOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Accounts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_accounts_update_account_endpoint",
+    "summary": "Update Account Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "account_id",
+      "schema": {
+       "title": "Account Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AccountOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Accounts"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchAccount"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_accounts_delete_account_endpoint",
+    "summary": "Delete Account Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "account_id",
+      "schema": {
+       "title": "Account Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Accounts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction": {
+   "post": {
+    "operationId": "api_endpoints_transactions_create_transaction_endpoint",
+    "summary": "Create Transaction Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransactionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateTransaction"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_transactions_list_transactions_endpoint",
+    "summary": "List Transactions Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "ordering",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "date",
+          "-date",
+          "amount",
+          "-amount",
+          "created_at",
+          "-created_at"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ordering"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page",
+      "schema": {
+       "default": 1,
+       "minimum": 1,
+       "title": "Page",
+       "type": "integer"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page_size",
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Page Size"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PagedTransactionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction/export": {
+   "get": {
+    "operationId": "api_endpoints_transactions_export_transactions_endpoint",
+    "summary": "Export Transactions Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "ordering",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "date",
+          "-date",
+          "amount",
+          "-amount",
+          "created_at",
+          "-created_at"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ordering"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "description": "Excel file with every transaction matching the filters (same ones as the list).",
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction/{transaction_id}": {
+   "get": {
+    "operationId": "api_endpoints_transactions_get_transaction_endpoint",
+    "summary": "Get Transaction Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transaction_id",
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransactionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_transactions_update_transaction_endpoint",
+    "summary": "Update Transaction Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transaction_id",
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransactionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchTransaction"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_transactions_delete_transaction_endpoint",
+    "summary": "Delete Transaction Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transaction_id",
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction-series": {
+   "post": {
+    "operationId": "api_endpoints_transactions_create_series_endpoint",
+    "summary": "Create Series Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateSeries"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction-series/{series_id}": {
+   "get": {
+    "operationId": "api_endpoints_transactions_get_series_endpoint",
+    "summary": "Get Series Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "series_id",
+      "schema": {
+       "title": "Series Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_transactions_update_series_endpoint",
+    "summary": "Update Series Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "series_id",
+      "schema": {
+       "title": "Series Id",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "from_index",
+      "schema": {
+       "default": 1,
+       "title": "From Index",
+       "type": "integer"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesChangeOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Apply the change to occurrence `from_index` and all the following ones.",
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchSeries"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_transactions_cancel_series_endpoint",
+    "summary": "Cancel Series Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "series_id",
+      "schema": {
+       "title": "Series Id",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "from_index",
+      "schema": {
+       "default": 1,
+       "title": "From Index",
+       "type": "integer"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesChangeOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Delete the PLANNED occurrences from `from_index` on; realized ones are kept.",
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/dre": {
+   "get": {
+    "operationId": "api_endpoints_reports_dre_endpoint",
+    "summary": "Dre Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "year",
+      "schema": {
+       "title": "Year",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DREOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/cash-flow": {
+   "get": {
+    "operationId": "api_endpoints_reports_cash_flow_endpoint",
+    "summary": "Cash Flow Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "start",
+      "schema": {
+       "format": "date",
+       "title": "Start",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "end",
+      "schema": {
+       "format": "date",
+       "title": "End",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "granularity",
+      "schema": {
+       "default": "month",
+       "enum": [
+        "month",
+        "day"
+       ],
+       "title": "Granularity",
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CashFlowOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/attachment": {
+   "post": {
+    "operationId": "api_endpoints_attachments_upload_attachment_endpoint",
+    "summary": "Upload Attachment Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AttachmentOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Attachments"
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "title": "MultiPartBodyParams",
+        "type": "object",
+        "properties": {
+         "target": {
+          "enum": [
+           "transaction",
+           "contact",
+           "invoice",
+           "sale"
+          ],
+          "title": "Target",
+          "type": "string"
+         },
+         "target_id": {
+          "title": "Target Id",
+          "type": "integer"
+         },
+         "file": {
+          "format": "binary",
+          "title": "File",
+          "type": "string"
+         }
+        },
+        "required": [
+         "target",
+         "target_id",
+         "file"
+        ]
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_attachments_list_attachments_endpoint",
+    "summary": "List Attachments Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "target",
+      "schema": {
+       "enum": [
+        "transaction",
+        "contact",
+        "invoice",
+        "sale"
+       ],
+       "title": "Target",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "target_id",
+      "schema": {
+       "title": "Target Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AttachmentOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Attachments"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/attachment/{attachment_id}/download": {
+   "get": {
+    "operationId": "api_endpoints_attachments_download_attachment_endpoint",
+    "summary": "Download Attachment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "attachment_id",
+      "schema": {
+       "title": "Attachment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "tags": [
+     "Attachments"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/attachment/{attachment_id}": {
+   "delete": {
+    "operationId": "api_endpoints_attachments_delete_attachment_endpoint",
+    "summary": "Delete Attachment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "attachment_id",
+      "schema": {
+       "title": "Attachment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Attachments"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/invoice": {
+   "post": {
+    "operationId": "api_endpoints_invoices_create_invoice_endpoint",
+    "summary": "Create Invoice Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvoiceOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Invoices"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateInvoice"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_invoices_list_invoices_endpoint",
+    "summary": "List Invoices Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "transaction_id",
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/InvoiceOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Invoices"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/invoice/pending": {
+   "get": {
+    "operationId": "api_endpoints_invoices_pending_invoices_endpoint",
+    "summary": "Pending Invoices Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "direction",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "receive",
+          "issue"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Direction"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "kind",
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/InvoiceKind"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "reason",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "missing_invoice",
+          "missing_attachment"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Reason"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page",
+      "schema": {
+       "default": 1,
+       "minimum": 1,
+       "title": "Page",
+       "type": "integer"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page_size",
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Page Size"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PagedPendingInvoiceOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Invoices"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/invoice/{invoice_id}": {
+   "get": {
+    "operationId": "api_endpoints_invoices_get_invoice_endpoint",
+    "summary": "Get Invoice Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "invoice_id",
+      "schema": {
+       "title": "Invoice Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvoiceOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Invoices"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_invoices_update_invoice_endpoint",
+    "summary": "Update Invoice Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "invoice_id",
+      "schema": {
+       "title": "Invoice Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvoiceOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Invoices"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchInvoice"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_invoices_delete_invoice_endpoint",
+    "summary": "Delete Invoice Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "invoice_id",
+      "schema": {
+       "title": "Invoice Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Invoices"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/product": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_products_endpoint",
+    "summary": "List Products Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "active",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Active"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ProductOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_sales_create_product_endpoint",
+    "summary": "Create Product Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProductOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NamedCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/product/{product_id}": {
+   "patch": {
+    "operationId": "api_endpoints_sales_update_product_endpoint",
+    "summary": "Update Product Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "product_id",
+      "schema": {
+       "title": "Product Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProductOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProductPatch"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_sales_delete_product_endpoint",
+    "summary": "Delete Product Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "product_id",
+      "schema": {
+       "title": "Product Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/salesperson": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_salespeople_endpoint",
+    "summary": "List Salespeople Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "active",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Active"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/SalespersonOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_sales_create_salesperson_endpoint",
+    "summary": "Create Salesperson Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SalespersonOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SalespersonCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/salesperson/{salesperson_id}": {
+   "patch": {
+    "operationId": "api_endpoints_sales_update_salesperson_endpoint",
+    "summary": "Update Salesperson Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "salesperson_id",
+      "schema": {
+       "title": "Salesperson Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SalespersonOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SalespersonPatch"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_sales_delete_salesperson_endpoint",
+    "summary": "Delete Salesperson Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "salesperson_id",
+      "schema": {
+       "title": "Salesperson Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/sale": {
+   "post": {
+    "operationId": "api_endpoints_sales_create_sale_endpoint",
+    "summary": "Create Sale Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SaleOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateSale"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "get": {
+    "operationId": "api_endpoints_sales_list_sales_endpoint",
+    "summary": "List Sales Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/SaleStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "product_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Product Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "salesperson_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Salesperson Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "delivery_responsible_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Delivery Responsible Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "ordering",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "date",
+          "-date",
+          "amount",
+          "-amount",
+          "created_at",
+          "-created_at"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ordering"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page",
+      "schema": {
+       "default": 1,
+       "minimum": 1,
+       "title": "Page",
+       "type": "integer"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page_size",
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Page Size"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PagedSaleOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/sale/{sale_id}": {
+   "get": {
+    "operationId": "api_endpoints_sales_get_sale_endpoint",
+    "summary": "Get Sale Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SaleOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_sales_update_sale_endpoint",
+    "summary": "Update Sale Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SaleOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchSale"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_sales_delete_sale_endpoint",
+    "summary": "Delete Sale Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/sale/{sale_id}/receivables": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_receivables_endpoint",
+    "summary": "List Receivables Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TransactionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_sales_generate_receivables_endpoint",
+    "summary": "Generate Receivables Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TransactionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/GenerateReceivables"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/sales": {
+   "get": {
+    "operationId": "api_endpoints_sales_sales_report_endpoint",
+    "summary": "Sales Report Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "start",
+      "schema": {
+       "format": "date",
+       "title": "Start",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "end",
+      "schema": {
+       "format": "date",
+       "title": "End",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/SaleStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "product_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Product Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "salesperson_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Salesperson Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "delivery_responsible_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Delivery Responsible Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "ordering",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "date",
+          "-date",
+          "amount",
+          "-amount",
+          "created_at",
+          "-created_at"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ordering"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SalesReportOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/import": {
+   "post": {
+    "operationId": "api_endpoints_imports_import_endpoint",
+    "summary": "Import Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ImportOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Preview (commit=false, default) or run the legacy spreadsheet import.\n\n`companies` is a JSON object mapping each name of the \"Empresa\" column to a company id,\ne.g. {\"O HENRIQUECEDOR\": 2}. Rows with an empty company go to `default_company_id`.",
+    "tags": [
+     "Import"
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "properties": {
+         "file": {
+          "format": "binary",
+          "title": "File",
+          "type": "string"
+         },
+         "default_company_id": {
+          "title": "Default Company Id",
+          "type": "integer"
+         },
+         "companies": {
+          "default": "{}",
+          "title": "Companies",
+          "type": "string"
+         },
+         "commit": {
+          "default": false,
+          "title": "Commit",
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "file",
+         "default_company_id"
+        ],
+        "title": "MultiPartBodyParams",
+        "type": "object"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/history": {
+   "get": {
+    "operationId": "api_endpoints_history_object_history_endpoint",
+    "summary": "Object History Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "target",
+      "schema": {
+       "enum": [
+        "transaction",
+        "contact",
+        "invoice",
+        "sale",
+        "company",
+        "subgroup",
+        "account",
+        "product",
+        "salesperson",
+        "user"
+       ],
+       "title": "Target",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "target_id",
+      "schema": {
+       "title": "Target Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/HistoryEventOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "description": "Every change of one record, oldest first. Permission = view on the record's module.",
+    "tags": [
+     "History"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/history/feed": {
+   "get": {
+    "operationId": "api_endpoints_history_activity_feed_endpoint",
+    "summary": "Activity Feed Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "user_id",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "User Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "target",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "transaction",
+          "contact",
+          "invoice",
+          "sale",
+          "company",
+          "subgroup",
+          "account",
+          "product",
+          "salesperson",
+          "user"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Target"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page",
+      "schema": {
+       "default": 1,
+       "minimum": 1,
+       "title": "Page",
+       "type": "integer"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FeedOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "All changes across the system, newest first (admins). Filter by user to audit their work.",
+    "tags": [
+     "History"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/token/pair": {
+   "post": {
+    "operationId": "token_obtain_pair",
+    "summary": "Obtain Token",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TokenObtainPairOutputSchema"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "token"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TokenObtainPairInputSchema"
+       }
+      }
+     },
+     "required": true
+    }
+   }
+  },
+  "/api/token/refresh": {
+   "post": {
+    "operationId": "token_refresh",
+    "summary": "Refresh Token",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TokenRefreshOutputSchema"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "token"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TokenRefreshInputSchema"
+       }
+      }
+     },
+     "required": true
+    }
+   }
+  },
+  "/api/token/verify": {
+   "post": {
+    "operationId": "token_verify",
+    "summary": "Verify Token",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Schema"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "token"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TokenVerifyInputSchema"
+       }
+      }
+     },
+     "required": true
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "MeOut": {
+    "properties": {
+     "company_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Company Ids",
+      "type": "array"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "email": {
+      "maxLength": 254,
+      "title": "Email",
+      "type": "string"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "role": {
+      "default": "manager",
+      "maxLength": 20,
+      "title": "Role",
+      "type": "string"
+     },
+     "is_superuser": {
+      "default": false,
+      "description": "Indica que este usu\u00e1rio tem todas as permiss\u00f5es sem atribu\u00ed-las explicitamente.",
+      "title": "Status De Superusu\u00e1rio",
+      "type": "boolean"
+     },
+     "is_active": {
+      "default": true,
+      "title": "Is Active",
+      "type": "boolean"
+     },
+     "joined_at": {
+      "format": "date-time",
+      "title": "Joined At",
+      "type": "string"
+     },
+     "deactivated_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deactivated At"
+     },
+     "is_admin": {
+      "title": "Is Admin",
+      "type": "boolean"
+     },
+     "permissions": {
+      "additionalProperties": {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      "title": "Permissions",
+      "type": "object"
+     }
+    },
+    "required": [
+     "company_ids",
+     "email",
+     "joined_at",
+     "is_admin",
+     "permissions"
+    ],
+    "title": "MeOut",
+    "type": "object"
+   },
+   "UserOut": {
+    "properties": {
+     "company_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Company Ids",
+      "type": "array"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "email": {
+      "maxLength": 254,
+      "title": "Email",
+      "type": "string"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "role": {
+      "default": "manager",
+      "maxLength": 20,
+      "title": "Role",
+      "type": "string"
+     },
+     "is_superuser": {
+      "default": false,
+      "description": "Indica que este usu\u00e1rio tem todas as permiss\u00f5es sem atribu\u00ed-las explicitamente.",
+      "title": "Status De Superusu\u00e1rio",
+      "type": "boolean"
+     },
+     "is_active": {
+      "default": true,
+      "title": "Is Active",
+      "type": "boolean"
+     },
+     "joined_at": {
+      "format": "date-time",
+      "title": "Joined At",
+      "type": "string"
+     },
+     "deactivated_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deactivated At"
+     }
+    },
+    "required": [
+     "company_ids",
+     "email",
+     "joined_at"
+    ],
+    "title": "UserOut",
+    "type": "object"
+   },
+   "CreateUserDTO": {
+    "properties": {
+     "email": {
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+     },
+     "password": {
+      "title": "Password",
+      "type": "string"
+     },
+     "repeat_password": {
+      "title": "Repeat Password",
+      "type": "string"
+     },
+     "name": {
+      "default": "",
+      "title": "Name",
+      "type": "string"
+     },
+     "role": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/Role"
+       }
+      ],
+      "default": "manager"
+     },
+     "company_ids": {
+      "default": [],
+      "items": {
+       "type": "integer"
+      },
+      "title": "Company Ids",
+      "type": "array"
+     }
+    },
+    "required": [
+     "email",
+     "password",
+     "repeat_password"
+    ],
+    "title": "CreateUserDTO",
+    "type": "object"
+   },
+   "Role": {
+    "enum": [
+     "admin",
+     "finance",
+     "legal",
+     "accountant",
+     "manager"
+    ],
+    "title": "Role",
+    "type": "string"
+   },
+   "PatchUserDTO": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "role": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Role"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "company_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Ids"
+     }
+    },
+    "title": "PatchUserDTO",
+    "type": "object"
+   },
+   "CompanyOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 120,
+      "title": "Name",
+      "type": "string"
+     },
+     "cnpj": {
+      "maxLength": 14,
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "initial_balance": {
+      "default": "0",
+      "title": "Initial Balance",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "cnpj"
+    ],
+    "title": "CompanyOut",
+    "type": "object"
+   },
+   "CompanyCreateDTO": {
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "cnpj": {
+      "title": "Cnpj",
+      "type": "string"
+     },
+     "initial_balance": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Initial Balance"
+     }
+    },
+    "required": [
+     "name",
+     "cnpj",
+     "initial_balance"
+    ],
+    "title": "CompanyCreateDTO",
+    "type": "object"
+   },
+   "CompanyUpdateDTO": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "cnpj": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cnpj"
+     },
+     "initial_balance": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Initial Balance"
+     }
+    },
+    "title": "CompanyUpdateDTO",
+    "type": "object"
+   },
+   "SubgroupOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 150,
+      "title": "Name",
+      "type": "string"
+     },
+     "group": {
+      "maxLength": 50,
+      "title": "Group",
+      "type": "string"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "group",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "SubgroupOut",
+    "type": "object"
+   },
+   "CreateSubgroup": {
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "group": {
+      "$ref": "#/components/schemas/Group"
+     }
+    },
+    "required": [
+     "name",
+     "group"
+    ],
+    "title": "CreateSubgroup",
+    "type": "object"
+   },
+   "Group": {
+    "enum": [
+     "operating_revenue",
+     "non_operating_revenue",
+     "variable_costs",
+     "fixed_costs",
+     "non_operating_expenses"
+    ],
+    "title": "Group",
+    "type": "string"
+   },
+   "PatchSubgroup": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "group": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Group"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "title": "PatchSubgroup",
+    "type": "object"
+   },
+   "ContactOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 160,
+      "title": "Name",
+      "type": "string"
+     },
+     "company_name": {
+      "anyOf": [
+       {
+        "maxLength": 160,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Name"
+     },
+     "document": {
+      "anyOf": [
+       {
+        "maxLength": 14,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document"
+     },
+     "email": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Email"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "maxLength": 50,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "ContactOut",
+    "type": "object"
+   },
+   "CreateContact": {
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "company_name": {
+      "default": "",
+      "title": "Company Name",
+      "type": "string"
+     },
+     "document": {
+      "default": "",
+      "title": "Document",
+      "type": "string"
+     },
+     "email": {
+      "anyOf": [
+       {
+        "format": "email",
+        "type": "string"
+       },
+       {
+        "const": "",
+        "type": "string"
+       }
+      ],
+      "default": "",
+      "title": "Email"
+     },
+     "phone": {
+      "default": "",
+      "title": "Phone",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "CreateContact",
+    "type": "object"
+   },
+   "PatchContact": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "company_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Name"
+     },
+     "document": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document"
+     },
+     "email": {
+      "anyOf": [
+       {
+        "format": "email",
+        "type": "string"
+       },
+       {
+        "const": "",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Email"
+     },
+     "phone": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone"
+     }
+    },
+    "title": "PatchContact",
+    "type": "object"
+   },
+   "AccountOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "company": {
+      "title": "Company",
+      "type": "integer"
+     },
+     "name": {
+      "maxLength": 120,
+      "title": "Name",
+      "type": "string"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company",
+     "name",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "AccountOut",
+    "type": "object"
+   },
+   "CreateAccount": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "name"
+    ],
+    "title": "CreateAccount",
+    "type": "object"
+   },
+   "PatchAccount": {
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "PatchAccount",
+    "type": "object"
+   },
+   "TransactionOut": {
+    "properties": {
+     "group": {
+      "$ref": "#/components/schemas/Group"
+     },
+     "is_reversal": {
+      "title": "Is Reversal",
+      "type": "boolean"
+     },
+     "series_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Id"
+     },
+     "series_index": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series Index"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "subgroup_name": {
+      "title": "Subgroup Name",
+      "type": "string"
+     },
+     "account_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Name"
+     },
+     "contact_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Name"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "company": {
+      "title": "Company",
+      "type": "integer"
+     },
+     "subgroup": {
+      "title": "Subgroup",
+      "type": "integer"
+     },
+     "account": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account"
+     },
+     "contact": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "type": {
+      "maxLength": 20,
+      "title": "Type",
+      "type": "string"
+     },
+     "status": {
+      "default": "planned",
+      "maxLength": 10,
+      "title": "Status",
+      "type": "string"
+     },
+     "reference": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "group",
+     "is_reversal",
+     "series_id",
+     "series_index",
+     "company_name",
+     "subgroup_name",
+     "company",
+     "subgroup",
+     "date",
+     "amount",
+     "type",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "TransactionOut",
+    "type": "object"
+   },
+   "CreateTransaction": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "subgroup_id": {
+      "title": "Subgroup Id",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TransactionType"
+     },
+     "status": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/TransactionStatus"
+       }
+      ],
+      "default": "planned"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "reference": {
+      "default": "",
+      "title": "Reference",
+      "type": "string"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "subgroup_id",
+     "date",
+     "amount",
+     "type"
+    ],
+    "title": "CreateTransaction",
+    "type": "object"
+   },
+   "TransactionStatus": {
+    "enum": [
+     "planned",
+     "realized"
+    ],
+    "title": "TransactionStatus",
+    "type": "string"
+   },
+   "TransactionType": {
+    "enum": [
+     "inflow",
+     "outflow"
+    ],
+    "title": "TransactionType",
+    "type": "string"
+   },
+   "Input": {
+    "properties": {
+     "page": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Page",
+      "type": "integer"
+     },
+     "page_size": {
+      "anyOf": [
+       {
+        "minimum": 1,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Page Size"
+     }
+    },
+    "title": "Input",
+    "type": "object"
+   },
+   "TransactionFilters": {
+    "properties": {
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/TransactionStatus"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "type": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/TransactionType"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Type"
+     },
+     "group": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/Group"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group"
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "amount_min": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Min"
+     },
+     "amount_max": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Max"
+     },
+     "search": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Search"
+     },
+     "date_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date From"
+     },
+     "date_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date To"
+     },
+     "ordering": {
+      "anyOf": [
+       {
+        "enum": [
+         "date",
+         "-date",
+         "amount",
+         "-amount",
+         "created_at",
+         "-created_at"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ordering"
+     }
+    },
+    "title": "TransactionFilters",
+    "type": "object"
+   },
+   "PagedTransactionOut": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/TransactionOut"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "items",
+     "count"
+    ],
+    "title": "PagedTransactionOut",
+    "type": "object"
+   },
+   "PatchTransaction": {
+    "properties": {
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "type": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TransactionType"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "status": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TransactionStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "reference": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "title": "PatchTransaction",
+    "type": "object"
+   },
+   "SeriesKind": {
+    "enum": [
+     "installment",
+     "recurring"
+    ],
+    "title": "SeriesKind",
+    "type": "string"
+   },
+   "SeriesOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/SeriesKind"
+     },
+     "frequency": {
+      "title": "Frequency",
+      "type": "string"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "total_amount": {
+      "title": "Total Amount",
+      "type": "string"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "created_by_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Created By Id"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "transactions": {
+      "items": {
+       "$ref": "#/components/schemas/TransactionOut"
+      },
+      "title": "Transactions",
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "frequency",
+     "count",
+     "total_amount",
+     "company_id",
+     "created_by_id",
+     "created_at",
+     "transactions"
+    ],
+    "title": "SeriesOut",
+    "type": "object"
+   },
+   "CreateSeries": {
+    "properties": {
+     "kind": {
+      "$ref": "#/components/schemas/SeriesKind"
+     },
+     "count": {
+      "maximum": 120,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+     },
+     "first_date": {
+      "format": "date",
+      "title": "First Date",
+      "type": "string"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "subgroup_id": {
+      "title": "Subgroup Id",
+      "type": "integer"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TransactionType"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "total_amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Amount"
+     },
+     "status": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/TransactionStatus"
+       }
+      ],
+      "default": "planned"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "reference": {
+      "default": "",
+      "title": "Reference",
+      "type": "string"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "count",
+     "first_date",
+     "company_id",
+     "subgroup_id",
+     "type"
+    ],
+    "title": "CreateSeries",
+    "type": "object"
+   },
+   "SeriesChangeOut": {
+    "properties": {
+     "affected": {
+      "title": "Affected",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "affected"
+    ],
+    "title": "SeriesChangeOut",
+    "type": "object"
+   },
+   "PatchSeries": {
+    "properties": {
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "reference": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reference"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "title": "PatchSeries",
+    "type": "object"
+   },
+   "DREParams": {
+    "properties": {
+     "year": {
+      "title": "Year",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "year"
+    ],
+    "title": "DREParams",
+    "type": "object"
+   },
+   "ReportFilters": {
+    "properties": {
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/TransactionStatus"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "type": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/TransactionType"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Type"
+     },
+     "group": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/Group"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Group"
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "amount_min": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Min"
+     },
+     "amount_max": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Max"
+     },
+     "search": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Search"
+     }
+    },
+    "title": "ReportFilters",
+    "type": "object"
+   },
+   "DRELine": {
+    "properties": {
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "info",
+       "group",
+       "subgroup",
+       "result"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "months": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Months",
+      "type": "array"
+     },
+     "total": {
+      "title": "Total",
+      "type": "string"
+     },
+     "percents": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Percents",
+      "type": "array"
+     },
+     "total_percent": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Percent"
+     }
+    },
+    "required": [
+     "key",
+     "label",
+     "kind",
+     "months",
+     "total",
+     "percents",
+     "total_percent"
+    ],
+    "title": "DRELine",
+    "type": "object"
+   },
+   "DREOut": {
+    "properties": {
+     "year": {
+      "title": "Year",
+      "type": "integer"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/DRELine"
+      },
+      "title": "Lines",
+      "type": "array"
+     }
+    },
+    "required": [
+     "year",
+     "lines"
+    ],
+    "title": "DREOut",
+    "type": "object"
+   },
+   "CashFlowParams": {
+    "properties": {
+     "start": {
+      "format": "date",
+      "title": "Start",
+      "type": "string"
+     },
+     "end": {
+      "format": "date",
+      "title": "End",
+      "type": "string"
+     },
+     "granularity": {
+      "default": "month",
+      "enum": [
+       "month",
+       "day"
+      ],
+      "title": "Granularity",
+      "type": "string"
+     }
+    },
+    "required": [
+     "start",
+     "end"
+    ],
+    "title": "CashFlowParams",
+    "type": "object"
+   },
+   "CashFlowOut": {
+    "properties": {
+     "start": {
+      "format": "date",
+      "title": "Start",
+      "type": "string"
+     },
+     "end": {
+      "format": "date",
+      "title": "End",
+      "type": "string"
+     },
+     "granularity": {
+      "enum": [
+       "month",
+       "day"
+      ],
+      "title": "Granularity",
+      "type": "string"
+     },
+     "opening": {
+      "title": "Opening",
+      "type": "string"
+     },
+     "closing": {
+      "title": "Closing",
+      "type": "string"
+     },
+     "periods": {
+      "items": {
+       "$ref": "#/components/schemas/CashFlowPeriod"
+      },
+      "title": "Periods",
+      "type": "array"
+     }
+    },
+    "required": [
+     "start",
+     "end",
+     "granularity",
+     "opening",
+     "closing",
+     "periods"
+    ],
+    "title": "CashFlowOut",
+    "type": "object"
+   },
+   "CashFlowPeriod": {
+    "properties": {
+     "period": {
+      "format": "date",
+      "title": "Period",
+      "type": "string"
+     },
+     "opening": {
+      "title": "Opening",
+      "type": "string"
+     },
+     "inflow": {
+      "title": "Inflow",
+      "type": "string"
+     },
+     "outflow": {
+      "title": "Outflow",
+      "type": "string"
+     },
+     "closing": {
+      "title": "Closing",
+      "type": "string"
+     }
+    },
+    "required": [
+     "period",
+     "opening",
+     "inflow",
+     "outflow",
+     "closing"
+    ],
+    "title": "CashFlowPeriod",
+    "type": "object"
+   },
+   "AttachmentOut": {
+    "properties": {
+     "target": {
+      "title": "Target",
+      "type": "string"
+     },
+     "target_id": {
+      "title": "Target Id",
+      "type": "integer"
+     },
+     "uploaded_by_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Uploaded By Id"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 255,
+      "title": "Name",
+      "type": "string"
+     },
+     "mime_type": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mime Type"
+     },
+     "size": {
+      "title": "Size",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "target",
+     "target_id",
+     "uploaded_by_id",
+     "created_at",
+     "name",
+     "size"
+    ],
+    "title": "AttachmentOut",
+    "type": "object"
+   },
+   "InvoiceOut": {
+    "properties": {
+     "transaction_id": {
+      "title": "Transaction Id",
+      "type": "integer"
+     },
+     "direction": {
+      "enum": [
+       "receive",
+       "issue"
+      ],
+      "title": "Direction",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "kind": {
+      "default": "service",
+      "maxLength": 10,
+      "title": "Kind",
+      "type": "string"
+     },
+     "done": {
+      "default": false,
+      "title": "Done",
+      "type": "boolean"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "maxLength": 60,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "issue_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue Date"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "transaction_id",
+     "direction",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "InvoiceOut",
+    "type": "object"
+   },
+   "CreateInvoice": {
+    "properties": {
+     "transaction_id": {
+      "title": "Transaction Id",
+      "type": "integer"
+     },
+     "kind": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/InvoiceKind"
+       }
+      ],
+      "default": "service"
+     },
+     "done": {
+      "default": false,
+      "title": "Done",
+      "type": "boolean"
+     },
+     "number": {
+      "default": "",
+      "title": "Number",
+      "type": "string"
+     },
+     "issue_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue Date"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "transaction_id"
+    ],
+    "title": "CreateInvoice",
+    "type": "object"
+   },
+   "InvoiceKind": {
+    "enum": [
+     "service",
+     "product"
+    ],
+    "title": "InvoiceKind",
+    "type": "string"
+   },
+   "PendingInvoiceFilters": {
+    "properties": {
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "date_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date From"
+     },
+     "date_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date To"
+     },
+     "direction": {
+      "anyOf": [
+       {
+        "enum": [
+         "receive",
+         "issue"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Direction"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvoiceKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "enum": [
+         "missing_invoice",
+         "missing_attachment"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     }
+    },
+    "title": "PendingInvoiceFilters",
+    "type": "object"
+   },
+   "PagedPendingInvoiceOut": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/PendingInvoiceOut"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "items",
+     "count"
+    ],
+    "title": "PagedPendingInvoiceOut",
+    "type": "object"
+   },
+   "PendingInvoiceOut": {
+    "properties": {
+     "transaction_id": {
+      "title": "Transaction Id",
+      "type": "integer"
+     },
+     "direction": {
+      "enum": [
+       "receive",
+       "issue"
+      ],
+      "title": "Direction",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "kind": {
+      "default": "service",
+      "maxLength": 10,
+      "title": "Kind",
+      "type": "string"
+     },
+     "done": {
+      "default": false,
+      "title": "Done",
+      "type": "boolean"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "maxLength": 60,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "issue_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue Date"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     },
+     "pending_reason": {
+      "enum": [
+       "missing_invoice",
+       "missing_attachment"
+      ],
+      "title": "Pending Reason",
+      "type": "string"
+     },
+     "transaction_date": {
+      "format": "date",
+      "title": "Transaction Date",
+      "type": "string"
+     },
+     "transaction_amount": {
+      "title": "Transaction Amount",
+      "type": "string"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "contact_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Name"
+     }
+    },
+    "required": [
+     "transaction_id",
+     "direction",
+     "created_at",
+     "updated_at",
+     "pending_reason",
+     "transaction_date",
+     "transaction_amount",
+     "company_id",
+     "company_name"
+    ],
+    "title": "PendingInvoiceOut",
+    "type": "object"
+   },
+   "PatchInvoice": {
+    "properties": {
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvoiceKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "done": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "issue_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Issue Date"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "title": "PatchInvoice",
+    "type": "object"
+   },
+   "ProductOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 120,
+      "title": "Name",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "ProductOut",
+    "type": "object"
+   },
+   "NamedCreate": {
+    "properties": {
+     "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "NamedCreate",
+    "type": "object"
+   },
+   "ProductPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Active"
+     }
+    },
+    "title": "ProductPatch",
+    "type": "object"
+   },
+   "SalespersonOut": {
+    "properties": {
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 120,
+      "title": "Name",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "user_id",
+     "name"
+    ],
+    "title": "SalespersonOut",
+    "type": "object"
+   },
+   "SalespersonCreate": {
+    "properties": {
+     "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "SalespersonCreate",
+    "type": "object"
+   },
+   "SalespersonPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Active"
+     },
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     }
+    },
+    "title": "SalespersonPatch",
+    "type": "object"
+   },
+   "SaleOut": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "contact_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Name"
+     },
+     "product_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
+     "product_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Name"
+     },
+     "salesperson_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Id"
+     },
+     "salesperson_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Name"
+     },
+     "delivery_responsible_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivery Responsible Id"
+     },
+     "received_amount": {
+      "title": "Received Amount",
+      "type": "string"
+     },
+     "scheduled_amount": {
+      "title": "Scheduled Amount",
+      "type": "string"
+     },
+     "pending_amount": {
+      "title": "Pending Amount",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "payment_method": {
+      "anyOf": [
+       {
+        "maxLength": 60,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Method"
+     },
+     "payment_terms": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Terms"
+     },
+     "installments_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Installments Count"
+     },
+     "status": {
+      "default": "active",
+      "maxLength": 10,
+      "title": "Status",
+      "type": "string"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "contact_id",
+     "product_id",
+     "salesperson_id",
+     "delivery_responsible_id",
+     "received_amount",
+     "scheduled_amount",
+     "pending_amount",
+     "date",
+     "amount",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "SaleOut",
+    "type": "object"
+   },
+   "CreateSale": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "product_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
+     "salesperson_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Id"
+     },
+     "delivery_responsible_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivery Responsible Id"
+     },
+     "payment_method": {
+      "default": "",
+      "title": "Payment Method",
+      "type": "string"
+     },
+     "payment_terms": {
+      "default": "",
+      "title": "Payment Terms",
+      "type": "string"
+     },
+     "installments_count": {
+      "anyOf": [
+       {
+        "minimum": 1,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Installments Count"
+     },
+     "status": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/SaleStatus"
+       }
+      ],
+      "default": "active"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "date",
+     "amount"
+    ],
+    "title": "CreateSale",
+    "type": "object"
+   },
+   "SaleStatus": {
+    "enum": [
+     "active",
+     "completed",
+     "canceled"
+    ],
+    "title": "SaleStatus",
+    "type": "string"
+   },
+   "SaleFilters": {
+    "properties": {
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "date_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date From"
+     },
+     "date_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date To"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/SaleStatus"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "product_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
+     "salesperson_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Id"
+     },
+     "delivery_responsible_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivery Responsible Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "search": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Search"
+     },
+     "ordering": {
+      "anyOf": [
+       {
+        "enum": [
+         "date",
+         "-date",
+         "amount",
+         "-amount",
+         "created_at",
+         "-created_at"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ordering"
+     }
+    },
+    "title": "SaleFilters",
+    "type": "object"
+   },
+   "PagedSaleOut": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/SaleOut"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "items",
+     "count"
+    ],
+    "title": "PagedSaleOut",
+    "type": "object"
+   },
+   "PatchSale": {
+    "properties": {
+     "date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "product_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
+     "salesperson_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Id"
+     },
+     "delivery_responsible_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivery Responsible Id"
+     },
+     "payment_method": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Method"
+     },
+     "payment_terms": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Terms"
+     },
+     "installments_count": {
+      "anyOf": [
+       {
+        "minimum": 1,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Installments Count"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SaleStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "title": "PatchSale",
+    "type": "object"
+   },
+   "GenerateReceivables": {
+    "properties": {
+     "subgroup_id": {
+      "title": "Subgroup Id",
+      "type": "integer"
+     },
+     "first_date": {
+      "format": "date",
+      "title": "First Date",
+      "type": "string"
+     },
+     "installments": {
+      "maximum": 120,
+      "minimum": 1,
+      "title": "Installments",
+      "type": "integer"
+     },
+     "down_payment": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": "0",
+      "title": "Down Payment"
+     },
+     "down_payment_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Down Payment Date"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     }
+    },
+    "required": [
+     "subgroup_id",
+     "first_date",
+     "installments"
+    ],
+    "title": "GenerateReceivables",
+    "type": "object"
+   },
+   "SalesReportParams": {
+    "properties": {
+     "start": {
+      "format": "date",
+      "title": "Start",
+      "type": "string"
+     },
+     "end": {
+      "format": "date",
+      "title": "End",
+      "type": "string"
+     }
+    },
+    "required": [
+     "start",
+     "end"
+    ],
+    "title": "SalesReportParams",
+    "type": "object"
+   },
+   "SalesReportOut": {
+    "properties": {
+     "start": {
+      "format": "date",
+      "title": "Start",
+      "type": "string"
+     },
+     "end": {
+      "format": "date",
+      "title": "End",
+      "type": "string"
+     },
+     "total_sold": {
+      "title": "Total Sold",
+      "type": "string"
+     },
+     "total_received": {
+      "title": "Total Received",
+      "type": "string"
+     },
+     "sales_count": {
+      "title": "Sales Count",
+      "type": "integer"
+     },
+     "periods": {
+      "items": {
+       "$ref": "#/components/schemas/SalesReportPeriod"
+      },
+      "title": "Periods",
+      "type": "array"
+     }
+    },
+    "required": [
+     "start",
+     "end",
+     "total_sold",
+     "total_received",
+     "sales_count",
+     "periods"
+    ],
+    "title": "SalesReportOut",
+    "type": "object"
+   },
+   "SalesReportPeriod": {
+    "properties": {
+     "period": {
+      "format": "date",
+      "title": "Period",
+      "type": "string"
+     },
+     "sold": {
+      "title": "Sold",
+      "type": "string"
+     },
+     "sales_count": {
+      "title": "Sales Count",
+      "type": "integer"
+     },
+     "received": {
+      "title": "Received",
+      "type": "string"
+     }
+    },
+    "required": [
+     "period",
+     "sold",
+     "sales_count",
+     "received"
+    ],
+    "title": "SalesReportPeriod",
+    "type": "object"
+   },
+   "ImportOut": {
+    "properties": {
+     "committed": {
+      "title": "Committed",
+      "type": "boolean"
+     },
+     "company_names": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Company Names",
+      "type": "array"
+     },
+     "unmapped_companies": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Unmapped Companies",
+      "type": "array"
+     },
+     "transactions_found": {
+      "title": "Transactions Found",
+      "type": "integer"
+     },
+     "sales_found": {
+      "title": "Sales Found",
+      "type": "integer"
+     },
+     "subgroups_created": {
+      "title": "Subgroups Created",
+      "type": "integer"
+     },
+     "contacts_created": {
+      "title": "Contacts Created",
+      "type": "integer"
+     },
+     "products_created": {
+      "title": "Products Created",
+      "type": "integer"
+     },
+     "transactions_created": {
+      "title": "Transactions Created",
+      "type": "integer"
+     },
+     "sales_created": {
+      "title": "Sales Created",
+      "type": "integer"
+     },
+     "skipped": {
+      "items": {
+       "$ref": "#/components/schemas/SkippedRow"
+      },
+      "title": "Skipped",
+      "type": "array"
+     }
+    },
+    "required": [
+     "committed",
+     "company_names",
+     "unmapped_companies",
+     "transactions_found",
+     "sales_found",
+     "subgroups_created",
+     "contacts_created",
+     "products_created",
+     "transactions_created",
+     "sales_created",
+     "skipped"
+    ],
+    "title": "ImportOut",
+    "type": "object"
+   },
+   "SkippedRow": {
+    "properties": {
+     "row": {
+      "title": "Row",
+      "type": "integer"
+     },
+     "reason": {
+      "title": "Reason",
+      "type": "string"
+     }
+    },
+    "required": [
+     "row",
+     "reason"
+    ],
+    "title": "SkippedRow",
+    "type": "object"
+   },
+   "HistoryEventOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "action": {
+      "title": "Action",
+      "type": "string"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "target": {
+      "title": "Target",
+      "type": "string"
+     },
+     "target_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target Id"
+     },
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     },
+     "user_email": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Email"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "changes": {
+      "additionalProperties": true,
+      "title": "Changes",
+      "type": "object"
+     },
+     "data": {
+      "additionalProperties": true,
+      "title": "Data",
+      "type": "object"
+     }
+    },
+    "required": [
+     "id",
+     "action",
+     "created_at",
+     "target",
+     "target_id",
+     "user_id",
+     "user_email",
+     "source",
+     "changes",
+     "data"
+    ],
+    "title": "HistoryEventOut",
+    "type": "object"
+   },
+   "FeedFilters": {
+    "properties": {
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     },
+     "target": {
+      "anyOf": [
+       {
+        "enum": [
+         "transaction",
+         "contact",
+         "invoice",
+         "sale",
+         "company",
+         "subgroup",
+         "account",
+         "product",
+         "salesperson",
+         "user"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target"
+     },
+     "date_from": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date From"
+     },
+     "date_to": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date To"
+     },
+     "page": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Page",
+      "type": "integer"
+     }
+    },
+    "title": "FeedFilters",
+    "type": "object"
+   },
+   "FeedOut": {
+    "properties": {
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/HistoryEventOut"
+      },
+      "title": "Items",
+      "type": "array"
+     }
+    },
+    "required": [
+     "count",
+     "items"
+    ],
+    "title": "FeedOut",
+    "type": "object"
+   },
+   "TokenObtainPairOutputSchema": {
+    "properties": {
+     "email": {
+      "maxLength": 254,
+      "title": "Email",
+      "type": "string"
+     },
+     "refresh": {
+      "title": "Refresh",
+      "type": "string"
+     },
+     "access": {
+      "title": "Access",
+      "type": "string"
+     }
+    },
+    "required": [
+     "email",
+     "refresh",
+     "access"
+    ],
+    "title": "TokenObtainPairOutputSchema",
+    "type": "object"
+   },
+   "TokenObtainPairInputSchema": {
+    "properties": {
+     "password": {
+      "format": "password",
+      "title": "Password",
+      "type": "string",
+      "writeOnly": true
+     },
+     "email": {
+      "maxLength": 254,
+      "title": "Email",
+      "type": "string"
+     }
+    },
+    "required": [
+     "password",
+     "email"
+    ],
+    "title": "TokenObtainPairInputSchema",
+    "type": "object"
+   },
+   "TokenRefreshOutputSchema": {
+    "properties": {
+     "refresh": {
+      "title": "Refresh",
+      "type": "string"
+     },
+     "access": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Access"
+     }
+    },
+    "required": [
+     "refresh",
+     "access"
+    ],
+    "title": "TokenRefreshOutputSchema",
+    "type": "object"
+   },
+   "TokenRefreshInputSchema": {
+    "properties": {
+     "refresh": {
+      "title": "Refresh",
+      "type": "string"
+     }
+    },
+    "required": [
+     "refresh"
+    ],
+    "title": "TokenRefreshInputSchema",
+    "type": "object"
+   },
+   "Schema": {
+    "properties": {},
+    "title": "Schema",
+    "type": "object"
+   },
+   "TokenVerifyInputSchema": {
+    "properties": {
+     "token": {
+      "title": "Token",
+      "type": "string"
+     }
+    },
+    "required": [
+     "token"
+    ],
+    "title": "TokenVerifyInputSchema",
+    "type": "object"
+   }
+  },
+  "securitySchemes": {
+   "JWTAuth": {
+    "type": "http",
+    "scheme": "bearer"
+   }
+  }
+ },
+ "servers": []
+}
