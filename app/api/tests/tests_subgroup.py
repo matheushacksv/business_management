@@ -178,4 +178,4 @@ class SubGroupEndpointTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()[0], {'value': 'operating_revenue', 'label': 'Receitas Operacionais'})
-        self.assertEqual(len(response.json()), 5)
+        self.assertEqual(len(response.json()), 6)  # 5 DRE groups + transfer

@@ -527,7 +527,7 @@
       }
      }
     },
-    "description": "The 5 fixed DRE groups (value + label), to fill selects.",
+    "description": "The fixed groups (value + label): the 5 DRE groups + the system-managed transfer group.",
     "tags": [
      "Subgroups"
     ],
@@ -1913,6 +1913,153 @@
      }
     },
     "description": "Delete the PLANNED occurrences from `from_index` on; realized ones are kept.",
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transfer": {
+   "post": {
+    "operationId": "api_endpoints_transactions_create_transfer_endpoint",
+    "summary": "Create Transfer Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransferOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateTransfer"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transfer/{transfer_id}": {
+   "get": {
+    "operationId": "api_endpoints_transactions_get_transfer_endpoint",
+    "summary": "Get Transfer Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transfer_id",
+      "schema": {
+       "title": "Transfer Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransferOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_transactions_update_transfer_endpoint",
+    "summary": "Update Transfer Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transfer_id",
+      "schema": {
+       "title": "Transfer Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransferOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchTransfer"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_transactions_delete_transfer_endpoint",
+    "summary": "Delete Transfer Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transfer_id",
+      "schema": {
+       "title": "Transfer Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
     "tags": [
      "Transactions"
     ],
@@ -4746,7 +4893,8 @@
      "non_operating_revenue",
      "variable_costs",
      "fixed_costs",
-     "non_operating_expenses"
+     "non_operating_expenses",
+     "transfer"
     ],
     "title": "Group",
     "type": "string"
@@ -5075,6 +5223,17 @@
       ],
       "title": "Series Index"
      },
+     "transfer_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Transfer Id"
+     },
      "company_name": {
       "title": "Company Name",
       "type": "string"
@@ -5205,6 +5364,7 @@
      "is_reversal",
      "series_id",
      "series_index",
+     "transfer_id",
      "company_name",
      "subgroup_name",
      "company",
@@ -5921,6 +6081,247 @@
      }
     },
     "title": "PatchSeries",
+    "type": "object"
+   },
+   "TransferOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/TransactionStatus"
+     },
+     "notes": {
+      "title": "Notes",
+      "type": "string"
+     },
+     "from_company_id": {
+      "title": "From Company Id",
+      "type": "integer"
+     },
+     "from_company_name": {
+      "title": "From Company Name",
+      "type": "string"
+     },
+     "from_account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Account Id"
+     },
+     "to_company_id": {
+      "title": "To Company Id",
+      "type": "integer"
+     },
+     "to_company_name": {
+      "title": "To Company Name",
+      "type": "string"
+     },
+     "to_account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Account Id"
+     },
+     "outflow_id": {
+      "title": "Outflow Id",
+      "type": "integer"
+     },
+     "inflow_id": {
+      "title": "Inflow Id",
+      "type": "integer"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "date",
+     "amount",
+     "status",
+     "notes",
+     "from_company_id",
+     "from_company_name",
+     "from_account_id",
+     "to_company_id",
+     "to_company_name",
+     "to_account_id",
+     "outflow_id",
+     "inflow_id",
+     "created_at"
+    ],
+    "title": "TransferOut",
+    "type": "object"
+   },
+   "CreateTransfer": {
+    "properties": {
+     "from_company_id": {
+      "title": "From Company Id",
+      "type": "integer"
+     },
+     "to_company_id": {
+      "title": "To Company Id",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "status": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/TransactionStatus"
+       }
+      ],
+      "default": "planned"
+     },
+     "from_account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Account Id"
+     },
+     "to_account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Account Id"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "from_company_id",
+     "to_company_id",
+     "date",
+     "amount"
+    ],
+    "title": "CreateTransfer",
+    "type": "object"
+   },
+   "PatchTransfer": {
+    "properties": {
+     "date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TransactionStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "from_account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Account Id"
+     },
+     "to_account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "To Account Id"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     }
+    },
+    "title": "PatchTransfer",
     "type": "object"
    },
    "DREParams": {

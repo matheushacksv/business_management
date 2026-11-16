@@ -1,7 +1,7 @@
 import type { components } from '~/types/api'
 
 type S = components['schemas']
-export interface Option { label: string; value: number | string; description?: string }
+export interface Option { label: string; value: number | string; description?: string; group?: string }
 
 interface Lookups {
   companies?: S['CompanyOut'][]
@@ -49,7 +49,7 @@ export function useLookups() {
   const options = {
     companies: computed<Option[]>(() => (cache.value.companies ?? []).map(c => ({ label: c.name, value: c.id! }))),
     subgroups: computed<Option[]>(() => (cache.value.subgroups ?? []).map(s => ({
-      label: s.name, value: s.id!, description: groupLabel(s.group),
+      label: s.name, value: s.id!, description: groupLabel(s.group), group: s.group,
     }))),
     groups: computed<Option[]>(() => cache.value.groups ?? []),
     accounts: computed<Option[]>(() => (cache.value.accounts ?? []).map(a => ({ label: a.name, value: a.id!, company: a.company }) as Option)),

@@ -10,6 +10,8 @@ class Group(models.TextChoices):
     VARIABLE_COSTS = 'variable_costs', 'Custos Variáveis'
     FIXED_COSTS = 'fixed_costs', 'Custos Fixos'
     NON_OPERATING_EXPENSES = 'non_operating_expenses', 'Despesas Não Operacionais'
+    # Money moved between companies of the group: hits each company's cash, never the DRE
+    TRANSFER = 'transfer', 'Transferências entre empresas'
 
 class TransactionType(models.TextChoices):
     INFLOW = 'inflow', 'Entrada'
@@ -25,7 +27,9 @@ NATURAL_TYPE: dict[str, str] = {
     Group.VARIABLE_COSTS: TransactionType.OUTFLOW,
     Group.FIXED_COSTS: TransactionType.OUTFLOW,
     Group.NON_OPERATING_EXPENSES: TransactionType.OUTFLOW,
-}
+}  # TRANSFER has no natural type: each transfer has one leg of each
+
+TRANSFER_SUBGROUP_NAME = 'Transferência entre empresas'
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class SubGroup(models.Model):
@@ -112,6 +116,21 @@ class TransactionSeries(models.Model):
         return f'{self.get_kind_display()} x{self.count}'  # type:ignore
 
 
+class Transfer(models.Model):
+    """Money moved from one company of the group to another.
+
+    The data lives in its two transactions (outflow in the source company, inflow in the
+    destination), so cash flow, lists and filters see it like any transaction; the
+    TRANSFER group keeps it out of the DRE. Both legs only change together.
+    """
+
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class Transaction(models.Model):
     company = models.ForeignKey('companies.Company', on_delete=models.PROTECT, related_name='transactions')
@@ -128,6 +147,9 @@ class Transaction(models.Model):
         TransactionSeries, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions'
     )
     series_index = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-based: "3/10"
+    transfer = models.ForeignKey(  # one of the two legs of a transfer between companies
+        Transfer, on_delete=models.CASCADE, null=True, blank=True, related_name='transactions'
+    )
     sale = models.ForeignKey(  # receivable of a sale
         'sales.Sale', on_delete=models.PROTECT, null=True, blank=True, related_name='receivables'
     )
@@ -146,7 +168,8 @@ class Transaction(models.Model):
 
     @property
     def is_reversal(self) -> bool:
-        return self.type != NATURAL_TYPE[self.subgroup.group]
+        natural = NATURAL_TYPE.get(self.subgroup.group)
+        return natural is not None and self.type != natural
 
 
 class InvoiceKind(models.TextChoices):

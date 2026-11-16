@@ -12,15 +12,22 @@ from django.db.models import Case, CharField, Exists, OuterRef, ProtectedError, 
 from apps.companies.services import list_companies_service, normalize_cnpj
 from apps.attachments.models import Attachment
 from apps.finance.models import (
-    Account, Contact, Group, Invoice, InvoiceKind, SeriesKind, SubGroup, Transaction,
-    TransactionSeries, TransactionStatus, TransactionType,
+    TRANSFER_SUBGROUP_NAME, Account, Contact, Group, Invoice, InvoiceKind, SeriesKind, SubGroup, Transaction,
+    TransactionSeries, TransactionStatus, TransactionType, Transfer,
 )
 from apps.users.models import User
 
 # Subgroups services
 
 
+def _reject_transfer_group(*groups) -> None:
+    # The TRANSFER group has one fixed subgroup, managed by the transfer services
+    if Group.TRANSFER in groups:
+        raise ValidationError('The transfer group is managed by the system')
+
+
 def create_subgroup_service(name: str, group: Group) -> SubGroup:
+    _reject_transfer_group(group)
     try:
         with transaction.atomic():
             return SubGroup.objects.create(name=name.strip(), group=group)
@@ -42,6 +49,7 @@ def update_subgroup_service(subgroup_id: int, **fields) -> SubGroup:
         subgroup = SubGroup.objects.get(pk=subgroup_id)
     except SubGroup.DoesNotExist:
         raise SubGroup.DoesNotExist
+    _reject_transfer_group(subgroup.group, fields.get('group'))
     if 'name' in fields:
         subgroup.name = fields['name'].strip()
     if 'group' in fields:
@@ -179,8 +187,12 @@ def _transactions_for(user: User):
 
 def _check_refs(*, company_id: int, subgroup_id=None, account_id=None, contact_id=None) -> None:
     # Body references that don't exist are a bad request (400), not a missing resource (404)
-    if subgroup_id is not None and not SubGroup.objects.filter(pk=subgroup_id).exists():
-        raise ValidationError('Subgroup does not exist')
+    if subgroup_id is not None:
+        group = SubGroup.objects.filter(pk=subgroup_id).values_list('group', flat=True).first()
+        if group is None:
+            raise ValidationError('Subgroup does not exist')
+        if group == Group.TRANSFER:
+            raise ValidationError('Transfers between companies must be created as a transfer')
     if contact_id is not None and not Contact.objects.filter(pk=contact_id).exists():
         raise ValidationError('Contact does not exist')
     if account_id is not None and not Account.objects.filter(pk=account_id, company_id=company_id).exists():
@@ -252,6 +264,7 @@ def get_transaction_service(*, user: User, transaction_id: int) -> Transaction:
 def update_transaction_service(*, user: User, transaction_id: int, **fields) -> Transaction:
     # ponytail: company is immutable; to move a transaction, delete and recreate it
     tx = get_transaction_service(user=user, transaction_id=transaction_id)
+    _reject_transfer_leg(tx)
     _check_refs(
         company_id=tx.company_id,  # type:ignore
         subgroup_id=fields.get('subgroup_id'),
@@ -273,8 +286,101 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
 
 def delete_transaction_service(*, user: User, transaction_id: int) -> None:
     tx = get_transaction_service(user=user, transaction_id=transaction_id)
+    _reject_transfer_leg(tx)
     with transaction.atomic(), pghistory.context(user=user.pk):
         tx.delete()
+
+
+def _reject_transfer_leg(tx: Transaction) -> None:
+    if tx.transfer_id:  # type:ignore
+        raise ValidationError('This transaction is part of a transfer: change the transfer instead')
+
+
+# Transfers between companies services
+# A transfer is two transactions (outflow in the source, inflow in the destination) that
+# always change together. Seeing or changing one requires access to BOTH companies.
+
+def _transfer_subgroup() -> SubGroup:
+    subgroup, _ = SubGroup.objects.get_or_create(group=Group.TRANSFER, name=TRANSFER_SUBGROUP_NAME)
+    return subgroup
+
+
+def transfer_legs(transfer: Transfer) -> tuple[Transaction, Transaction]:
+    legs = {t.type: t for t in transfer.transactions.select_related('company', 'account')}  # type:ignore
+    return legs[TransactionType.OUTFLOW], legs[TransactionType.INFLOW]
+
+
+def create_transfer_service(
+    *, user: User, from_company_id: int, to_company_id: int, date, amount,
+    status: str = TransactionStatus.PLANNED, from_account_id: int | None = None,
+    to_account_id: int | None = None, notes: str = '',
+) -> Transfer:
+    if from_company_id == to_company_id:
+        raise ValidationError('Source and destination companies must be different')
+    companies = list_companies_service(user=user)
+    source = companies.get(pk=from_company_id)
+    target = companies.get(pk=to_company_id)
+    _check_refs(company_id=source.pk, account_id=from_account_id)
+    _check_refs(company_id=target.pk, account_id=to_account_id)
+
+    try:
+        with transaction.atomic(), pghistory.context(user=user.pk):
+            common = {'subgroup': _transfer_subgroup(), 'date': date, 'amount': amount,
+                      'status': status, 'notes': notes.strip()}
+            transfer = Transfer.objects.create(created_by=user)
+            # ponytail: counterpart name frozen in the reference; renaming a company won't update it
+            Transaction.objects.create(
+                transfer=transfer, company=source, account_id=from_account_id,
+                type=TransactionType.OUTFLOW, reference=f'Para {target.name}', **common,
+            )
+            Transaction.objects.create(
+                transfer=transfer, company=target, account_id=to_account_id,
+                type=TransactionType.INFLOW, reference=f'De {source.name}', **common,
+            )
+    except IntegrityError:
+        raise ValidationError('Invalid transfer')
+    return transfer
+
+
+def get_transfer_service(*, user: User, transfer_id: int) -> Transfer:
+    transfer = Transfer.objects.get(pk=transfer_id)
+    if transfer.transactions.exclude(company__in=list_companies_service(user=user)).exists():  # type:ignore
+        raise Transfer.DoesNotExist('Transfer matching query does not exist.')
+    return transfer
+
+
+def update_transfer_service(*, user: User, transfer_id: int, **fields) -> Transfer:
+    # ponytail: companies are immutable, like on transactions; to change them delete and recreate
+    transfer = get_transfer_service(user=user, transfer_id=transfer_id)
+    outflow, inflow = transfer_legs(transfer)
+    if 'from_account_id' in fields:
+        _check_refs(company_id=outflow.company_id, account_id=fields['from_account_id'])  # type:ignore
+    if 'to_account_id' in fields:
+        _check_refs(company_id=inflow.company_id, account_id=fields['to_account_id'])  # type:ignore
+    shared = {f: fields[f] for f in ('date', 'amount', 'status', 'notes') if f in fields}
+    if 'notes' in shared:
+        shared['notes'] = shared['notes'].strip()
+
+    try:
+        with transaction.atomic(), pghistory.context(user=user.pk):
+            for leg, account_field in ((outflow, 'from_account_id'), (inflow, 'to_account_id')):
+                changes = dict(shared)
+                if account_field in fields:
+                    changes['account_id'] = fields[account_field]
+                if not changes:
+                    continue
+                for field, value in changes.items():
+                    setattr(leg, field, value)
+                leg.save(update_fields=[*changes, 'updated_at'])
+    except IntegrityError:
+        raise ValidationError('Invalid transfer')
+    return transfer
+
+
+def delete_transfer_service(*, user: User, transfer_id: int) -> None:
+    transfer = get_transfer_service(user=user, transfer_id=transfer_id)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        transfer.delete()  # cascades to both legs
 
 
 # Invoices (NF) services

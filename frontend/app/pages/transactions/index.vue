@@ -120,6 +120,13 @@ const orderings = [
 const selected = ref<number | null>(null)
 const drawerOpen = ref(false)
 const createOpen = ref(false)
+const transferOpen = ref(false)
+function onTransferred(transfer: { outflow_id: number }) {
+  transferOpen.value = false
+  load()
+  selected.value = transfer.outflow_id
+  drawerOpen.value = true
+}
 function onSelect(_: Event, row: { original: Transaction }) {
   selected.value = row.original.id!
   drawerOpen.value = true
@@ -135,6 +142,8 @@ function onCreated(id: number | null) {
   <AppPage title="Lançamentos">
     <template #actions>
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
+      <UButton v-if="auth.can('transactions', 'create')" label="Transferência" icon="i-lucide-repeat"
+               color="neutral" variant="outline" @click="transferOpen = true" />
       <UButton v-if="auth.can('transactions', 'create')" label="Novo lançamento" icon="i-lucide-plus"
                class="rounded-full" @click="createOpen = true" />
     </template>
@@ -170,6 +179,12 @@ function onCreated(id: number | null) {
     <UModal v-model:open="createOpen" title="Novo lançamento" :ui="{ content: 'max-w-2xl' }">
       <template #body>
         <TransactionsForm @saved="onCreated" @cancel="createOpen = false" />
+      </template>
+    </UModal>
+
+    <UModal v-model:open="transferOpen" title="Transferência entre empresas" :ui="{ content: 'max-w-2xl' }">
+      <template #body>
+        <TransactionsTransferForm @saved="onTransferred" @cancel="transferOpen = false" />
       </template>
     </UModal>
   </AppPage>

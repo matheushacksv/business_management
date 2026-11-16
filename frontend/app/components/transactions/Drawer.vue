@@ -2,6 +2,7 @@
 import type { components } from '~/types/api'
 
 type Transaction = components['schemas']['TransactionOut']
+type Transfer = components['schemas']['TransferOut']
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ transactionId: number | null }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -9,9 +10,15 @@ const emit = defineEmits<{ changed: [] }>()
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const auth = useAuth()
 const tx = ref<Transaction | null>(null)
+// Leg of a transfer between companies: changes go through the transfer (both legs together).
+// null when the user can't see the other company: the leg is then read-only.
+const transfer = ref<Transfer | null>(null)
 const editing = ref(false)
 const tab = ref('details')
-const canChange = computed(() => auth.can('transactions', 'change'))
+const isLeg = computed(() => !!tx.value?.transfer_id)
+// A leg the user can't manage as a transfer (other company not visible) stays read-only
+const canChange = computed(() => auth.can('transactions', 'change') && (!isLeg.value || !!transfer.value))
+const canDelete = computed(() => auth.can('transactions', 'delete') && (!isLeg.value || !!transfer.value))
 
 const tabs = [
   { label: 'Detalhes', value: 'details', icon: 'i-lucide-file-text' },
@@ -24,6 +31,11 @@ async function load() {
   if (!props.transactionId) return
   try {
     tx.value = await unwrap(api.GET('/api/transaction/{transaction_id}', { params: { path: { transaction_id: props.transactionId } } }))
+    transfer.value = null
+    if (tx.value.transfer_id) {
+      transfer.value = await unwrap(api.GET('/api/transfer/{transfer_id}', { params: { path: { transfer_id: tx.value.transfer_id } } }))
+        .catch(() => null)
+    }
   } catch (e) {
     notifyError(e)
     open.value = false
@@ -45,10 +57,17 @@ async function saved() {
 }
 
 async function remove() {
-  if (!tx.value || !confirm('Excluir este lançamento?')) return
+  if (!tx.value) return
+  if (transfer.value) {
+    if (!confirm('Excluir a transferência? A saída e a entrada das duas empresas serão excluídas.')) return
+  } else if (!confirm('Excluir este lançamento?')) return
   try {
-    await unwrap(api.DELETE('/api/transaction/{transaction_id}', { params: { path: { transaction_id: tx.value.id! } } }))
-    notifySuccess('Lançamento excluído')
+    if (transfer.value) {
+      await unwrap(api.DELETE('/api/transfer/{transfer_id}', { params: { path: { transfer_id: transfer.value.id } } }))
+    } else {
+      await unwrap(api.DELETE('/api/transaction/{transaction_id}', { params: { path: { transaction_id: tx.value.id! } } }))
+    }
+    notifySuccess(transfer.value ? 'Transferência excluída' : 'Lançamento excluído')
     open.value = false
     emit('changed')
   } catch (e) {
@@ -58,11 +77,13 @@ async function remove() {
 
 async function toggleStatus() {
   if (!tx.value) return
+  const status = tx.value.status === 'realized' ? 'planned' : 'realized'
   try {
-    await unwrap(api.PATCH('/api/transaction/{transaction_id}', {
-      params: { path: { transaction_id: tx.value.id! } },
-      body: { status: tx.value.status === 'realized' ? 'planned' : 'realized' },
-    }))
+    if (transfer.value) {
+      await unwrap(api.PATCH('/api/transfer/{transfer_id}', { params: { path: { transfer_id: transfer.value.id } }, body: { status } }))
+    } else {
+      await unwrap(api.PATCH('/api/transaction/{transaction_id}', { params: { path: { transaction_id: tx.value.id! } }, body: { status } }))
+    }
     await saved()
   } catch (e) {
     notifyError(e)
@@ -86,13 +107,13 @@ async function cancelFollowing() {
 const fields = computed(() => {
   const t = tx.value
   if (!t) return []
-  return [
+  return <[string, string][]>[
     ['Empresa', t.company_name],
     ['Data', formatDate(t.date)],
     ['Subgrupo', t.subgroup_name],
     ['Cliente/Fornecedor', t.contact_name ?? '—'],
     ['Conta', t.account_name ?? '—'],
-    ['Produto / Nº boleto', t.reference || '—'],
+    [t.transfer_id ? 'Transferência' : 'Produto / Nº boleto', t.reference || '—'],
     ['Parcela', t.series_index ? `${t.series_index}ª da série` : '—'],
   ]
 })
@@ -114,6 +135,7 @@ const fields = computed(() => {
               <SStatusBadge kind="type" :value="tx.type" />
               <SStatusBadge kind="status" :value="tx.status" />
               <UBadge v-if="tx.is_reversal" label="Estorno" color="warning" variant="subtle" size="sm" />
+              <UBadge v-if="isLeg" label="Transferência" icon="i-lucide-repeat" color="primary" variant="subtle" size="sm" />
             </div>
           </div>
           <UButton v-if="canChange" :label="tx.status === 'realized' ? 'Marcar previsto' : 'Marcar realizado'"
@@ -124,7 +146,8 @@ const fields = computed(() => {
         <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full" />
 
         <template v-if="tab === 'details'">
-          <TransactionsForm v-if="editing" :transaction="tx" @saved="saved" @cancel="editing = false" />
+          <TransactionsTransferForm v-if="editing && transfer" :transfer="transfer" @saved="saved" @cancel="editing = false" />
+          <TransactionsForm v-else-if="editing" :transaction="tx" @saved="saved" @cancel="editing = false" />
           <template v-else>
             <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
               <div v-for="[label, value] in fields" :key="label">
@@ -136,11 +159,14 @@ const fields = computed(() => {
                 <dd class="text-sm text-highlighted whitespace-pre-line">{{ tx.notes }}</dd>
               </div>
             </dl>
+            <UAlert v-if="isLeg && !transfer" color="neutral" variant="subtle" icon="i-lucide-lock"
+                    title="Parte de uma transferência entre empresas"
+                    description="Só quem tem acesso às duas empresas pode alterar ou excluir." />
             <div class="flex flex-wrap gap-2 pt-2">
-              <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
+              <UButton v-if="canChange" :label="transfer ? 'Editar transferência' : 'Editar'" icon="i-lucide-pencil" @click="editing = true" />
               <UButton v-if="tx.series_id && auth.can('transactions', 'delete')" label="Cancelar desta em diante"
                        icon="i-lucide-calendar-x" color="warning" variant="soft" @click="cancelFollowing" />
-              <UButton v-if="auth.can('transactions', 'delete')" label="Excluir" icon="i-lucide-trash-2" color="error"
+              <UButton v-if="canDelete" :label="transfer ? 'Excluir transferência' : 'Excluir'" icon="i-lucide-trash-2" color="error"
                        variant="ghost" class="ms-auto" @click="remove" />
             </div>
           </template>

@@ -13,7 +13,7 @@ const columns = [
   { accessorKey: 'name', header: 'Subgrupo', cell: ({ row }: any) => h('span', { class: 'text-highlighted' }, row.original.name) },
 ]
 const fields = computed(() => [
-  { key: 'group', label: 'Grupo do DRE', type: 'select' as const, options: lookups.options.groups.value, required: true },
+  { key: 'group', label: 'Grupo do DRE', type: 'select' as const, options: lookups.options.groups.value.filter(g => g.value !== 'transfer'), required: true },
   { key: 'name', label: 'Nome', required: true },
 ])
 </script>

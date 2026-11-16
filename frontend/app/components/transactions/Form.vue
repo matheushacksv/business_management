@@ -38,6 +38,8 @@ watch(lookups.options.companies, (companies) => {
 
 // Picking a subgroup sets its natural type (revenue -> inflow, cost -> outflow).
 // Not immediate: opening an existing transaction keeps its type. The user may still flip it (reversal).
+// Transfers between companies have their own form: their system subgroup isn't offered here
+const subgroupItems = computed(() => lookups.options.subgroups.value.filter(o => o.group !== 'transfer'))
 const subgroupGroup = computed(() => lookups.cache.value.subgroups?.find(s => s.id === state.subgroup_id)?.group)
 watch(() => state.subgroup_id, () => {
   const natural = naturalType(subgroupGroup.value)
@@ -132,7 +134,7 @@ async function submit() {
     </UFormField>
 
     <UFormField label="Subgrupo" required class="sm:col-span-2">
-      <USelectMenu v-model="state.subgroup_id" :items="lookups.options.subgroups.value" value-key="value"
+      <USelectMenu v-model="state.subgroup_id" :items="subgroupItems" value-key="value"
                    placeholder="Escolha a categoria" class="w-full" />
     </UFormField>
 

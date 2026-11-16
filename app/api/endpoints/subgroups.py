@@ -17,7 +17,7 @@ def create_subgroup_endpoint(request, data: CreateSubgroup):
 @router.get('/groups', response=list[dict])
 @require_permission('subgroups', VIEW)
 def list_groups_endpoint(request):
-    """The 5 fixed DRE groups (value + label), to fill selects."""
+    """The fixed groups (value + label): the 5 DRE groups + the system-managed transfer group."""
     return [{'value': value, 'label': label} for value, label in Group.choices]
 
 

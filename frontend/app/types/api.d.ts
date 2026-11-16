@@ -155,7 +155,7 @@ export interface paths {
         };
         /**
          * List Groups Endpoint
-         * @description The 5 fixed DRE groups (value + label), to fill selects.
+         * @description The fixed groups (value + label): the 5 DRE groups + the system-managed transfer group.
          */
         get: operations["api_endpoints_subgroups_list_groups_endpoint"];
         put?: never;
@@ -356,6 +356,42 @@ export interface paths {
          * @description Apply the change to occurrence `from_index` and all the following ones.
          */
         patch: operations["api_endpoints_transactions_update_series_endpoint"];
+        trace?: never;
+    };
+    "/api/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Transfer Endpoint */
+        post: operations["api_endpoints_transactions_create_transfer_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfer/{transfer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Transfer Endpoint */
+        get: operations["api_endpoints_transactions_get_transfer_endpoint"];
+        put?: never;
+        post?: never;
+        /** Delete Transfer Endpoint */
+        delete: operations["api_endpoints_transactions_delete_transfer_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Transfer Endpoint */
+        patch: operations["api_endpoints_transactions_update_transfer_endpoint"];
         trace?: never;
     };
     "/api/reports/dre": {
@@ -932,7 +968,7 @@ export interface components {
          * Group
          * @enum {string}
          */
-        Group: "operating_revenue" | "non_operating_revenue" | "variable_costs" | "fixed_costs" | "non_operating_expenses";
+        Group: "operating_revenue" | "non_operating_revenue" | "variable_costs" | "fixed_costs" | "non_operating_expenses" | "transfer";
         /** PatchSubgroup */
         PatchSubgroup: {
             /** Name */
@@ -1042,6 +1078,8 @@ export interface components {
             series_id: number | null;
             /** Series Index */
             series_index: number | null;
+            /** Transfer Id */
+            transfer_id: number | null;
             /** Company Name */
             company_name: string;
             /** Subgroup Name */
@@ -1276,6 +1314,81 @@ export interface components {
             contact_id?: number | null;
             /** Reference */
             reference?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** TransferOut */
+        TransferOut: {
+            /** Id */
+            id: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount */
+            amount: string;
+            status: components["schemas"]["TransactionStatus"];
+            /** Notes */
+            notes: string;
+            /** From Company Id */
+            from_company_id: number;
+            /** From Company Name */
+            from_company_name: string;
+            /** From Account Id */
+            from_account_id: number | null;
+            /** To Company Id */
+            to_company_id: number;
+            /** To Company Name */
+            to_company_name: string;
+            /** To Account Id */
+            to_account_id: number | null;
+            /** Outflow Id */
+            outflow_id: number;
+            /** Inflow Id */
+            inflow_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CreateTransfer */
+        CreateTransfer: {
+            /** From Company Id */
+            from_company_id: number;
+            /** To Company Id */
+            to_company_id: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount */
+            amount: number | string;
+            /** @default planned */
+            status: components["schemas"]["TransactionStatus"];
+            /** From Account Id */
+            from_account_id?: number | null;
+            /** To Account Id */
+            to_account_id?: number | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /** PatchTransfer */
+        PatchTransfer: {
+            /** Date */
+            date?: string | null;
+            /** Amount */
+            amount?: number | string | null;
+            status?: components["schemas"]["TransactionStatus"] | null;
+            /** From Account Id */
+            from_account_id?: number | null;
+            /** To Account Id */
+            to_account_id?: number | null;
             /** Notes */
             notes?: string | null;
         };
@@ -2876,6 +2989,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeriesChangeOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_create_transfer_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransfer"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_get_transfer_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_delete_transfer_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_transactions_update_transfer_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchTransfer"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
                 };
             };
         };

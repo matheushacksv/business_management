@@ -67,6 +67,7 @@ class TransactionOut(ModelSchema):
     is_reversal: bool
     series_id: int | None
     series_index: int | None
+    transfer_id: int | None
     # Names for display (the list query select_related()s them: no extra queries)
     company_name: str = Field(alias='company.name')
     subgroup_name: str = Field(alias='subgroup.name')
@@ -128,3 +129,49 @@ class SeriesOut(Schema):
 class SeriesChangeOut(Schema):
     affected: int
 
+
+
+# Transfers between companies
+
+class CreateTransfer(Schema):
+    from_company_id: int
+    to_company_id: int
+    date: dt.date
+    amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    status: TransactionStatus = TransactionStatus.PLANNED
+    from_account_id: int | None = None
+    to_account_id: int | None = None
+    notes: str = ''
+
+
+class PatchTransfer(Schema):
+    date: dt.date | None = None
+    amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    status: TransactionStatus | None = None
+    from_account_id: int | None = None
+    to_account_id: int | None = None
+    notes: str | None = None
+
+    @model_validator(mode='after')
+    def reject_null_on_required(self):
+        for field in ('date', 'amount', 'status', 'notes'):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f'{field} cannot be null')
+        return self
+
+
+class TransferOut(Schema):
+    id: int
+    date: dt.date
+    amount: Decimal
+    status: TransactionStatus
+    notes: str
+    from_company_id: int
+    from_company_name: str
+    from_account_id: int | None
+    to_company_id: int
+    to_company_name: str
+    to_account_id: int | None
+    outflow_id: int
+    inflow_id: int
+    created_at: dt.datetime
