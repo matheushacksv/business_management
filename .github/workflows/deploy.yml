@@ -60,6 +60,12 @@ jobs:
             git pull --ff-only
             docker build -t gestao-backend:latest -f app/Dockerfile .
             docker build -t gestao-frontend:latest -f frontend/Dockerfile .
+            # Dump before migrations run; a bad deploy can be rolled back to this point (14 days kept)
+            DUMP=/var/backups/gestao/pre-deploy-$(date +%F-%H%M).sql
+            docker exec "$(docker ps -q -f name=gestao_database | head -1)" \
+              sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner' > "$DUMP"
+            gzip "$DUMP"
+            find /var/backups/gestao -name 'pre-deploy-*.sql.gz' -mtime +14 -delete
             docker stack deploy -c docker-compose.prod.yml gestao
             docker service update --force --image gestao-backend:latest gestao_app-backend
             docker service update --force --image gestao-frontend:latest gestao_app-frontend
