@@ -1,0 +1,67 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_DB: test, POSTGRES_USER: test, POSTGRES_PASSWORD: test}
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      POSTGRES_DB: test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      SECRET_KEY: ci-only
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost
+      CORS_ALLOWED_ORIGINS: http://localhost
+      MINIO_ENDPOINT_URL: http://localhost:9000
+      MINIO_ACCESS_KEY: ci
+      MINIO_SECRET_KEY: ci-secret
+      MINIO_BUCKET_NAME: media
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Backend tests
+        working-directory: app
+        run: uv sync --frozen && uv run manage.py test
+      - uses: oven-sh/setup-bun@v2
+      - name: Frontend typecheck
+        working-directory: frontend
+        run: bun install --frozen-lockfile && bun run typecheck
+
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{secrets.SSH_HOST}}
+          username: ${{secrets.SSH_USER}}
+          key: ${{secrets.SSH_KEY}}
+          port: ${{secrets.SSH_PORT}}
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /opt/gestao
+            git pull --ff-only
+            docker build -t gestao-backend:latest -f app/Dockerfile .
+            docker build -t gestao-frontend:latest -f frontend/Dockerfile .
+            docker stack deploy -c docker-compose.prod.yml gestao
+            docker service update --force --image gestao-backend:latest gestao_app-backend
+            docker service update --force --image gestao-frontend:latest gestao_app-frontend
+            
+       
