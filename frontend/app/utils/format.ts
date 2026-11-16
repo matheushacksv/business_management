@@ -67,3 +67,14 @@ export function naturalType(group?: string | null): 'inflow' | 'outflow' | null 
   return INFLOW_GROUPS.includes(group) ? 'inflow' : 'outflow'
 }
 
+
+/** Query object (arrays = repeated keys, like the API filters) -> URLSearchParams. */
+export function toSearchParams(query: Record<string, unknown>): URLSearchParams {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    for (const v of ([] as unknown[]).concat(value)) {
+      if (v !== undefined && v !== null && v !== '') params.append(key, String(v))
+    }
+  }
+  return params
+}

@@ -1,43 +1,63 @@
 <script setup lang="ts">
 import type { components } from '~/types/api'
 
-type Dre = components['schemas']['DREOut']
+type DreTable = components['schemas']['DRETableOut']
+type Line = components['schemas']['DRETableLine']
 definePageMeta({ permission: ['reports', 'view'] })
 
-const { api, unwrap, notifyError } = useApi()
+const { api, unwrap, notifyError, download } = useApi()
 const lookups = useLookups()
 lookups.ensure('companies').catch(notifyError)
 const filters = useReportFilters()
 
-const currentYear = new Date().getFullYear()
+const now = new Date()
+const currentYear = now.getFullYear()
+const view = ref<'monthly' | 'years' | 'month'>('monthly')
+const views = [
+  { label: 'Mensal', value: 'monthly' },
+  { label: 'Comparar anos', value: 'years' },
+  { label: 'Comparar mês', value: 'month' },
+]
 const year = ref(currentYear)
 const years = Array.from({ length: 6 }, (_, i) => ({ label: String(currentYear - i), value: currentYear - i }))
+const month = ref(now.getMonth() + 1)
+const months = MONTHS.map((label, i) => ({ label, value: i + 1 }))
 const showPercent = ref(false)
 const hideEmpty = ref(true)
 const collapsed = ref<Set<string>>(new Set())
 
-const dre = ref<Dre | null>(null)
+const table = ref<DreTable | null>(null)
 const loading = ref(false)
+
+const query = computed(() => ({
+  view: view.value, year: year.value, ...(view.value === 'month' ? { month: month.value } : {}), ...filters.query.value,
+}))
 
 async function load() {
   loading.value = true
   try {
-    dre.value = await unwrap(api.GET('/api/reports/dre', { params: { query: { year: year.value, ...filters.query.value } as any } }))
+    table.value = await unwrap(api.GET('/api/reports/dre/table', { params: { query: query.value as any } }))
   } catch (e) {
     notifyError(e)
   } finally {
     loading.value = false
   }
 }
-watch([year, filters.query], load, { immediate: true })
+watch(query, load, { immediate: true })
+
+function exportXlsx() {
+  const params = toSearchParams({ ...query.value, percent: showPercent.value })
+  download(`/api/reports/dre/export?${params}`, 'dre.xlsx').catch(notifyError)
+}
 
 // Subgroup rows belong to the group above them
+const isEmpty = (line: Line) => line.values.every(v => v === null || Number(v) === 0)
 const rows = computed(() => {
   let group = ''
-  return (dre.value?.lines ?? []).map((line) => {
+  return (table.value?.lines ?? []).map((line) => {
     if (line.kind === 'group') group = line.key
     return { ...line, group: line.kind === 'subgroup' ? group : '' }
-  }).filter(l => l.kind !== 'subgroup' || (!collapsed.value.has(l.group) && (!hideEmpty.value || Number(l.total) !== 0)))
+  }).filter(l => l.kind !== 'subgroup' || (!collapsed.value.has(l.group) && (!hideEmpty.value || !isEmpty(l))))
 })
 
 function toggle(key: string) {
@@ -52,14 +72,36 @@ const rowClass: Record<string, string> = {
   subgroup: 'text-toned',
   result: 'font-semibold text-primary bg-sky-500/[0.06]',
 }
-const cell = (value: string | null | undefined, percent: string | null | undefined) =>
-  showPercent.value ? formatPercent(percent) : formatMoney(value)
+
+const signed = (text: string, n: number) => (n > 0 ? `+${text}` : text)
+function cellText(line: Line, i: number): string {
+  const kind = table.value!.columns[i]!.kind
+  const value = line.values[i]
+  if (value === null || value === undefined) return '—'
+  if (kind === 'delta') return signed(formatMoney(value), Number(value))
+  if (kind === 'delta_percent') return signed(formatPercent(value), Number(value))
+  return showPercent.value ? formatPercent(line.percents[i]) : formatMoney(value)
+}
+// Variations: green when it moves the good way for that line (costs down, revenue/results up)
+function cellClass(line: Line, i: number): string {
+  const kind = table.value!.columns[i]!.kind
+  const n = Number(line.values[i] ?? 0)
+  if (kind === 'value') return n < 0 ? 'text-error' : n === 0 ? 'text-dimmed' : ''
+  if (n === 0 || !line.better) return 'text-dimmed'
+  return (n > 0) === (line.better === 'up') ? 'text-success' : 'text-error'
+}
 </script>
 
 <template>
   <AppPage title="DRE">
+    <template #actions>
+      <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
+    </template>
+
     <template #toolbar>
-      <USelect v-model="year" :items="years" class="w-28" />
+      <UTabs v-model="view" :items="views" :content="false" size="sm" />
+      <USelect v-model="year" :items="years" class="w-28" aria-label="Ano" />
+      <USelect v-if="view === 'month'" v-model="month" :items="months" class="w-24" aria-label="Mês" />
       <USelectMenu v-model="filters.company_id.value" :items="lookups.options.companies.value" value-key="value" multiple
                    placeholder="Consolidado (todas)" class="w-56" />
       <USelect v-model="filters.status.value" :items="filters.statusOptions" class="w-52" />
@@ -71,13 +113,15 @@ const cell = (value: string | null | undefined, percent: string | null | undefin
       <table class="w-full text-sm tabular">
         <thead class="sticky top-0 bg-(--s-solid) z-10">
           <tr class="text-xs text-muted uppercase tracking-wide">
-            <th class="sticky left-0 bg-(--s-solid) px-4 py-3 text-left font-medium min-w-64">Resultado do exercício {{ year }}</th>
-            <th v-for="m in MONTHS" :key="m" class="px-3 py-3 text-right font-medium">{{ m }}</th>
-            <th class="px-4 py-3 text-right font-medium">Total</th>
+            <th class="sticky left-0 bg-(--s-solid) px-4 py-3 text-left font-medium min-w-64">{{ table?.title ?? 'DRE' }}</th>
+            <th v-for="(column, i) in table?.columns ?? []" :key="i" class="px-3 py-3 text-right font-medium whitespace-nowrap"
+                :class="column.kind !== 'value' ? 'bg-muted/40' : ''">
+              {{ column.label }}
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="!dre && loading"><td colspan="14" class="p-6"><USkeleton class="h-64 w-full" /></td></tr>
+          <tr v-if="!table && loading"><td colspan="14" class="p-6"><USkeleton class="h-64 w-full" /></td></tr>
           <tr v-for="line in rows" :key="line.key" class="border-t border-muted" :class="rowClass[line.kind]">
             <td class="sticky left-0 px-4 py-2 whitespace-nowrap"
                 :class="[line.kind === 'subgroup' ? 'ps-9' : '', line.kind === 'result' ? 'bg-(--s-result)' : 'bg-(--s-solid)']">
@@ -87,12 +131,10 @@ const cell = (value: string | null | undefined, percent: string | null | undefin
               </button>
               <span v-else>{{ line.kind === 'result' ? '= ' : '' }}{{ line.label }}</span>
             </td>
-            <td v-for="(value, i) in line.months" :key="i" class="px-3 py-2 text-right whitespace-nowrap"
-                :class="Number(value) < 0 ? 'text-error' : Number(value) === 0 ? 'text-dimmed' : ''">
-              {{ cell(value, line.percents[i]) }}
-            </td>
-            <td class="px-4 py-2 text-right whitespace-nowrap font-medium" :class="Number(line.total) < 0 ? 'text-error' : ''">
-              {{ cell(line.total, line.total_percent) }}
+            <td v-for="(_, i) in line.values" :key="i" class="px-3 py-2 text-right whitespace-nowrap"
+                :class="[cellClass(line, i), table!.columns[i]!.kind !== 'value' ? 'bg-muted/40' : '',
+                         view === 'monthly' && i === line.values.length - 1 ? 'font-medium' : '']">
+              {{ cellText(line, i) }}
             </td>
           </tr>
         </tbody>
@@ -100,6 +142,7 @@ const cell = (value: string | null | undefined, percent: string | null | undefin
     </div>
     <p class="text-xs text-dimmed">
       Estornos (tipo oposto ao do grupo) subtraem do grupo. Faturamento Bruto vem das vendas e é informativo.
+      <template v-if="view !== 'monthly'">Variações em verde: custo caindo ou receita/resultado subindo.</template>
     </p>
   </AppPage>
 </template>

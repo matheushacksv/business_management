@@ -411,6 +411,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/dre/table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dre Table Endpoint
+         * @description DRE in one of its views (monthly, year vs previous year, month vs previous/last year).
+         */
+        get: operations["api_endpoints_reports_dre_table_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/dre/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dre Export Endpoint
+         * @description Excel with exactly the DRE view on screen (same params as /reports/dre/table).
+         */
+        get: operations["api_endpoints_reports_dre_export_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/cash-flow": {
         parameters: {
             query?: never;
@@ -420,6 +460,23 @@ export interface paths {
         };
         /** Cash Flow Endpoint */
         get: operations["api_endpoints_reports_cash_flow_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/cash-flow/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cash Flow Export Endpoint */
+        get: operations["api_endpoints_reports_cash_flow_export_endpoint"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1446,6 +1503,61 @@ export interface components {
             year: number;
             /** Lines */
             lines: components["schemas"]["DRELine"][];
+        };
+        /** DRETableParams */
+        DRETableParams: {
+            /**
+             * View
+             * @default monthly
+             * @enum {string}
+             */
+            view: "monthly" | "years" | "month";
+            /** Year */
+            year: number;
+            /** Month */
+            month?: number | null;
+            /**
+             * Percent
+             * @default false
+             */
+            percent: boolean;
+        };
+        /** DRETableColumn */
+        DRETableColumn: {
+            /** Label */
+            label: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "value" | "delta" | "delta_percent";
+        };
+        /** DRETableLine */
+        DRETableLine: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "info" | "group" | "subgroup" | "result";
+            /** Better */
+            better: ("up" | "down") | null;
+            /** Values */
+            values: (string | null)[];
+            /** Percents */
+            percents: (string | null)[];
+        };
+        /** DRETableOut */
+        DRETableOut: {
+            /** Title */
+            title: string;
+            /** Columns */
+            columns: components["schemas"]["DRETableColumn"][];
+            /** Lines */
+            lines: components["schemas"]["DRETableLine"][];
         };
         /** CashFlowParams */
         CashFlowParams: {
@@ -3117,6 +3229,74 @@ export interface operations {
             };
         };
     };
+    api_endpoints_reports_dre_table_endpoint: {
+        parameters: {
+            query: {
+                view?: "monthly" | "years" | "month";
+                year: number;
+                month?: number | null;
+                percent?: boolean;
+                company_id?: number[] | null;
+                status?: components["schemas"]["TransactionStatus"][] | null;
+                type?: components["schemas"]["TransactionType"][] | null;
+                group?: components["schemas"]["Group"][] | null;
+                subgroup_id?: number[] | null;
+                account_id?: number[] | null;
+                contact_id?: number[] | null;
+                amount_min?: number | string | null;
+                amount_max?: number | string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DRETableOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_reports_dre_export_endpoint: {
+        parameters: {
+            query: {
+                view?: "monthly" | "years" | "month";
+                year: number;
+                month?: number | null;
+                percent?: boolean;
+                company_id?: number[] | null;
+                status?: components["schemas"]["TransactionStatus"][] | null;
+                type?: components["schemas"]["TransactionType"][] | null;
+                group?: components["schemas"]["Group"][] | null;
+                subgroup_id?: number[] | null;
+                account_id?: number[] | null;
+                contact_id?: number[] | null;
+                amount_min?: number | string | null;
+                amount_max?: number | string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_endpoints_reports_cash_flow_endpoint: {
         parameters: {
             query: {
@@ -3148,6 +3328,38 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CashFlowOut"];
                 };
+            };
+        };
+    };
+    api_endpoints_reports_cash_flow_export_endpoint: {
+        parameters: {
+            query: {
+                start: string;
+                end: string;
+                granularity?: "month" | "day";
+                company_id?: number[] | null;
+                status?: components["schemas"]["TransactionStatus"][] | null;
+                type?: components["schemas"]["TransactionType"][] | null;
+                group?: components["schemas"]["Group"][] | null;
+                subgroup_id?: number[] | null;
+                account_id?: number[] | null;
+                contact_id?: number[] | null;
+                amount_min?: number | string | null;
+                amount_max?: number | string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

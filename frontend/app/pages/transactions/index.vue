@@ -70,11 +70,8 @@ function clearFilters() {
 const activeFilters = computed(() => Object.entries(filters).filter(([k, v]) => k !== 'ordering' && (Array.isArray(v) ? v.length : v)).length)
 
 function exportXlsx() {
-  const params = new URLSearchParams()
-  for (const [key, value] of Object.entries(query.value)) {
-    if (key === 'page') continue
-    for (const v of ([] as unknown[]).concat(value)) params.append(key, String(v))
-  }
+  const { page: _, ...filters } = query.value as Record<string, unknown>
+  const params = toSearchParams(filters)
   download(`/api/transaction/export?${params}`, 'lancamentos.xlsx').catch(notifyError)
 }
 

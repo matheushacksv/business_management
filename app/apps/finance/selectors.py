@@ -141,6 +141,84 @@ def dre_selector(*, user: User, year: int, **filters) -> dict:
     return {'year': year, 'lines': lines}
 
 
+# DRE views (same table shape for the screen and the Excel export)
+
+MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+COST_GROUPS = {f'group:{g}' for g in (Group.VARIABLE_COSTS, Group.FIXED_COSTS, Group.NON_OPERATING_EXPENSES)}
+
+
+def _delta(current: Decimal, previous: Decimal) -> tuple[Decimal, Decimal | None]:
+    diff = current - previous
+    return diff, (diff / abs(previous)).quantize(Decimal('0.0001')) if previous else None
+
+
+def _better(line: dict, group_key: str) -> str | None:
+    """Which direction is good news: costs going down, everything else going up."""
+    if line['kind'] == 'info':
+        return None
+    if line['kind'] == 'result':  # margins and net result: always "higher is better"
+        return 'up'
+    return 'down' if (line['key'] if line['kind'] == 'group' else group_key) in COST_GROUPS else 'up'
+
+
+def dre_table_selector(*, user: User, view: str, year: int, month: int | None = None, **filters) -> dict:
+    """DRE as a generic table: columns + lines with one value per column.
+
+    monthly: Jan..Dez + Total | years: year-1, year, variation, variation % |
+    month: same month last year, previous month, month, % vs previous month, % vs last year.
+    `percents` follow the values (share of operating revenue); None on variation columns.
+    """
+    current = dre_selector(user=user, year=year, **filters)
+    if view == 'monthly':
+        columns = [{'label': m, 'kind': 'value'} for m in MONTH_LABELS] + [{'label': 'Total', 'kind': 'value'}]
+        pick = lambda line, _: (line['months'] + [line['total']], line['percents'] + [line['total_percent']])
+        title = f'DRE {year}'
+        previous = None
+    else:
+        previous = dre_selector(user=user, year=year - 1, **filters)
+        if view == 'years':
+            columns = [{'label': str(year - 1), 'kind': 'value'}, {'label': str(year), 'kind': 'value'},
+                       {'label': 'Variação', 'kind': 'delta'}, {'label': 'Var %', 'kind': 'delta_percent'}]
+
+            def pick(line, old):
+                diff, pct = _delta(line['total'], old['total'])
+                return ([old['total'], line['total'], diff, pct],
+                        [old['total_percent'], line['total_percent'], None, None])
+            title = f'DRE {year} × {year - 1}'
+        elif view == 'month':
+            if not month or not 1 <= month <= 12:
+                raise ValidationError('month must be between 1 and 12')
+            m = month - 1
+            label = lambda mi, y: f'{MONTH_LABELS[mi]}/{y}'
+            prev_label = label(11, year - 1) if m == 0 else label(m - 1, year)
+            columns = [{'label': label(m, year - 1), 'kind': 'value'}, {'label': prev_label, 'kind': 'value'},
+                       {'label': label(m, year), 'kind': 'value'},
+                       {'label': 'vs mês ant.', 'kind': 'delta_percent'}, {'label': 'vs ano ant.', 'kind': 'delta_percent'}]
+
+            def pick(line, old):
+                # January's previous month is December of the year before
+                prev_value, prev_pct = (old['months'][11], old['percents'][11]) if m == 0 \
+                    else (line['months'][m - 1], line['percents'][m - 1])
+                value = line['months'][m]
+                return ([old['months'][m], prev_value, value, _delta(value, prev_value)[1], _delta(value, old['months'][m])[1]],
+                        [old['percents'][m], prev_pct, line['percents'][m], None, None])
+            title = f'DRE {label(m, year)}'
+        else:
+            raise ValidationError(f'Invalid view: {view}')
+
+    old_lines = {line['key']: line for line in previous['lines']} if previous else {}
+    lines, group_key = [], ''
+    for line in current['lines']:
+        if line['kind'] == 'group':
+            group_key = line['key']
+        old = old_lines.get(line['key'], {**line, 'months': [ZERO] * 12, 'total': ZERO,
+                                          'percents': [None] * 12, 'total_percent': None})
+        values, percents = pick(line, old)
+        lines.append({'key': line['key'], 'label': line['label'], 'kind': line['kind'],
+                      'better': _better(line, group_key), 'values': values, 'percents': percents})
+    return {'title': title, 'columns': columns, 'lines': lines}
+
+
 # Cash flow
 
 MAX_DAILY_RANGE = 366

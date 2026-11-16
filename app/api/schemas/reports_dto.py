@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Literal
 
 from ninja import Schema
+from pydantic import Field
 
 
 class DREParams(Schema):
@@ -45,3 +46,30 @@ class CashFlowOut(Schema):
     opening: Decimal
     closing: Decimal
     periods: list[CashFlowPeriod]
+
+
+class DRETableParams(Schema):
+    view: Literal['monthly', 'years', 'month'] = 'monthly'
+    year: int
+    month: int | None = Field(None, ge=1, le=12)  # required by the "month" view
+    percent: bool = False  # export only: share of revenue instead of R$
+
+
+class DRETableColumn(Schema):
+    label: str
+    kind: Literal['value', 'delta', 'delta_percent']
+
+
+class DRETableLine(Schema):
+    key: str
+    label: str
+    kind: Literal['info', 'group', 'subgroup', 'result']
+    better: Literal['up', 'down'] | None  # good direction for the variation colors
+    values: list[Decimal | None]  # one per column
+    percents: list[Decimal | None]  # share of operating revenue; None on variation columns
+
+
+class DRETableOut(Schema):
+    title: str
+    columns: list[DRETableColumn]
+    lines: list[DRETableLine]

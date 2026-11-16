@@ -4,7 +4,7 @@ import type { components } from '~/types/api'
 type CashFlow = components['schemas']['CashFlowOut']
 definePageMeta({ permission: ['reports', 'view'] })
 
-const { api, unwrap, notifyError } = useApi()
+const { api, unwrap, notifyError, download } = useApi()
 const lookups = useLookups()
 lookups.ensure('companies').catch(notifyError)
 const filters = useReportFilters()
@@ -31,6 +31,11 @@ async function load() {
 }
 watch([start, end, granularity, filters.query], load, { immediate: true })
 
+function exportXlsx() {
+  const params = toSearchParams({ start: start.value, end: end.value, granularity: granularity.value, ...filters.query.value })
+  download(`/api/reports/cash-flow/export?${params}`, 'fluxo-de-caixa.xlsx').catch(notifyError)
+}
+
 const label = (p: string) => (granularity.value === 'month' ? formatMonth(p) : formatDate(p).slice(0, 5))
 const chart = computed(() => {
   const periods = flow.value?.periods ?? []
@@ -50,6 +55,10 @@ const totals = computed(() => (flow.value?.periods ?? []).reduce(
 
 <template>
   <AppPage title="Fluxo de caixa">
+    <template #actions>
+      <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
+    </template>
+
     <template #toolbar>
       <UInput v-model="start" type="date" class="w-40" aria-label="Início" />
       <UInput v-model="end" type="date" class="w-40" aria-label="Fim" />

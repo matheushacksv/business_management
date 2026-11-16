@@ -2294,6 +2294,535 @@
     ]
    }
   },
+  "/api/reports/dre/table": {
+   "get": {
+    "operationId": "api_endpoints_reports_dre_table_endpoint",
+    "summary": "Dre Table Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "view",
+      "schema": {
+       "default": "monthly",
+       "enum": [
+        "monthly",
+        "years",
+        "month"
+       ],
+       "title": "View",
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "year",
+      "schema": {
+       "title": "Year",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 12,
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Month"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "percent",
+      "schema": {
+       "default": false,
+       "title": "Percent",
+       "type": "boolean"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DRETableOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "DRE in one of its views (monthly, year vs previous year, month vs previous/last year).",
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/dre/export": {
+   "get": {
+    "operationId": "api_endpoints_reports_dre_export_endpoint",
+    "summary": "Dre Export Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "view",
+      "schema": {
+       "default": "monthly",
+       "enum": [
+        "monthly",
+        "years",
+        "month"
+       ],
+       "title": "View",
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "year",
+      "schema": {
+       "title": "Year",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 12,
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Month"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "percent",
+      "schema": {
+       "default": false,
+       "title": "Percent",
+       "type": "boolean"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "description": "Excel with exactly the DRE view on screen (same params as /reports/dre/table).",
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/cash-flow": {
    "get": {
     "operationId": "api_endpoints_reports_cash_flow_endpoint",
@@ -2531,6 +3060,248 @@
         }
        }
       }
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/cash-flow/export": {
+   "get": {
+    "operationId": "api_endpoints_reports_cash_flow_export_endpoint",
+    "summary": "Cash Flow Export Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "start",
+      "schema": {
+       "format": "date",
+       "title": "Start",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "end",
+      "schema": {
+       "format": "date",
+       "title": "End",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "granularity",
+      "schema": {
+       "default": "month",
+       "enum": [
+        "month",
+        "day"
+       ],
+       "title": "Granularity",
+       "type": "string"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
      }
     },
     "tags": [
@@ -6568,6 +7339,174 @@
      "lines"
     ],
     "title": "DREOut",
+    "type": "object"
+   },
+   "DRETableParams": {
+    "properties": {
+     "view": {
+      "default": "monthly",
+      "enum": [
+       "monthly",
+       "years",
+       "month"
+      ],
+      "title": "View",
+      "type": "string"
+     },
+     "year": {
+      "title": "Year",
+      "type": "integer"
+     },
+     "month": {
+      "anyOf": [
+       {
+        "maximum": 12,
+        "minimum": 1,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Month"
+     },
+     "percent": {
+      "default": false,
+      "title": "Percent",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "year"
+    ],
+    "title": "DRETableParams",
+    "type": "object"
+   },
+   "DRETableColumn": {
+    "properties": {
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "value",
+       "delta",
+       "delta_percent"
+      ],
+      "title": "Kind",
+      "type": "string"
+     }
+    },
+    "required": [
+     "label",
+     "kind"
+    ],
+    "title": "DRETableColumn",
+    "type": "object"
+   },
+   "DRETableLine": {
+    "properties": {
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "info",
+       "group",
+       "subgroup",
+       "result"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "better": {
+      "anyOf": [
+       {
+        "enum": [
+         "up",
+         "down"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Better"
+     },
+     "values": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Values",
+      "type": "array"
+     },
+     "percents": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Percents",
+      "type": "array"
+     }
+    },
+    "required": [
+     "key",
+     "label",
+     "kind",
+     "better",
+     "values",
+     "percents"
+    ],
+    "title": "DRETableLine",
+    "type": "object"
+   },
+   "DRETableOut": {
+    "properties": {
+     "title": {
+      "title": "Title",
+      "type": "string"
+     },
+     "columns": {
+      "items": {
+       "$ref": "#/components/schemas/DRETableColumn"
+      },
+      "title": "Columns",
+      "type": "array"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/DRETableLine"
+      },
+      "title": "Lines",
+      "type": "array"
+     }
+    },
+    "required": [
+     "title",
+     "columns",
+     "lines"
+    ],
+    "title": "DRETableOut",
     "type": "object"
    },
    "CashFlowParams": {
