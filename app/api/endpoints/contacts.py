@@ -1,8 +1,8 @@
 from ninja import Router
 
-from api.schemas.contacts_dto import ContactOut, CreateContact, PatchContact
-from apps.finance import services
-from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
+from api.schemas.contacts_dto import ContactOut, ContactSummaryOut, CreateContact, PatchContact
+from apps.finance import selectors, services
+from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, has_permission, require_permission
 
 router = Router(tags=['Contacts'])
 
@@ -38,3 +38,14 @@ def update_contact_endpoint(request, contact_id: int, data: PatchContact):
 def delete_contact_endpoint(request, contact_id: int):
     services.delete_contact_service(contact_id=contact_id)
     return 204, None
+
+
+@router.get('/contact/{contact_id}/summary', response=ContactSummaryOut)
+@require_permission('contacts', VIEW)
+def contact_summary_endpoint(request, contact_id: int):
+    """Totals for the contact page: sales (if the role sees sales) and money (if it sees transactions)."""
+    return selectors.contact_summary_selector(
+        user=request.user, contact_id=contact_id,
+        sales=has_permission(request.user, 'sales', VIEW),
+        money=has_permission(request.user, 'transactions', VIEW),
+    )

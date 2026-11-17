@@ -107,6 +107,10 @@ async function saved() {
           <SalesForm v-if="editing" :sale="sale" @saved="saved" @cancel="editing = false" />
           <template v-else>
             <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div v-if="sale.contact_id">
+                <dt class="text-xs text-dimmed">Cliente</dt>
+                <dd><NuxtLink :to="`/registers/contacts/${sale.contact_id}`" class="text-primary hover:underline">{{ sale.contact_name }}</NuxtLink></dd>
+              </div>
               <div><dt class="text-xs text-dimmed">Vendedor</dt><dd>{{ sale.salesperson_name ?? '—' }}</dd></div>
               <div><dt class="text-xs text-dimmed">Forma de pagamento</dt><dd>{{ sale.payment_method || '—' }}</dd></div>
               <div><dt class="text-xs text-dimmed">Condições</dt><dd>{{ sale.payment_terms || '—' }}</dd></div>

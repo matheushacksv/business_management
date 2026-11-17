@@ -28,6 +28,7 @@ const props = defineProps<{
   remove?: (id: number) => Promise<unknown>
   toForm?: (row: T) => Record<string, any>   // row -> form values (defaults to same keys)
   searchKeys?: string[]                        // client-side search over these keys
+  rowTo?: (row: T) => string                   // clicking a row opens this page instead of the edit modal
 }>()
 const emit = defineEmits<{ changed: [] }>()
 
@@ -131,7 +132,7 @@ async function destroy() {
 
     <div class="s-panel overflow-hidden">
       <UTable :data="filtered" :columns="columns" :loading="loading" sticky :empty="`Nenhum registro`"
-              class="max-h-[calc(100dvh-14rem)]" @select="(_: Event, row: any) => openEdit(row.original)" />
+              class="max-h-[calc(100dvh-14rem)]" @select="(_: Event, row: any) => rowTo ? navigateTo(rowTo(row.original)) : openEdit(row.original)" />
     </div>
     <p class="text-sm text-muted">{{ filtered.length.toLocaleString('pt-BR') }} registro(s)</p>
 

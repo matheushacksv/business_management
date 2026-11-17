@@ -841,6 +841,44 @@
     ]
    }
   },
+  "/api/contact/{contact_id}/summary": {
+   "get": {
+    "operationId": "api_endpoints_contacts_contact_summary_endpoint",
+    "summary": "Contact Summary Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ContactSummaryOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Totals for the contact page: sales (if the role sees sales) and money (if it sees transactions).",
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "JWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/account": {
    "post": {
     "operationId": "api_endpoints_accounts_create_account_endpoint",
@@ -3683,6 +3721,22 @@
      },
      {
       "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
       "name": "page",
       "schema": {
        "default": 1,
@@ -5763,6 +5817,17 @@
       ],
       "title": "Phone"
      },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
      "created_at": {
       "format": "date-time",
       "title": "Created At",
@@ -5815,6 +5880,11 @@
      "phone": {
       "default": "",
       "title": "Phone",
+      "type": "string"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
       "type": "string"
      }
     },
@@ -5885,9 +5955,122 @@
        }
       ],
       "title": "Phone"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
      }
     },
     "title": "PatchContact",
+    "type": "object"
+   },
+   "ContactMoneySummary": {
+    "properties": {
+     "received": {
+      "title": "Received",
+      "type": "string"
+     },
+     "to_receive": {
+      "title": "To Receive",
+      "type": "string"
+     },
+     "overdue_receivable": {
+      "title": "Overdue Receivable",
+      "type": "string"
+     },
+     "overdue_receivable_count": {
+      "title": "Overdue Receivable Count",
+      "type": "integer"
+     },
+     "paid": {
+      "title": "Paid",
+      "type": "string"
+     },
+     "to_pay": {
+      "title": "To Pay",
+      "type": "string"
+     },
+     "overdue_payable": {
+      "title": "Overdue Payable",
+      "type": "string"
+     },
+     "overdue_payable_count": {
+      "title": "Overdue Payable Count",
+      "type": "integer"
+     },
+     "pending_invoices": {
+      "title": "Pending Invoices",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "received",
+     "to_receive",
+     "overdue_receivable",
+     "overdue_receivable_count",
+     "paid",
+     "to_pay",
+     "overdue_payable",
+     "overdue_payable_count",
+     "pending_invoices"
+    ],
+    "title": "ContactMoneySummary",
+    "type": "object"
+   },
+   "ContactSalesSummary": {
+    "properties": {
+     "sold": {
+      "title": "Sold",
+      "type": "string"
+     },
+     "sales_count": {
+      "title": "Sales Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "sold",
+     "sales_count"
+    ],
+    "title": "ContactSalesSummary",
+    "type": "object"
+   },
+   "ContactSummaryOut": {
+    "description": "Each block is null when the user's role can't see that module.",
+    "properties": {
+     "sales": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ContactSalesSummary"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "money": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ContactMoneySummary"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "sales",
+     "money"
+    ],
+    "title": "ContactSummaryOut",
     "type": "object"
    },
    "AccountOut": {
@@ -7915,6 +8098,17 @@
        }
       ],
       "title": "Reason"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
      }
     },
     "title": "PendingInvoiceFilters",

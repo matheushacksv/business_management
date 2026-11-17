@@ -9,12 +9,13 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db.models import Case, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.utils import timezone
 from django.db.models.functions import Coalesce, ExtractMonth, TruncMonth
 
 from apps.companies.services import list_companies_service
-from apps.finance.models import NATURAL_TYPE, Group, SubGroup, TransactionType
-from apps.finance.services import list_transactions_service
+from apps.finance.models import NATURAL_TYPE, Contact, Group, SubGroup, TransactionStatus, TransactionType
+from apps.finance.services import list_transactions_service, pending_invoices_service
 from apps.users.models import User
 
 ZERO = Decimal('0')
@@ -283,3 +284,47 @@ def cash_flow_selector(
         'start': start, 'end': end, 'granularity': granularity,
         'opening': opening_balance, 'closing': balance, 'periods': periods,
     }
+
+
+# Contact page
+
+def contact_summary_selector(*, user: User, contact_id: int, sales: bool, money: bool) -> dict:
+    """Totals of one customer/supplier, limited to the user's companies.
+
+    `sales`/`money` say which blocks the user's role may see (sales module / transactions module).
+    """
+    contact = Contact.objects.get(pk=contact_id)  # 404 when missing
+    result: dict = {'sales': None, 'money': None}
+
+    if sales:
+        from apps.sales.models import Sale, SaleStatus  # local: sales depends on finance
+
+        totals = (Sale.objects.filter(company__in=list_companies_service(user=user), contact=contact)
+                  .exclude(status=SaleStatus.CANCELED)
+                  .aggregate(sold=Coalesce(Sum('amount'), Value(ZERO), output_field=MONEY), sales_count=Count('id')))
+        result['sales'] = totals
+
+    if money:
+        today = timezone.localdate()
+        planned = Q(status=TransactionStatus.PLANNED)
+        due = Q(date__lt=today)
+
+        def by_type(type_):
+            return {
+                'done': _sum(type=type_, status=TransactionStatus.REALIZED),
+                'open': Coalesce(Sum('amount', filter=Q(type=type_) & planned & ~due), Value(ZERO), output_field=MONEY),
+                'late': Coalesce(Sum('amount', filter=Q(type=type_) & planned & due), Value(ZERO), output_field=MONEY),
+                'late_count': Count('id', filter=Q(type=type_) & planned & due),
+            }
+
+        qs = list_transactions_service(user=user, contact_id=contact.pk).order_by()
+        inflow = qs.aggregate(**{f'in_{k}': v for k, v in by_type(TransactionType.INFLOW).items()})
+        outflow = qs.aggregate(**{f'out_{k}': v for k, v in by_type(TransactionType.OUTFLOW).items()})
+        result['money'] = {
+            'received': inflow['in_done'], 'to_receive': inflow['in_open'],
+            'overdue_receivable': inflow['in_late'], 'overdue_receivable_count': inflow['in_late_count'],
+            'paid': outflow['out_done'], 'to_pay': outflow['out_open'],
+            'overdue_payable': outflow['out_late'], 'overdue_payable_count': outflow['out_late_count'],
+            'pending_invoices': pending_invoices_service(user=user, contact_id=contact.pk).count(),
+        }
+    return result

@@ -222,6 +222,26 @@ export interface paths {
         patch: operations["api_endpoints_contacts_update_contact_endpoint"];
         trace?: never;
     };
+    "/api/contact/{contact_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Contact Summary Endpoint
+         * @description Totals for the contact page: sales (if the role sees sales) and money (if it sees transactions).
+         */
+        get: operations["api_endpoints_contacts_contact_summary_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/account": {
         parameters: {
             query?: never;
@@ -1046,6 +1066,8 @@ export interface components {
             email?: string | null;
             /** Phone */
             phone?: string | null;
+            /** Notes */
+            notes?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1081,6 +1103,11 @@ export interface components {
              * @default
              */
             phone: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** PatchContact */
         PatchContact: {
@@ -1094,6 +1121,44 @@ export interface components {
             email?: string | "" | null;
             /** Phone */
             phone?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** ContactMoneySummary */
+        ContactMoneySummary: {
+            /** Received */
+            received: string;
+            /** To Receive */
+            to_receive: string;
+            /** Overdue Receivable */
+            overdue_receivable: string;
+            /** Overdue Receivable Count */
+            overdue_receivable_count: number;
+            /** Paid */
+            paid: string;
+            /** To Pay */
+            to_pay: string;
+            /** Overdue Payable */
+            overdue_payable: string;
+            /** Overdue Payable Count */
+            overdue_payable_count: number;
+            /** Pending Invoices */
+            pending_invoices: number;
+        };
+        /** ContactSalesSummary */
+        ContactSalesSummary: {
+            /** Sold */
+            sold: string;
+            /** Sales Count */
+            sales_count: number;
+        };
+        /**
+         * ContactSummaryOut
+         * @description Each block is null when the user's role can't see that module.
+         */
+        ContactSummaryOut: {
+            sales: components["schemas"]["ContactSalesSummary"] | null;
+            money: components["schemas"]["ContactMoneySummary"] | null;
         };
         /** AccountOut */
         AccountOut: {
@@ -1720,6 +1785,8 @@ export interface components {
             kind?: components["schemas"]["InvoiceKind"] | null;
             /** Reason */
             reason?: ("missing_invoice" | "missing_attachment") | null;
+            /** Contact Id */
+            contact_id?: number | null;
         };
         /** PagedPendingInvoiceOut */
         PagedPendingInvoiceOut: {
@@ -2733,6 +2800,28 @@ export interface operations {
             };
         };
     };
+    api_endpoints_contacts_contact_summary_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactSummaryOut"];
+                };
+            };
+        };
+    };
     api_endpoints_accounts_list_accounts_endpoint: {
         parameters: {
             query?: {
@@ -3518,6 +3607,7 @@ export interface operations {
                 direction?: ("receive" | "issue") | null;
                 kind?: components["schemas"]["InvoiceKind"] | null;
                 reason?: ("missing_invoice" | "missing_attachment") | null;
+                contact_id?: number | null;
                 page?: number;
                 page_size?: number | null;
             };

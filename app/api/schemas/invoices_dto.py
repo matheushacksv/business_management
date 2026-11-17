@@ -62,3 +62,4 @@ class PendingInvoiceFilters(Schema):
     direction: Literal['receive', 'issue'] | None = None
     kind: InvoiceKind | None = None
     reason: Literal['missing_invoice', 'missing_attachment'] | None = None
+    contact_id: int | None = None

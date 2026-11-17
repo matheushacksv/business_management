@@ -55,6 +55,7 @@ class Contact(models.Model):
     document = models.CharField(max_length=14, blank=True) # CPF or CNPJ
     email = models.EmailField(max_length=100, blank=True)
     phone = models.CharField(max_length=50, blank=True)
+    notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

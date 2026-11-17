@@ -24,7 +24,7 @@ const fields = [
 <template>
   <AppCrud
     title="Clientes e fornecedores" module="contacts" singular="Contato"
-    :columns="columns" :fields="fields" :search-keys="['name', 'company_name', 'document', 'email']"
+    :columns="columns" :fields="fields" :row-to="(c) => `/registers/contacts/${c.id}`" :search-keys="['name', 'company_name', 'document', 'email']"
     :load="() => unwrap(api.GET('/api/contact', { params: { query: {} } })) as Promise<Contact[]>"
     :create="(d) => unwrap(api.POST('/api/contact', { body: d as any }))"
     :update="(id, d) => unwrap(api.PATCH('/api/contact/{contact_id}', { params: { path: { contact_id: id } }, body: d }))"

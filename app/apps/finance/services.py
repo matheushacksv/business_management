@@ -81,6 +81,7 @@ def create_contact_service(
     document: str = '',
     email: str = '',
     phone: str = '',
+    notes: str = '',
 ) -> Contact:
     try:
         with transaction.atomic():
@@ -90,6 +91,7 @@ def create_contact_service(
                 document=normalize_cnpj(document),
                 email=email.strip().lower(),
                 phone=phone.strip(),
+                notes=notes.strip(),
             )
     except IntegrityError:
         raise ValidationError('Contact with this document already exists')
@@ -454,6 +456,7 @@ INVOICE_PENDING_REASONS = ('missing_invoice', 'missing_attachment')
 def pending_invoices_service(
     *, user: User, company_id=None, date_from=None, date_to=None,
     direction: str | None = None, kind: str | None = None, reason: str | None = None,
+    contact_id: int | None = None,
 ):
     """NFs still pending: not received/issued yet, or done but without the file attached."""
     has_attachment = Attachment.objects.filter(
@@ -475,6 +478,7 @@ def pending_invoices_service(
     filters = {
         'transaction__company_id__in': company_id, 'transaction__date__gte': date_from,
         'transaction__date__lte': date_to, 'kind': kind, 'pending_reason': reason,
+        'transaction__contact_id': contact_id,
         'transaction__type': {'receive': TransactionType.OUTFLOW, 'issue': TransactionType.INFLOW}.get(direction or ''),
     }
     return qs.filter(**{k: v for k, v in filters.items() if v not in (None, [])})

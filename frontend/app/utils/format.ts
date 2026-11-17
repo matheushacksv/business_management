@@ -78,3 +78,11 @@ export function toSearchParams(query: Record<string, unknown>): URLSearchParams 
   }
   return params
 }
+
+/** "12345678000190" -> "12.345.678/0001-90"; "12345678901" -> "123.456.789-01"; anything else as is. */
+export function formatDocument(value?: string | null): string {
+  if (!value) return ''
+  if (value.length === 14) return value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+  if (value.length === 11) return value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
+  return value
+}

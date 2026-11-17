@@ -152,7 +152,11 @@ const fields = computed(() => {
             <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
               <div v-for="[label, value] in fields" :key="label">
                 <dt class="text-xs text-dimmed">{{ label }}</dt>
-                <dd class="text-sm text-highlighted">{{ value }}</dd>
+                <dd class="text-sm text-highlighted">
+                  <NuxtLink v-if="label === 'Cliente/Fornecedor' && tx.contact" :to="`/registers/contacts/${tx.contact}`"
+                            class="text-primary hover:underline">{{ value }}</NuxtLink>
+                  <template v-else>{{ value }}</template>
+                </dd>
               </div>
               <div v-if="tx.notes" class="col-span-2">
                 <dt class="text-xs text-dimmed">Observações</dt>
