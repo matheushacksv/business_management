@@ -97,11 +97,11 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
     <template #body>
       <USkeleton v-if="!item" class="h-40 w-full" />
       <div v-else class="space-y-5">
-        <div class="s-panel grid grid-cols-2 gap-3 p-4 text-xs sm:grid-cols-4">
-          <div><p class="text-dimmed">Devido (em aberto)</p><p class="font-display text-lg text-error tabular">{{ formatMoney(item.open_amount) }}</p></div>
-          <div><p class="text-dimmed">Recebido (parcelas)</p><p class="font-display text-lg text-success tabular">{{ formatMoney(item.received_amount) }}</p></div>
-          <div><p class="text-dimmed">Valor da proposta</p><p class="text-highlighted tabular">{{ item.proposal_amount != null ? formatMoney(item.proposal_amount) : '—' }}</p></div>
-          <div><p class="text-dimmed">Pago pelo cliente</p><p class="text-highlighted tabular">{{ item.paid_amount != null ? formatMoney(item.paid_amount) : '—' }}</p></div>
+        <div class="s-panel grid grid-cols-2 gap-x-4 gap-y-3 p-4 text-xs">
+          <div class="min-w-0"><p class="text-dimmed">Devido (em aberto)</p><p class="font-display text-lg text-error tabular truncate">{{ formatMoney(item.open_amount) }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Recebido (parcelas)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Valor da proposta</p><p class="text-sm text-highlighted tabular truncate">{{ item.proposal_amount != null ? formatMoney(item.proposal_amount) : '—' }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Pago pelo cliente</p><p class="text-sm text-highlighted tabular truncate">{{ item.paid_amount != null ? formatMoney(item.paid_amount) : '—' }}</p></div>
         </div>
 
         <UAlert v-if="incomplete && !editing" color="warning" variant="subtle" icon="i-lucide-triangle-alert"

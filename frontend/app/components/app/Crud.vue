@@ -54,6 +54,15 @@ const filtered = computed(() => {
   return rows.value.filter(r => props.searchKeys!.some(k => String((r as any)[k] ?? '').toLowerCase().includes(term)))
 })
 
+// Client-side pages: the API returns every row (small lists), but rendering hundreds of
+// table rows at once is what makes the screen slow.
+// ponytail: move to server-side pagination if a list reaches the thousands
+const PAGE_SIZE = 50
+const page = ref(1)
+watch(search, () => { page.value = 1 })
+watch(() => filtered.value.length, (n) => { page.value = Math.min(page.value, Math.max(1, Math.ceil(n / PAGE_SIZE))) })
+const pageRows = computed(() => filtered.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
+
 // Form modal
 const open = ref(false)
 const editingId = ref<number | null>(null)
@@ -132,10 +141,13 @@ async function destroy() {
     </template>
 
     <div class="s-panel overflow-hidden">
-      <UTable :data="filtered" :columns="columns" :loading="loading" sticky :empty="`Nenhum registro`"
+      <UTable :data="pageRows" :columns="columns" :loading="loading" sticky :empty="`Nenhum registro`"
               class="max-h-[calc(100dvh-14rem)]" @select="(_: Event, row: any) => rowTo ? navigateTo(rowTo(row.original)) : openEdit(row.original)" />
     </div>
-    <p class="text-sm text-muted">{{ filtered.length.toLocaleString('pt-BR') }} registro(s)</p>
+    <div class="flex items-center justify-between text-sm text-muted">
+      <span>{{ filtered.length.toLocaleString('pt-BR') }} registro(s)</span>
+      <UPagination v-if="filtered.length > PAGE_SIZE" v-model:page="page" :total="filtered.length" :items-per-page="PAGE_SIZE" />
+    </div>
 
     <UModal v-model:open="open" :title="editingId ? `Editar ${singular.toLowerCase()}` : `Novo(a) ${singular.toLowerCase()}`"
             :ui="{ content: 'max-w-xl' }">
