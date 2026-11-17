@@ -1,0 +1,133 @@
+<script setup lang="ts">
+import type { components } from '~/types/api'
+
+// "Ação de cobrança por inadimplência": every field is required (client rule)
+type Case = components['schemas']['CaseOut']
+const props = defineProps<{ item?: Case | null; contactId?: number | null; contactName?: string | null }>()
+const emit = defineEmits<{ saved: [id: number]; cancel: [] }>()
+
+const { api, unwrap, notifyError, notifySuccess } = useApi()
+const lookups = useLookups()
+lookups.ensure('companies').catch(notifyError)
+
+const c = props.item
+const state = reactive({
+  company_id: c?.company_id as number | undefined,
+  contact_id: c?.contact_id ?? props.contactId ?? null,
+  client_company: c?.client_company ?? '',
+  contact_info: c?.contact_info ?? '',
+  delivered: c?.delivered ?? '',
+  proposal_amount: c?.proposal_amount != null ? Number(c.proposal_amount) : (undefined as number | undefined),
+  paid_amount: c?.paid_amount != null ? Number(c.paid_amount) : (undefined as number | undefined),
+  summary: c?.summary ?? '',
+  drive_link: c?.drive_link ?? '',
+  stage: c?.stage ?? 'new',
+  agreement: c?.agreement ?? '',
+})
+watch(lookups.options.companies, (list) => {
+  if (!state.company_id && list.length) state.company_id = list[0]!.value as number
+}, { immediate: true })
+
+// New case: prefill "Empresa" and "Contato" from the customer's registration
+watch(() => state.contact_id, async (id) => {
+  if (c || !id) return
+  try {
+    const contact = await unwrap(api.GET('/api/contact/{contact_id}', { params: { path: { contact_id: id } } }))
+    state.client_company ||= contact.company_name ?? ''
+    state.contact_info ||= [contact.phone, contact.email].filter(Boolean).join(' · ')
+  } catch (e) {
+    notifyError(e)
+  }
+}, { immediate: true })
+
+const stageOptions = Object.entries(LABELS.caseStage).map(([value, label]) => ({ value, label }))
+const needsAgreement = computed(() => state.stage === 'agreement')
+const saving = ref(false)
+
+const missing = computed(() => {
+  const fields: [unknown, string][] = [
+    [state.company_id, 'Empresa do grupo'], [state.contact_id, 'Cliente'], [state.client_company.trim(), 'Empresa'],
+    [state.contact_info.trim(), 'Contato'], [state.delivered.trim(), 'O que foi entregue'],
+    [state.proposal_amount != null, 'Valor da proposta'], [state.paid_amount != null, 'Valor pago pelo cliente'],
+    [state.summary.trim(), 'Resumo da situação'], [state.drive_link.trim(), 'Link do drive'],
+  ]
+  if (needsAgreement.value) fields.push([state.agreement.trim(), 'Acordo feito'])
+  return fields.filter(([value]) => !value).map(([, label]) => label)
+})
+
+async function submit() {
+  if (missing.value.length) {
+    notifyError(`Preencha: ${missing.value.join(', ')}.`, 'Campos obrigatórios')
+    return
+  }
+  saving.value = true
+  const body = {
+    client_company: state.client_company, contact_info: state.contact_info, delivered: state.delivered,
+    proposal_amount: state.proposal_amount!.toFixed(2), paid_amount: state.paid_amount!.toFixed(2),
+    summary: state.summary, drive_link: state.drive_link.trim(), stage: state.stage as any, agreement: state.agreement,
+  }
+  try {
+    const saved = c
+      ? await unwrap(api.PATCH('/api/collection-case/{case_id}', { params: { path: { case_id: c.id! } }, body }))
+      : await unwrap(api.POST('/api/collection-case', {
+          body: { ...body, company_id: state.company_id!, contact_id: state.contact_id! },
+        }))
+    notifySuccess(c ? 'Caso atualizado' : 'Caso de cobrança aberto')
+    emit('saved', saved.id!)
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    saving.value = false
+  }
+}
+</script>
+
+<template>
+  <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
+    <UFormField label="Cliente" required class="sm:col-span-2">
+      <AppContactSelect v-if="!c" v-model="state.contact_id" :initial-label="contactName" />
+      <p v-else class="text-sm text-highlighted">{{ c.contact_name }}</p>
+    </UFormField>
+    <UFormField label="Empresa" required hint="do cliente">
+      <UInput v-model="state.client_company" class="w-full" />
+    </UFormField>
+    <UFormField label="Contato" required hint="telefone, e-mail, pessoa">
+      <UInput v-model="state.contact_info" class="w-full" />
+    </UFormField>
+    <UFormField label="O que foi entregue" required class="sm:col-span-2">
+      <UTextarea v-model="state.delivered" :rows="2" autoresize class="w-full" />
+    </UFormField>
+    <UFormField label="Valor da proposta" required>
+      <UInputNumber v-model="state.proposal_amount" :min="0" :step="0.01" :increment="false" :decrement="false"
+                    :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
+    </UFormField>
+    <UFormField label="Valor pago pelo cliente" required>
+      <UInputNumber v-model="state.paid_amount" :min="0" :step="0.01" :increment="false" :decrement="false"
+                    :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
+    </UFormField>
+    <UFormField label="Resumo da situação do cliente" required class="sm:col-span-2">
+      <UTextarea v-model="state.summary" :rows="3" autoresize class="w-full" />
+    </UFormField>
+    <UFormField label="Link do drive" required class="sm:col-span-2">
+      <UInput v-model="state.drive_link" type="url" placeholder="Cole o link da pasta no Google Drive" icon="i-lucide-link" class="w-full" />
+    </UFormField>
+    <UFormField v-if="!c" label="Empresa do grupo" required>
+      <USelect v-model="state.company_id" :items="lookups.options.companies.value" class="w-full" />
+    </UFormField>
+    <UFormField label="Etapa" :class="c ? 'sm:col-span-2' : ''">
+      <USelect v-model="state.stage" :items="stageOptions" class="w-full" />
+    </UFormField>
+    <UFormField v-if="needsAgreement || state.agreement" label="Acordo ou sentença" :required="needsAgreement"
+                hint="valor, parcelas, 1º vencimento" class="sm:col-span-2">
+      <UTextarea v-model="state.agreement" :rows="2" autoresize
+                 placeholder="Ex.: R$ 20.000,00 em 10x de R$ 2.000,00, primeiro vencimento dia 10/12" class="w-full" />
+    </UFormField>
+    <p v-if="!c" class="sm:col-span-2 text-xs text-dimmed">
+      As parcelas em aberto desse cliente nessa empresa serão vinculadas ao caso e saem da DRE e do fluxo de caixa até serem recebidas.
+    </p>
+    <div class="sm:col-span-2 flex justify-end gap-2">
+      <UButton label="Cancelar" color="neutral" variant="ghost" @click="emit('cancel')" />
+      <UButton type="submit" :label="c ? 'Salvar' : 'Abrir caso'" :loading="saving" />
+    </div>
+  </form>
+</template>

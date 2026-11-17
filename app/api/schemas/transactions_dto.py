@@ -68,6 +68,7 @@ class TransactionOut(ModelSchema):
     series_id: int | None
     series_index: int | None
     transfer_id: int | None
+    collection_case_id: int | None  # planned + set = out of DRE / cash flow
     # Names for display (the list query select_related()s them: no extra queries)
     company_name: str = Field(alias='company.name')
     subgroup_name: str = Field(alias='subgroup.name')

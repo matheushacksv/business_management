@@ -11,6 +11,7 @@ from api.endpoints.contacts import router as contact_router
 from api.endpoints.history import router as history_router
 from api.endpoints.imports import router as import_router
 from api.endpoints.invoices import router as invoice_router
+from api.endpoints.legal import router as legal_router
 from api.endpoints.reports import router as report_router
 from api.endpoints.sales import router as sales_router
 from api.endpoints.subgroups import router as subgroup_router
@@ -46,3 +47,4 @@ api.add_router('/', invoice_router)
 api.add_router('/', sales_router)
 api.add_router('/', import_router)
 api.add_router('/', history_router)
+api.add_router('/', legal_router)

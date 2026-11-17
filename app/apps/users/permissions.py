@@ -16,20 +16,20 @@ VIEW, CREATE, CHANGE, DELETE = 'view', 'create', 'change', 'delete'
 ALL = frozenset({VIEW, CREATE, CHANGE, DELETE})
 READ = frozenset({VIEW})
 
-MODULES = ('users', 'companies', 'subgroups', 'contacts', 'accounts', 'transactions', 'reports', 'sales')
+MODULES = ('users', 'companies', 'subgroups', 'contacts', 'accounts', 'transactions', 'reports', 'sales', 'legal')
 
 # ponytail: fixed matrix in code; move to DB (Django Groups) if the client needs custom roles
 PERMISSIONS: dict[str, dict[str, frozenset[str]]] = {
     Role.FINANCE: {
         'companies': READ, 'subgroups': READ, 'contacts': ALL, 'accounts': ALL,
-        'transactions': ALL, 'reports': READ, 'sales': ALL,
+        'transactions': ALL, 'reports': READ, 'sales': ALL, 'legal': ALL,
     },
     Role.ACCOUNTANT: {
         'companies': READ, 'subgroups': READ, 'contacts': READ, 'accounts': READ,
         'transactions': READ, 'reports': READ, 'sales': READ,
     },
-    Role.MANAGER: {'companies': READ, 'subgroups': READ, 'reports': READ, 'sales': READ},
-    Role.LEGAL: {'companies': READ, 'contacts': READ, 'sales': READ},  # contracts of their cases
+    Role.MANAGER: {'companies': READ, 'subgroups': READ, 'reports': READ, 'sales': READ, 'legal': READ},
+    Role.LEGAL: {'companies': READ, 'contacts': READ, 'sales': READ, 'legal': ALL},  # contracts of their cases
 }
 
 

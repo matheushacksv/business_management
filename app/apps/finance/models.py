@@ -154,6 +154,9 @@ class Transaction(models.Model):
     sale = models.ForeignKey(  # receivable of a sale
         'sales.Sale', on_delete=models.PROTECT, null=True, blank=True, related_name='receivables'
     )
+    collection_case = models.ForeignKey(  # planned + linked = out of DRE / cash flow (uncertain)
+        'legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

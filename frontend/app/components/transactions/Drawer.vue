@@ -141,6 +141,7 @@ const fields = computed(() => {
               <SStatusBadge kind="status" :value="tx.status" />
               <UBadge v-if="tx.is_reversal" label="Estorno" color="warning" variant="subtle" size="sm" />
               <UBadge v-if="isLeg" label="Transferência" icon="i-lucide-repeat" color="primary" variant="subtle" size="sm" />
+              <UBadge v-if="tx.collection_case_id" label="Em cobrança" icon="i-lucide-scale" color="warning" variant="subtle" size="sm" />
             </div>
           </div>
           <UButton v-if="canChange" :label="tx.status === 'realized' ? 'Marcar previsto' : 'Marcar realizado'"

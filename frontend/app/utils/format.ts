@@ -48,6 +48,11 @@ export const LABELS = {
   } as Record<string, string>,
   invoiceKind: { service: 'NF de Serviço', product: 'NF de Produto' } as Record<string, string>,
   action: { insert: 'Criou', update: 'Alterou', delete: 'Excluiu' } as Record<string, string>,
+  // Legal kanban columns, in order (mirrors apps.legal.models.CaseStage)
+  caseStage: {
+    new: 'Nova Ação', stand_by: 'Stand By', requested: 'Solicitada ao Jurídico', filed: 'Ação Protocolada',
+    in_progress: 'Em andamento', agreement: 'Acordo ou Sentença', awaiting_judge: 'Aguardando Juiz', done: 'Concluída',
+  } as Record<string, string>,
 }
 
 export const TYPE_OPTIONS = [

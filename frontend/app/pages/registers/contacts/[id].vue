@@ -19,6 +19,7 @@ const auth = useAuth()
 const canSales = computed(() => auth.can('sales', 'view'))
 const canMoney = computed(() => auth.can('transactions', 'view'))
 const canEdit = computed(() => auth.can('contacts', 'change'))
+const collectionOpen = ref(false)
 
 const UProgress = resolveComponent('UProgress')
 const SStatusBadge = resolveComponent('SStatusBadge')
@@ -177,6 +178,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 <template>
   <AppPage :title="contact?.name ?? 'Cliente/fornecedor'">
     <template #actions>
+      <UButton v-if="auth.can('legal', 'create')" label="Enviar para cobrança" icon="i-lucide-scale" color="neutral" variant="outline"
+               :disabled="!contact" @click="collectionOpen = true" />
       <UButton v-if="canEdit" label="Editar" icon="i-lucide-pencil" color="neutral" variant="outline" :disabled="!contact" @click="editOpen = true" />
       <UButton v-if="auth.can('contacts', 'delete')" icon="i-lucide-trash-2" color="error" variant="ghost" aria-label="Excluir contato" @click="remove" />
     </template>
@@ -274,5 +277,10 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     <SalesDrawer v-model:open="saleOpen" :sale-id="saleId" @changed="refreshAll" />
     <TransactionsDrawer v-model:open="txOpen" :transaction-id="txId" @changed="refreshAll" />
     <AppContactFormModal v-model:open="editOpen" :contact="contact" @saved="(c) => (contact = c)" />
+    <UModal v-model:open="collectionOpen" title="Ação de cobrança por inadimplência" :ui="{ content: 'max-w-2xl' }">
+      <template #body>
+        <LegalForm :contact-id="id" :contact-name="contact?.name" @saved="navigateTo('/legal')" @cancel="collectionOpen = false" />
+      </template>
+    </UModal>
   </AppPage>
 </template>

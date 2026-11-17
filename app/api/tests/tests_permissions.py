@@ -84,15 +84,15 @@ class PermissionMatrixTest(TestCase):
     def test_expected_matrix(self):
         expected = {
             Role.ADMIN: {'users': 'vcud', 'companies': 'vcud', 'subgroups': 'vcud', 'contacts': 'vcud',
-                         'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'vcud', 'sales': 'vcud'},
+                         'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'vcud', 'sales': 'vcud', 'legal': 'vcud'},
             Role.FINANCE: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': 'vcud',
-                           'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'v', 'sales': 'vcud'},
+                           'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'v', 'sales': 'vcud', 'legal': 'vcud'},
             Role.ACCOUNTANT: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': 'v',
-                              'accounts': 'v', 'transactions': 'v', 'reports': 'v', 'sales': 'v'},
+                              'accounts': 'v', 'transactions': 'v', 'reports': 'v', 'sales': 'v', 'legal': ''},
             Role.MANAGER: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': '',
-                           'accounts': '', 'transactions': '', 'reports': 'v', 'sales': 'v'},
+                           'accounts': '', 'transactions': '', 'reports': 'v', 'sales': 'v', 'legal': 'v'},
             Role.LEGAL: {'users': '', 'companies': 'v', 'subgroups': '', 'contacts': 'v',
-                         'accounts': '', 'transactions': '', 'reports': '', 'sales': 'v'},
+                         'accounts': '', 'transactions': '', 'reports': '', 'sales': 'v', 'legal': 'vcud'},
         }
         letters = {'view': 'v', 'create': 'c', 'change': 'u', 'delete': 'd'}
         for role, modules in expected.items():

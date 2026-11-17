@@ -22,6 +22,10 @@ ZERO = Decimal('0')
 MONEY = DecimalField(max_digits=16, decimal_places=2)
 INFLOW_GROUPS = [g for g, t in NATURAL_TYPE.items() if t == TransactionType.INFLOW]
 
+# Installments under a collection case are uncertain money: out of the DRE and the cash flow
+# until received (realized)
+IN_COLLECTION = Q(status=TransactionStatus.PLANNED, collection_case__isnull=False)
+
 # Natural type adds, opposite type (reversal) subtracts — inside its own group
 SIGNED_AMOUNT = Case(
     When(subgroup__group__in=INFLOW_GROUPS, type=TransactionType.INFLOW, then=F('amount')),
@@ -83,6 +87,7 @@ def dre_selector(*, user: User, year: int, **filters) -> dict:
     rows = (
         list_transactions_service(user=user, **filters)
         .filter(date__year=year)
+        .exclude(IN_COLLECTION)
         .order_by()  # no ORDER BY inside GROUP BY
         .values('subgroup_id', month=ExtractMonth('date'))
         .annotate(total=Sum(SIGNED_AMOUNT))
@@ -248,7 +253,7 @@ def cash_flow_selector(
     filters.pop('ordering', None)
 
     # Cash flow uses the real direction of money (type), not the DRE group sign
-    qs = list_transactions_service(user=user, **filters).order_by()
+    qs = list_transactions_service(user=user, **filters).exclude(IN_COLLECTION).order_by()
 
     # account/subgroup; per-account opening balances would need an Account.initial_balance
     companies = list_companies_service(user=user)

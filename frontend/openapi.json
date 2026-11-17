@@ -5402,6 +5402,411 @@
      }
     ]
    }
+  },
+  "/api/collection-case/stages": {
+   "get": {
+    "operationId": "api_endpoints_legal_list_stages_endpoint",
+    "summary": "List Stages Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/StageOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case": {
+   "get": {
+    "operationId": "api_endpoints_legal_list_cases_endpoint",
+    "summary": "List Cases Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "stage",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/CaseStage"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Stage"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CaseOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_legal_create_case_endpoint",
+    "summary": "Create Case Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CaseOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateCase"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/{case_id}": {
+   "get": {
+    "operationId": "api_endpoints_legal_get_case_endpoint",
+    "summary": "Get Case Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CaseOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_legal_update_case_endpoint",
+    "summary": "Update Case Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CaseOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchCase"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_legal_delete_case_endpoint",
+    "summary": "Delete Case Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/{case_id}/comments": {
+   "get": {
+    "operationId": "api_endpoints_legal_list_comments_endpoint",
+    "summary": "List Comments Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CommentOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_legal_add_comment_endpoint",
+    "summary": "Add Comment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CommentOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateComment"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/{case_id}/transactions": {
+   "get": {
+    "operationId": "api_endpoints_legal_case_transactions_endpoint",
+    "summary": "Case Transactions Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TransactionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
   }
  },
  "components": {
@@ -6341,6 +6746,17 @@
       ],
       "title": "Transfer Id"
      },
+     "collection_case_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Collection Case Id"
+     },
      "company_name": {
       "title": "Company Name",
       "type": "string"
@@ -6472,6 +6888,7 @@
      "series_id",
      "series_index",
      "transfer_id",
+     "collection_case_id",
      "company_name",
      "subgroup_name",
      "company",
@@ -9982,6 +10399,517 @@
      "items"
     ],
     "title": "FeedOut",
+    "type": "object"
+   },
+   "StageOut": {
+    "properties": {
+     "value": {
+      "title": "Value",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     }
+    },
+    "required": [
+     "value",
+     "label"
+    ],
+    "title": "StageOut",
+    "type": "object"
+   },
+   "CaseFilters": {
+    "properties": {
+     "stage": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/CaseStage"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stage"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "search": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Search"
+     }
+    },
+    "title": "CaseFilters",
+    "type": "object"
+   },
+   "CaseStage": {
+    "description": "Kanban columns of the legal team, in order.",
+    "enum": [
+     "new",
+     "stand_by",
+     "requested",
+     "filed",
+     "in_progress",
+     "agreement",
+     "awaiting_judge",
+     "done"
+    ],
+    "title": "CaseStage",
+    "type": "string"
+   },
+   "CaseOut": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "contact_id": {
+      "title": "Contact Id",
+      "type": "integer"
+     },
+     "contact_name": {
+      "title": "Contact Name",
+      "type": "string"
+     },
+     "open_amount": {
+      "title": "Open Amount",
+      "type": "string"
+     },
+     "received_amount": {
+      "title": "Received Amount",
+      "type": "string"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "client_company": {
+      "anyOf": [
+       {
+        "maxLength": 160,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Company"
+     },
+     "contact_info": {
+      "anyOf": [
+       {
+        "maxLength": 160,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Info"
+     },
+     "delivered": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivered"
+     },
+     "proposal_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Proposal Amount"
+     },
+     "paid_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Paid Amount"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "drive_link": {
+      "anyOf": [
+       {
+        "maxLength": 500,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Drive Link"
+     },
+     "stage": {
+      "default": "new",
+      "maxLength": 20,
+      "title": "Stage",
+      "type": "string"
+     },
+     "agreement": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Agreement"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "company_name",
+     "contact_id",
+     "contact_name",
+     "open_amount",
+     "received_amount",
+     "created_at",
+     "updated_at"
+    ],
+    "title": "CaseOut",
+    "type": "object"
+   },
+   "CreateCase": {
+    "description": "Form \"A\u00e7\u00e3o de cobran\u00e7a por inadimpl\u00eancia\": every field is required.",
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "contact_id": {
+      "title": "Contact Id",
+      "type": "integer"
+     },
+     "client_company": {
+      "minLength": 1,
+      "title": "Client Company",
+      "type": "string"
+     },
+     "contact_info": {
+      "minLength": 1,
+      "title": "Contact Info",
+      "type": "string"
+     },
+     "delivered": {
+      "minLength": 1,
+      "title": "Delivered",
+      "type": "string"
+     },
+     "proposal_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Proposal Amount"
+     },
+     "paid_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Paid Amount"
+     },
+     "summary": {
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+     },
+     "drive_link": {
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
+      "title": "Drive Link",
+      "type": "string"
+     },
+     "stage": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/CaseStage"
+       }
+      ],
+      "default": "new"
+     },
+     "agreement": {
+      "default": "",
+      "title": "Agreement",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "contact_id",
+     "client_company",
+     "contact_info",
+     "delivered",
+     "proposal_amount",
+     "paid_amount",
+     "summary",
+     "drive_link"
+    ],
+    "title": "CreateCase",
+    "type": "object"
+   },
+   "PatchCase": {
+    "properties": {
+     "client_company": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Company"
+     },
+     "contact_info": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Info"
+     },
+     "delivered": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivered"
+     },
+     "proposal_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Proposal Amount"
+     },
+     "paid_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Paid Amount"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "drive_link": {
+      "anyOf": [
+       {
+        "format": "uri",
+        "maxLength": 2083,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Drive Link"
+     },
+     "stage": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/CaseStage"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "agreement": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Agreement"
+     }
+    },
+    "title": "PatchCase",
+    "type": "object"
+   },
+   "CommentOut": {
+    "properties": {
+     "author_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Author Name"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "text",
+     "created_at"
+    ],
+    "title": "CommentOut",
+    "type": "object"
+   },
+   "CreateComment": {
+    "properties": {
+     "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "text"
+    ],
+    "title": "CreateComment",
     "type": "object"
    }
   },

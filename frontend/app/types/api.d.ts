@@ -909,6 +909,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/collection-case/stages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Stages Endpoint */
+        get: operations["api_endpoints_legal_list_stages_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cases Endpoint */
+        get: operations["api_endpoints_legal_list_cases_endpoint"];
+        put?: never;
+        /** Create Case Endpoint */
+        post: operations["api_endpoints_legal_create_case_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Case Endpoint */
+        get: operations["api_endpoints_legal_get_case_endpoint"];
+        put?: never;
+        post?: never;
+        /** Delete Case Endpoint */
+        delete: operations["api_endpoints_legal_delete_case_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Case Endpoint */
+        patch: operations["api_endpoints_legal_update_case_endpoint"];
+        trace?: never;
+    };
+    "/api/collection-case/{case_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Comments Endpoint */
+        get: operations["api_endpoints_legal_list_comments_endpoint"];
+        put?: never;
+        /** Add Comment Endpoint */
+        post: operations["api_endpoints_legal_add_comment_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case/{case_id}/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Case Transactions Endpoint */
+        get: operations["api_endpoints_legal_case_transactions_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1249,6 +1338,8 @@ export interface components {
             series_index: number | null;
             /** Transfer Id */
             transfer_id: number | null;
+            /** Collection Case Id */
+            collection_case_id: number | null;
             /** Company Name */
             company_name: string;
             /** Subgroup Name */
@@ -2372,6 +2463,151 @@ export interface components {
             count: number;
             /** Items */
             items: components["schemas"]["HistoryEventOut"][];
+        };
+        /** StageOut */
+        StageOut: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
+        /** CaseFilters */
+        CaseFilters: {
+            /** Stage */
+            stage?: components["schemas"]["CaseStage"][] | null;
+            /** Company Id */
+            company_id?: number[] | null;
+            /** Contact Id */
+            contact_id?: number | null;
+            /** Search */
+            search?: string | null;
+        };
+        /**
+         * CaseStage
+         * @description Kanban columns of the legal team, in order.
+         * @enum {string}
+         */
+        CaseStage: "new" | "stand_by" | "requested" | "filed" | "in_progress" | "agreement" | "awaiting_judge" | "done";
+        /** CaseOut */
+        CaseOut: {
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Contact Id */
+            contact_id: number;
+            /** Contact Name */
+            contact_name: string;
+            /** Open Amount */
+            open_amount: string;
+            /** Received Amount */
+            received_amount: string;
+            /** ID */
+            id?: number | null;
+            /** Client Company */
+            client_company?: string | null;
+            /** Contact Info */
+            contact_info?: string | null;
+            /** Delivered */
+            delivered?: string | null;
+            /** Proposal Amount */
+            proposal_amount?: string | null;
+            /** Paid Amount */
+            paid_amount?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Drive Link */
+            drive_link?: string | null;
+            /**
+             * Stage
+             * @default new
+             */
+            stage: string;
+            /** Agreement */
+            agreement?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * CreateCase
+         * @description Form "Ação de cobrança por inadimplência": every field is required.
+         */
+        CreateCase: {
+            /** Company Id */
+            company_id: number;
+            /** Contact Id */
+            contact_id: number;
+            /** Client Company */
+            client_company: string;
+            /** Contact Info */
+            contact_info: string;
+            /** Delivered */
+            delivered: string;
+            /** Proposal Amount */
+            proposal_amount: number | string;
+            /** Paid Amount */
+            paid_amount: number | string;
+            /** Summary */
+            summary: string;
+            /**
+             * Drive Link
+             * Format: uri
+             */
+            drive_link: string;
+            /** @default new */
+            stage: components["schemas"]["CaseStage"];
+            /**
+             * Agreement
+             * @default
+             */
+            agreement: string;
+        };
+        /** PatchCase */
+        PatchCase: {
+            /** Client Company */
+            client_company?: string | null;
+            /** Contact Info */
+            contact_info?: string | null;
+            /** Delivered */
+            delivered?: string | null;
+            /** Proposal Amount */
+            proposal_amount?: number | string | null;
+            /** Paid Amount */
+            paid_amount?: number | string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Drive Link */
+            drive_link?: string | null;
+            stage?: components["schemas"]["CaseStage"] | null;
+            /** Agreement */
+            agreement?: string | null;
+        };
+        /** CommentOut */
+        CommentOut: {
+            /** Author Name */
+            author_name?: string | null;
+            /** ID */
+            id?: number | null;
+            /** Text */
+            text: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CreateComment */
+        CreateComment: {
+            /** Text */
+            text: string;
         };
     };
     responses: never;
@@ -4437,6 +4673,213 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeedOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_list_stages_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_list_cases_endpoint: {
+        parameters: {
+            query?: {
+                stage?: components["schemas"]["CaseStage"][] | null;
+                company_id?: number[] | null;
+                contact_id?: number | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_create_case_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCase"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_get_case_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_delete_case_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_legal_update_case_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchCase"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_list_comments_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_add_comment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateComment"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_case_transactions_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionOut"][];
                 };
             };
         };

@@ -37,6 +37,10 @@ const items = computed<NavigationMenuItem[][]>(() => {
     can('sales') && { label: 'Vendedores', icon: 'i-lucide-user-round', to: '/sales/salespeople' },
   ])
 
+  const legal = section('Jurídico', [
+    can('legal') && { label: 'Cobranças', icon: 'i-lucide-scale', to: '/legal' },
+  ])
+
   const settings = keep<NavigationMenuItem>([
     parent({ label: 'Cadastros', icon: 'i-lucide-folder-tree' }, ['/registers'], [
       can('contacts') && { label: 'Clientes e fornecedores', to: '/registers/contacts' },
@@ -51,7 +55,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
     ]),
   ])
 
-  return [finance, sales, settings].filter(group => group.length)
+  return [finance, sales, legal, settings].filter(group => group.length)
 })
 
 const colorMode = useColorMode()
