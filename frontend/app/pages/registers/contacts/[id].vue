@@ -14,6 +14,7 @@ definePageMeta({ permission: ['contacts', 'view'] })
 const route = useRoute()
 const id = computed(() => Number(route.params.id))
 const { api, unwrap, notifyError, notifySuccess } = useApi()
+const confirm = useConfirm()
 const auth = useAuth()
 const canSales = computed(() => auth.can('sales', 'view'))
 const canMoney = computed(() => auth.can('transactions', 'view'))
@@ -154,7 +155,7 @@ async function saveNotes() {
 // Edit / delete
 const editOpen = ref(false)
 async function remove() {
-  if (!confirm(`Excluir ${contact.value?.name}? Só é possível se não houver lançamentos ou vendas ligados.`)) return
+  if (!await confirm({ title: `Excluir ${contact.value?.name}?`, description: 'Só é possível se não houver lançamentos ou vendas ligados.' })) return
   try {
     await unwrap(api.DELETE('/api/contact/{contact_id}', { params: { path: { contact_id: id.value } } }))
     notifySuccess('Contato excluído')

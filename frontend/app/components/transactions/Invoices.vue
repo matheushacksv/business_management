@@ -5,6 +5,7 @@ type Invoice = components['schemas']['InvoiceOut']
 const props = defineProps<{ transactionId: number; editable?: boolean }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
+const confirm = useConfirm()
 const invoices = ref<Invoice[]>([])
 const loading = ref(false)
 const editing = ref<number | null>(null)
@@ -58,7 +59,7 @@ async function save(invoice: Invoice) {
 }
 
 async function remove(invoice: Invoice) {
-  if (!confirm('Remover a exigência desta nota?')) return
+  if (!await confirm({ title: 'Remover exigência da nota?', description: 'O número, a data e os anexos desta nota também são removidos.', confirmLabel: 'Remover' })) return
   try {
     await unwrap(api.DELETE('/api/invoice/{invoice_id}', { params: { path: { invoice_id: invoice.id! } } }))
     await load()

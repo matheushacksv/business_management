@@ -6,6 +6,7 @@ const props = defineProps<{ target: 'transaction' | 'contact' | 'invoice' | 'sal
 const emit = defineEmits<{ changed: [] }>()
 
 const { api, unwrap, raw, download, notifyError, notifySuccess } = useApi()
+const confirm = useConfirm()
 const items = ref<Attachment[]>([])
 const loading = ref(false)
 const uploading = ref(false)
@@ -43,7 +44,7 @@ watch(file, async (value) => {
 })
 
 async function remove(item: Attachment) {
-  if (!confirm(`Excluir "${item.name}"?`)) return
+  if (!await confirm({ title: 'Excluir anexo?', description: `O arquivo "${item.name}" será apagado.` })) return
   try {
     await unwrap(api.DELETE('/api/attachment/{attachment_id}', { params: { path: { attachment_id: item.id! } } }))
     await load()

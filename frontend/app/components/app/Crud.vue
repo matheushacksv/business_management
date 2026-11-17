@@ -33,6 +33,7 @@ const props = defineProps<{
 const emit = defineEmits<{ changed: [] }>()
 
 const { notifyError, notifySuccess } = useApi()
+const confirm = useConfirm()
 const auth = useAuth()
 const can = (action: Action) => auth.can(props.module, action)
 
@@ -105,7 +106,7 @@ async function save() {
 }
 
 async function destroy() {
-  if (!editingId.value || !confirm(`Excluir este(a) ${props.singular.toLowerCase()}?`)) return
+  if (!editingId.value || !await confirm({ title: `Excluir ${props.singular.toLowerCase()}?`, description: 'Esta ação não pode ser desfeita.' })) return
   try {
     await props.remove!(editingId.value)
     notifySuccess(`${props.singular} excluído(a)`)

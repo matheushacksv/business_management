@@ -5,6 +5,7 @@ import type { components } from '~/types/api'
 type User = components['schemas']['UserOut']
 definePageMeta({ permission: ['users', 'view'] })
 const { api, unwrap, notifyError, notifySuccess } = useApi()
+const confirm = useConfirm()
 const auth = useAuth()
 const lookups = useLookups()
 await lookups.ensure('companies')
@@ -36,7 +37,7 @@ const fields = computed(() => [
 ])
 
 async function deactivate(id: number | null, close: () => void, reload: () => void) {
-  if (!id || !confirm('Desativar este usuário? Ele perde o acesso imediatamente.')) return
+  if (!id || !await confirm({ title: 'Desativar usuário?', description: 'Ele perde o acesso imediatamente.', confirmLabel: 'Desativar', icon: 'i-lucide-user-x' })) return
   try {
     await unwrap(api.POST('/api/user/deactivate/{user_id}', { params: { path: { user_id: id } } }))
     notifySuccess('Usuário desativado')

@@ -8,6 +8,7 @@ const props = defineProps<{ transactionId: number | null }>()
 const emit = defineEmits<{ changed: [] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
+const confirm = useConfirm()
 const auth = useAuth()
 const tx = ref<Transaction | null>(null)
 // Leg of a transfer between companies: changes go through the transfer (both legs together).
@@ -59,8 +60,8 @@ async function saved() {
 async function remove() {
   if (!tx.value) return
   if (transfer.value) {
-    if (!confirm('Excluir a transferência? A saída e a entrada das duas empresas serão excluídas.')) return
-  } else if (!confirm('Excluir este lançamento?')) return
+    if (!await confirm({ title: 'Excluir transferência?', description: 'A saída e a entrada das duas empresas serão excluídas.' })) return
+  } else if (!await confirm({ title: 'Excluir lançamento?', description: 'Notas fiscais e anexos ligados a ele também são excluídos.' })) return
   try {
     if (transfer.value) {
       await unwrap(api.DELETE('/api/transfer/{transfer_id}', { params: { path: { transfer_id: transfer.value.id } } }))
@@ -91,7 +92,11 @@ async function toggleStatus() {
 }
 
 async function cancelFollowing() {
-  if (!tx.value?.series_id || !confirm(`Cancelar as parcelas PREVISTAS a partir da ${tx.value.series_index}ª? As realizadas são mantidas.`)) return
+  if (!tx.value?.series_id) return
+  if (!await confirm({
+    title: 'Cancelar desta em diante?', confirmLabel: 'Cancelar parcelas', color: 'warning', icon: 'i-lucide-calendar-x',
+    description: `As parcelas PREVISTAS a partir da ${tx.value.series_index}ª serão excluídas. As realizadas são mantidas.`,
+  })) return
   try {
     const { affected } = await unwrap(api.DELETE('/api/transaction-series/{series_id}', {
       params: { path: { series_id: tx.value.series_id }, query: { from_index: tx.value.series_index ?? 1 } },
