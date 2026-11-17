@@ -2187,6 +2187,158 @@
     ]
    }
   },
+  "/api/transaction-import/inspect": {
+   "post": {
+    "operationId": "api_endpoints_transactions_inspect_import_endpoint",
+    "summary": "Inspect Import Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ImportInspectOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Columns of the file (header + sample values), to build the mapping.",
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "properties": {
+         "file": {
+          "format": "binary",
+          "title": "File",
+          "type": "string"
+         },
+         "sheet": {
+          "anyOf": [
+           {
+            "type": "string"
+           },
+           {
+            "type": "null"
+           }
+          ],
+          "title": "Sheet"
+         },
+         "header_row": {
+          "anyOf": [
+           {
+            "type": "integer"
+           },
+           {
+            "type": "null"
+           }
+          ],
+          "title": "Header Row"
+         }
+        },
+        "required": [
+         "file"
+        ],
+        "title": "MultiPartBodyParams",
+        "type": "object"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction-import": {
+   "post": {
+    "operationId": "api_endpoints_transactions_mapped_import_endpoint",
+    "summary": "Mapped Import Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MappedImportOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Dry run (commit=false) or import. `mapping` is JSON: columns, fixed, type_mode, value_maps...",
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "properties": {
+         "file": {
+          "format": "binary",
+          "title": "File",
+          "type": "string"
+         },
+         "mapping": {
+          "title": "Mapping",
+          "type": "string"
+         },
+         "sheet": {
+          "anyOf": [
+           {
+            "type": "string"
+           },
+           {
+            "type": "null"
+           }
+          ],
+          "title": "Sheet"
+         },
+         "header_row": {
+          "anyOf": [
+           {
+            "type": "integer"
+           },
+           {
+            "type": "null"
+           }
+          ],
+          "title": "Header Row"
+         },
+         "commit": {
+          "default": false,
+          "title": "Commit",
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "file",
+         "mapping"
+        ],
+        "title": "MultiPartBodyParams",
+        "type": "object"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/dre": {
    "get": {
     "operationId": "api_endpoints_reports_dre_endpoint",
@@ -7277,6 +7429,293 @@
      }
     },
     "title": "PatchTransfer",
+    "type": "object"
+   },
+   "ImportColumn": {
+    "properties": {
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     },
+     "header": {
+      "title": "Header",
+      "type": "string"
+     },
+     "samples": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Samples",
+      "type": "array"
+     }
+    },
+    "required": [
+     "index",
+     "header",
+     "samples"
+    ],
+    "title": "ImportColumn",
+    "type": "object"
+   },
+   "ImportInspectOut": {
+    "properties": {
+     "sheets": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Sheets",
+      "type": "array"
+     },
+     "sheet": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sheet"
+     },
+     "header_row": {
+      "title": "Header Row",
+      "type": "integer"
+     },
+     "columns": {
+      "items": {
+       "$ref": "#/components/schemas/ImportColumn"
+      },
+      "title": "Columns",
+      "type": "array"
+     },
+     "total_rows": {
+      "title": "Total Rows",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "sheets",
+     "sheet",
+     "header_row",
+     "columns",
+     "total_rows"
+    ],
+    "title": "ImportInspectOut",
+    "type": "object"
+   },
+   "ImportPreviewRow": {
+    "properties": {
+     "row": {
+      "title": "Row",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TransactionType"
+     },
+     "status": {
+      "$ref": "#/components/schemas/TransactionStatus"
+     },
+     "subgroup_name": {
+      "title": "Subgroup Name",
+      "type": "string"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "account_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Name"
+     },
+     "contact_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Name"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
+     "notes": {
+      "title": "Notes",
+      "type": "string"
+     },
+     "duplicate": {
+      "title": "Duplicate",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "row",
+     "date",
+     "amount",
+     "type",
+     "status",
+     "subgroup_name",
+     "company_name",
+     "account_name",
+     "contact_name",
+     "reference",
+     "notes",
+     "duplicate"
+    ],
+    "title": "ImportPreviewRow",
+    "type": "object"
+   },
+   "ImportRowError": {
+    "properties": {
+     "row": {
+      "title": "Row",
+      "type": "integer"
+     },
+     "field": {
+      "title": "Field",
+      "type": "string"
+     },
+     "code": {
+      "enum": [
+       "missing",
+       "invalid_date",
+       "invalid_amount",
+       "zero_amount",
+       "unknown",
+       "invalid_fixed"
+      ],
+      "title": "Code",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "string"
+     }
+    },
+    "required": [
+     "row",
+     "field",
+     "code",
+     "value"
+    ],
+    "title": "ImportRowError",
+    "type": "object"
+   },
+   "ImportUnknownValue": {
+    "properties": {
+     "value": {
+      "title": "Value",
+      "type": "string"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "value",
+     "count"
+    ],
+    "title": "ImportUnknownValue",
+    "type": "object"
+   },
+   "MappedImportOut": {
+    "properties": {
+     "committed": {
+      "title": "Committed",
+      "type": "boolean"
+     },
+     "header_row": {
+      "title": "Header Row",
+      "type": "integer"
+     },
+     "total_rows": {
+      "title": "Total Rows",
+      "type": "integer"
+     },
+     "valid_count": {
+      "title": "Valid Count",
+      "type": "integer"
+     },
+     "error_count": {
+      "title": "Error Count",
+      "type": "integer"
+     },
+     "duplicate_count": {
+      "title": "Duplicate Count",
+      "type": "integer"
+     },
+     "to_create": {
+      "title": "To Create",
+      "type": "integer"
+     },
+     "new_contacts": {
+      "title": "New Contacts",
+      "type": "integer"
+     },
+     "errors": {
+      "items": {
+       "$ref": "#/components/schemas/ImportRowError"
+      },
+      "title": "Errors",
+      "type": "array"
+     },
+     "unknown": {
+      "additionalProperties": {
+       "items": {
+        "$ref": "#/components/schemas/ImportUnknownValue"
+       },
+       "type": "array"
+      },
+      "title": "Unknown",
+      "type": "object"
+     },
+     "preview": {
+      "items": {
+       "$ref": "#/components/schemas/ImportPreviewRow"
+      },
+      "title": "Preview",
+      "type": "array"
+     },
+     "created": {
+      "title": "Created",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "committed",
+     "header_row",
+     "total_rows",
+     "valid_count",
+     "error_count",
+     "duplicate_count",
+     "to_create",
+     "new_contacts",
+     "errors",
+     "unknown",
+     "preview",
+     "created"
+    ],
+    "title": "MappedImportOut",
     "type": "object"
    },
    "DREParams": {

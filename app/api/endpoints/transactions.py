@@ -1,12 +1,18 @@
+import json
+
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.utils import timezone
-from ninja import Query, Router
+from ninja import File, Form, Query, Router
+from ninja.files import UploadedFile
 from ninja.pagination import PageNumberPagination, paginate
 
 from api.schemas.transactions_dto import (
     CreateSeries,
     CreateTransaction,
     CreateTransfer,
+    ImportInspectOut,
+    MappedImportOut,
     PatchSeries,
     PatchTransaction,
     PatchTransfer,
@@ -18,6 +24,7 @@ from api.schemas.transactions_dto import (
 )
 from apps.finance import services
 from apps.finance.exporter import XLSX_CONTENT_TYPE, transactions_xlsx
+from apps.finance.mapped_import import inspect_file, run_mapped_import
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
 
 router = Router(tags=['Transactions'])
@@ -151,3 +158,32 @@ def update_transfer_endpoint(request, transfer_id: int, data: PatchTransfer):
 def delete_transfer_endpoint(request, transfer_id: int):
     services.delete_transfer_service(user=request.user, transfer_id=transfer_id)
     return 204, None
+
+
+# Import from any .xlsx/.csv with column mapping (stateless: the file comes on every call)
+
+@router.post('/transaction-import/inspect', response=ImportInspectOut)
+@require_permission('transactions', CREATE)
+def inspect_import_endpoint(
+    request, file: File[UploadedFile], sheet: Form[str | None] = None, header_row: Form[int | None] = None,
+):
+    """Columns of the file (header + sample values), to build the mapping."""
+    return inspect_file(file, sheet=sheet, header_row=header_row)
+
+
+@router.post('/transaction-import', response=MappedImportOut)
+@require_permission('transactions', CREATE)
+def mapped_import_endpoint(
+    request, file: File[UploadedFile], mapping: Form[str], sheet: Form[str | None] = None,
+    header_row: Form[int | None] = None, commit: Form[bool] = False,
+):
+    """Dry run (commit=false) or import. `mapping` is JSON: columns, fixed, type_mode, value_maps..."""
+    try:
+        mapping_data = json.loads(mapping)
+    except json.JSONDecodeError:
+        raise ValidationError('mapping must be valid JSON')
+    if not isinstance(mapping_data, dict):
+        raise ValidationError('mapping must be a JSON object')
+    return run_mapped_import(
+        file, user=request.user, mapping=mapping_data, sheet=sheet, header_row=header_row, commit=commit,
+    )

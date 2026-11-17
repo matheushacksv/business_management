@@ -175,3 +175,61 @@ class TransferOut(Schema):
     outflow_id: int
     inflow_id: int
     created_at: dt.datetime
+
+
+# Import with column mapping (apps/finance/mapped_import.py)
+
+class ImportColumn(Schema):
+    index: int
+    header: str
+    samples: list[str]
+
+
+class ImportInspectOut(Schema):
+    sheets: list[str]  # .xlsx only
+    sheet: str | None
+    header_row: int  # 1-based, detected or the one asked
+    columns: list[ImportColumn]
+    total_rows: int
+
+
+class ImportRowError(Schema):
+    row: int
+    field: str
+    code: Literal['missing', 'invalid_date', 'invalid_amount', 'zero_amount', 'unknown', 'invalid_fixed']
+    value: str
+
+
+class ImportUnknownValue(Schema):
+    value: str
+    count: int
+
+
+class ImportPreviewRow(Schema):
+    row: int
+    date: dt.date
+    amount: Decimal
+    type: TransactionType
+    status: TransactionStatus
+    subgroup_name: str
+    company_name: str
+    account_name: str | None
+    contact_name: str | None
+    reference: str
+    notes: str
+    duplicate: bool
+
+
+class MappedImportOut(Schema):
+    committed: bool
+    header_row: int
+    total_rows: int
+    valid_count: int
+    error_count: int
+    duplicate_count: int
+    to_create: int
+    new_contacts: int
+    errors: list[ImportRowError]  # first 200
+    unknown: dict[str, list[ImportUnknownValue]]  # field -> values to map (value_maps)
+    preview: list[ImportPreviewRow]  # first 50 valid rows
+    created: int

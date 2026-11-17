@@ -465,6 +465,46 @@ export interface paths {
         patch: operations["api_endpoints_transactions_update_transfer_endpoint"];
         trace?: never;
     };
+    "/api/transaction-import/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inspect Import Endpoint
+         * @description Columns of the file (header + sample values), to build the mapping.
+         */
+        post: operations["api_endpoints_transactions_inspect_import_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transaction-import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mapped Import Endpoint
+         * @description Dry run (commit=false) or import. `mapping` is JSON: columns, fixed, type_mode, value_maps...
+         */
+        post: operations["api_endpoints_transactions_mapped_import_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/dre": {
         parameters: {
             query?: never;
@@ -1520,6 +1560,106 @@ export interface components {
             to_account_id?: number | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** ImportColumn */
+        ImportColumn: {
+            /** Index */
+            index: number;
+            /** Header */
+            header: string;
+            /** Samples */
+            samples: string[];
+        };
+        /** ImportInspectOut */
+        ImportInspectOut: {
+            /** Sheets */
+            sheets: string[];
+            /** Sheet */
+            sheet: string | null;
+            /** Header Row */
+            header_row: number;
+            /** Columns */
+            columns: components["schemas"]["ImportColumn"][];
+            /** Total Rows */
+            total_rows: number;
+        };
+        /** ImportPreviewRow */
+        ImportPreviewRow: {
+            /** Row */
+            row: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount */
+            amount: string;
+            type: components["schemas"]["TransactionType"];
+            status: components["schemas"]["TransactionStatus"];
+            /** Subgroup Name */
+            subgroup_name: string;
+            /** Company Name */
+            company_name: string;
+            /** Account Name */
+            account_name: string | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Reference */
+            reference: string;
+            /** Notes */
+            notes: string;
+            /** Duplicate */
+            duplicate: boolean;
+        };
+        /** ImportRowError */
+        ImportRowError: {
+            /** Row */
+            row: number;
+            /** Field */
+            field: string;
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "missing" | "invalid_date" | "invalid_amount" | "zero_amount" | "unknown" | "invalid_fixed";
+            /** Value */
+            value: string;
+        };
+        /** ImportUnknownValue */
+        ImportUnknownValue: {
+            /** Value */
+            value: string;
+            /** Count */
+            count: number;
+        };
+        /** MappedImportOut */
+        MappedImportOut: {
+            /** Committed */
+            committed: boolean;
+            /** Header Row */
+            header_row: number;
+            /** Total Rows */
+            total_rows: number;
+            /** Valid Count */
+            valid_count: number;
+            /** Error Count */
+            error_count: number;
+            /** Duplicate Count */
+            duplicate_count: number;
+            /** To Create */
+            to_create: number;
+            /** New Contacts */
+            new_contacts: number;
+            /** Errors */
+            errors: components["schemas"]["ImportRowError"][];
+            /** Unknown */
+            unknown: {
+                [key: string]: components["schemas"]["ImportUnknownValue"][];
+            };
+            /** Preview */
+            preview: components["schemas"]["ImportPreviewRow"][];
+            /** Created */
+            created: number;
         };
         /** DREParams */
         DREParams: {
@@ -3331,6 +3471,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransferOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_inspect_import_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** Sheet */
+                    sheet?: string | null;
+                    /** Header Row */
+                    header_row?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportInspectOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_mapped_import_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** Mapping */
+                    mapping: string;
+                    /** Sheet */
+                    sheet?: string | null;
+                    /** Header Row */
+                    header_row?: number | null;
+                    /**
+                     * Commit
+                     * @default false
+                     */
+                    commit?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappedImportOut"];
                 };
             };
         };

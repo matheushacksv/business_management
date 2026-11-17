@@ -118,6 +118,7 @@ const selected = ref<number | null>(null)
 const drawerOpen = ref(false)
 const createOpen = ref(false)
 const transferOpen = ref(false)
+const importOpen = ref(false)
 function onTransferred(transfer: { outflow_id: number }) {
   transferOpen.value = false
   load()
@@ -138,6 +139,8 @@ function onCreated(id: number | null) {
 <template>
   <AppPage title="Lançamentos">
     <template #actions>
+      <UButton v-if="auth.can('transactions', 'create')" label="Importar" icon="i-lucide-file-up" color="neutral"
+               variant="outline" @click="importOpen = true" />
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
       <UButton v-if="auth.can('transactions', 'create')" label="Transferência" icon="i-lucide-repeat"
                color="neutral" variant="outline" @click="transferOpen = true" />
@@ -178,6 +181,8 @@ function onCreated(id: number | null) {
         <TransactionsForm @saved="onCreated" @cancel="createOpen = false" />
       </template>
     </UModal>
+
+    <TransactionsImportModal v-model:open="importOpen" @imported="load" />
 
     <UModal v-model:open="transferOpen" title="Transferência entre empresas" :ui="{ content: 'max-w-2xl' }">
       <template #body>
