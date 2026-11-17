@@ -237,15 +237,21 @@ def company_names(result: ImportResult) -> list[str]:
     return sorted({e.company for e in result.entries if e.company})
 
 
-def import_spreadsheet(file, *, default_company: Company, companies: dict[str, Company]) -> ImportResult:
-    """Run inside the caller's transaction; the caller decides commit or rollback."""
+def import_spreadsheet(
+    file, *, default_company: Company, companies: dict[str, Company], require_empty: bool = True,
+) -> ImportResult:
+    """Run inside the caller's transaction; the caller decides commit or rollback.
+
+    `require_empty=False` is for the reconciliation, which imports into throwaway companies
+    inside a transaction that is always rolled back.
+    """
     result = parse_workbook(file)
     plan, entries, sales = result.plan, result.entries, result.sales or []
 
     unmapped = [name for name in company_names(result) if name not in companies]
     if unmapped:
         raise UnmappedCompanies(unmapped)
-    if Transaction.objects.exists() or Sale.objects.exists():
+    if require_empty and (Transaction.objects.exists() or Sale.objects.exists()):
         raise ValueError('Transactions/sales already exist; the import only runs on an empty database')
 
     subgroups = {}
