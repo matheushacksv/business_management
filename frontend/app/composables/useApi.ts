@@ -26,17 +26,13 @@ export function useApi() {
   const toast = useToast()
   const base = useRuntimeConfig().public.apiBase
 
-  /** fetch with the access token; on 401 refreshes once and retries; still 401 -> login. */
+  /** fetch with the session cookie; on 401 refreshes once and retries; still 401 -> login. */
   async function authFetch(input: Request): Promise<Response> {
     const retry = input.clone()
-    const send = (req: Request) => {
-      if (auth.access.value) req.headers.set('Authorization', `Bearer ${auth.access.value}`)
-      return globalThis.fetch(req)
-    }
-    const response = await send(input)
+    const response = await globalThis.fetch(input)
     if (response.status !== 401) return response
     if (await auth.refresh()) {
-      const again = await send(retry)
+      const again = await globalThis.fetch(retry)
       if (again.status !== 401) return again
     }
     auth.logout()

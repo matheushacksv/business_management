@@ -42,6 +42,85 @@
     ]
    }
   },
+  "/api/auth/login": {
+   "post": {
+    "operationId": "api_endpoints_auth_login_endpoint",
+    "summary": "Login Endpoint",
+    "parameters": [],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Auth"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LoginIn"
+       }
+      }
+     },
+     "required": true
+    }
+   }
+  },
+  "/api/auth/refresh": {
+   "post": {
+    "operationId": "api_endpoints_auth_refresh_endpoint",
+    "summary": "Refresh Endpoint",
+    "parameters": [],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Auth"
+    ]
+   }
+  },
+  "/api/auth/logout": {
+   "post": {
+    "operationId": "api_endpoints_auth_logout_endpoint",
+    "summary": "Logout Endpoint",
+    "parameters": [],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Auth"
+    ]
+   }
+  },
   "/api/me": {
    "get": {
     "operationId": "api_endpoints_user_me_endpoint",
@@ -64,7 +143,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -101,7 +180,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -130,7 +209,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -167,7 +246,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -212,7 +291,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -242,7 +321,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -273,7 +352,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -308,7 +387,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -345,7 +424,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -390,7 +469,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -418,7 +497,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -455,7 +534,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -500,7 +579,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -533,7 +612,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -570,7 +649,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -615,7 +694,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -643,7 +722,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -680,7 +759,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -726,7 +805,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -763,7 +842,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -808,7 +887,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -836,7 +915,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -874,7 +953,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -911,7 +990,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -957,7 +1036,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -994,7 +1073,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1039,7 +1118,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1067,7 +1146,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -1104,7 +1183,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1403,7 +1482,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -1670,7 +1749,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -1707,7 +1786,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1752,7 +1831,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1780,7 +1859,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -1817,7 +1896,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -1854,7 +1933,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1910,7 +1989,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -1956,7 +2035,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -1993,7 +2072,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -2030,7 +2109,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -2075,7 +2154,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -2103,7 +2182,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -2327,7 +2406,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -2595,7 +2674,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -2856,7 +2935,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3105,7 +3184,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3347,7 +3426,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3411,7 +3490,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -3465,7 +3544,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3495,7 +3574,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3525,7 +3604,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3562,7 +3641,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -3601,7 +3680,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3781,7 +3860,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3818,7 +3897,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -3863,7 +3942,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -3891,7 +3970,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -3939,7 +4018,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -3974,7 +4053,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4021,7 +4100,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4049,7 +4128,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4097,7 +4176,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4132,7 +4211,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4179,7 +4258,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4207,7 +4286,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4244,7 +4323,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4486,7 +4565,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4523,7 +4602,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4568,7 +4647,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4596,7 +4675,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4637,7 +4716,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    },
@@ -4686,7 +4765,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4922,7 +5001,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -4986,7 +5065,7 @@
     },
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -5049,7 +5128,7 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
    }
@@ -5167,110 +5246,32 @@
     ],
     "security": [
      {
-      "JWTAuth": []
+      "CookieJWTAuth": []
      }
     ]
-   }
-  },
-  "/api/token/pair": {
-   "post": {
-    "operationId": "token_obtain_pair",
-    "summary": "Obtain Token",
-    "parameters": [],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/TokenObtainPairOutputSchema"
-        }
-       }
-      }
-     }
-    },
-    "tags": [
-     "token"
-    ],
-    "requestBody": {
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/TokenObtainPairInputSchema"
-       }
-      }
-     },
-     "required": true
-    }
-   }
-  },
-  "/api/token/refresh": {
-   "post": {
-    "operationId": "token_refresh",
-    "summary": "Refresh Token",
-    "parameters": [],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/TokenRefreshOutputSchema"
-        }
-       }
-      }
-     }
-    },
-    "tags": [
-     "token"
-    ],
-    "requestBody": {
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/TokenRefreshInputSchema"
-       }
-      }
-     },
-     "required": true
-    }
-   }
-  },
-  "/api/token/verify": {
-   "post": {
-    "operationId": "token_verify",
-    "summary": "Verify Token",
-    "parameters": [],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Schema"
-        }
-       }
-      }
-     }
-    },
-    "tags": [
-     "token"
-    ],
-    "requestBody": {
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/TokenVerifyInputSchema"
-       }
-      }
-     },
-     "required": true
-    }
    }
   }
  },
  "components": {
   "schemas": {
+   "LoginIn": {
+    "properties": {
+     "email": {
+      "title": "Email",
+      "type": "string"
+     },
+     "password": {
+      "title": "Password",
+      "type": "string"
+     }
+    },
+    "required": [
+     "email",
+     "password"
+    ],
+    "title": "LoginIn",
+    "type": "object"
+   },
    "MeOut": {
     "properties": {
      "company_ids": {
@@ -9543,111 +9544,10 @@
     ],
     "title": "FeedOut",
     "type": "object"
-   },
-   "TokenObtainPairOutputSchema": {
-    "properties": {
-     "email": {
-      "maxLength": 254,
-      "title": "Email",
-      "type": "string"
-     },
-     "refresh": {
-      "title": "Refresh",
-      "type": "string"
-     },
-     "access": {
-      "title": "Access",
-      "type": "string"
-     }
-    },
-    "required": [
-     "email",
-     "refresh",
-     "access"
-    ],
-    "title": "TokenObtainPairOutputSchema",
-    "type": "object"
-   },
-   "TokenObtainPairInputSchema": {
-    "properties": {
-     "password": {
-      "format": "password",
-      "title": "Password",
-      "type": "string",
-      "writeOnly": true
-     },
-     "email": {
-      "maxLength": 254,
-      "title": "Email",
-      "type": "string"
-     }
-    },
-    "required": [
-     "password",
-     "email"
-    ],
-    "title": "TokenObtainPairInputSchema",
-    "type": "object"
-   },
-   "TokenRefreshOutputSchema": {
-    "properties": {
-     "refresh": {
-      "title": "Refresh",
-      "type": "string"
-     },
-     "access": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Access"
-     }
-    },
-    "required": [
-     "refresh",
-     "access"
-    ],
-    "title": "TokenRefreshOutputSchema",
-    "type": "object"
-   },
-   "TokenRefreshInputSchema": {
-    "properties": {
-     "refresh": {
-      "title": "Refresh",
-      "type": "string"
-     }
-    },
-    "required": [
-     "refresh"
-    ],
-    "title": "TokenRefreshInputSchema",
-    "type": "object"
-   },
-   "Schema": {
-    "properties": {},
-    "title": "Schema",
-    "type": "object"
-   },
-   "TokenVerifyInputSchema": {
-    "properties": {
-     "token": {
-      "title": "Token",
-      "type": "string"
-     }
-    },
-    "required": [
-     "token"
-    ],
-    "title": "TokenVerifyInputSchema",
-    "type": "object"
    }
   },
   "securitySchemes": {
-   "JWTAuth": {
+   "CookieJWTAuth": {
     "type": "http",
     "scheme": "bearer"
    }

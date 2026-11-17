@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 import sys
 
@@ -18,6 +19,13 @@ DEBUG = config('DEBUG', cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
+
+# Session JWTs (httpOnly cookies, see api/endpoints/auth.py). Refresh rotates on use:
+# 7 days without opening the system -> log in again.
+NINJA_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
 
 # Behind Traefik: TLS ends at the proxy, which sends X-Forwarded-Proto
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

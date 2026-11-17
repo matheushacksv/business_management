@@ -6,14 +6,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const auth = useAuth()
   const isLogin = to.path === '/login'
 
-  if (!auth.access.value && !auth.refreshToken.value) {
-    return isLogin ? undefined : navigateTo({ path: '/login', query: { next: to.fullPath } })
-  }
+  // The httpOnly session can't be read from JS: asking /api/me (refreshing if needed) is the check
   if (!auth.me.value) {
     try {
       await auth.loadMe()
     } catch {
-      return auth.logout()
+      return isLogin ? undefined : navigateTo({ path: '/login', query: { next: to.fullPath } })
     }
   }
   if (isLogin) return navigateTo('/')
