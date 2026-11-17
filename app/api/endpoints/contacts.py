@@ -1,8 +1,8 @@
 from ninja import Router
 
-from api.schemas.contacts_dto import ContactOut, ContactSummaryOut, CreateContact, PatchContact
+from api.schemas.contacts_dto import ContactOut, ContactSummaryOut, CreateContact, MergeContacts, PatchContact
 from apps.finance import selectors, services
-from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, has_permission, require_permission
+from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, check_permission, has_permission, require_permission
 
 router = Router(tags=['Contacts'])
 
@@ -49,3 +49,11 @@ def contact_summary_endpoint(request, contact_id: int):
         sales=has_permission(request.user, 'sales', VIEW),
         money=has_permission(request.user, 'transactions', VIEW),
     )
+
+
+@router.post('/contact/{contact_id}/merge', response=ContactOut)
+@require_permission('contacts', CHANGE)
+def merge_contacts_endpoint(request, contact_id: int, data: MergeContacts):
+    """Fold duplicated contacts into this one (their transactions, sales, cases and files move here)."""
+    check_permission(request.user, 'contacts', DELETE)  # the duplicates are deleted
+    return services.merge_contacts_service(user=request.user, target_id=contact_id, source_ids=data.source_ids)

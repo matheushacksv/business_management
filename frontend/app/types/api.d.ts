@@ -293,6 +293,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contact/{contact_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Contacts Endpoint
+         * @description Fold duplicated contacts into this one (their transactions, sales, cases and files move here).
+         */
+        post: operations["api_endpoints_contacts_merge_contacts_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/account": {
         parameters: {
             query?: never;
@@ -1295,6 +1315,11 @@ export interface components {
         ContactSummaryOut: {
             sales: components["schemas"]["ContactSalesSummary"] | null;
             money: components["schemas"]["ContactMoneySummary"] | null;
+        };
+        /** MergeContacts */
+        MergeContacts: {
+            /** Source Ids */
+            source_ids: number[];
         };
         /** AccountOut */
         AccountOut: {
@@ -3243,6 +3268,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContactSummaryOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_contacts_merge_contacts_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeContacts"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactOut"];
                 };
             };
         };

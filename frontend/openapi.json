@@ -958,6 +958,54 @@
     ]
    }
   },
+  "/api/contact/{contact_id}/merge": {
+   "post": {
+    "operationId": "api_endpoints_contacts_merge_contacts_endpoint",
+    "summary": "Merge Contacts Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ContactOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Fold duplicated contacts into this one (their transactions, sales, cases and files move here).",
+    "tags": [
+     "Contacts"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MergeContacts"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/account": {
    "post": {
     "operationId": "api_endpoints_accounts_create_account_endpoint",
@@ -6629,6 +6677,22 @@
      "money"
     ],
     "title": "ContactSummaryOut",
+    "type": "object"
+   },
+   "MergeContacts": {
+    "properties": {
+     "source_ids": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Source Ids",
+      "type": "array"
+     }
+    },
+    "required": [
+     "source_ids"
+    ],
+    "title": "MergeContacts",
     "type": "object"
    },
    "AccountOut": {

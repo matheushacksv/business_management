@@ -170,6 +170,35 @@ async function refreshAll() {
 }
 watch(id, refreshAll, { immediate: true })
 
+// Merge a duplicate into this contact (its transactions, sales, cases and files move here)
+const canMerge = computed(() => auth.can('contacts', 'change') && auth.can('contacts', 'delete'))
+const mergeOpen = ref(false)
+const mergeSource = ref<number | null>(null)
+const merging = ref(false)
+async function merge() {
+  if (!mergeSource.value || !contact.value) return
+  const ok = await confirm({
+    title: 'Mesclar contatos?',
+    description: `Lançamentos, vendas, cobranças e anexos do duplicado passam para "${contact.value.name}" e o duplicado é excluído. Não dá para desfazer.`,
+    confirmLabel: 'Mesclar', color: 'warning', icon: 'i-lucide-merge',
+  })
+  if (!ok) return
+  merging.value = true
+  try {
+    await unwrap(api.POST('/api/contact/{contact_id}/merge', {
+      params: { path: { contact_id: id.value } }, body: { source_ids: [mergeSource.value] },
+    }))
+    notifySuccess('Contatos mesclados')
+    mergeOpen.value = false
+    mergeSource.value = null
+    await refreshAll()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    merging.value = false
+  }
+}
+
 const m = computed(() => summary.value?.money)
 const isSupplier = computed(() => !!m.value && [m.value.paid, m.value.to_pay, m.value.overdue_payable].some(v => Number(v) > 0))
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
@@ -180,6 +209,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     <template #actions>
       <UButton v-if="auth.can('legal', 'create')" label="Enviar para cobrança" icon="i-lucide-scale" color="neutral" variant="outline"
                :disabled="!contact" @click="collectionOpen = true" />
+      <UButton v-if="canMerge" label="Mesclar duplicado" icon="i-lucide-merge" color="neutral" variant="outline"
+               :disabled="!contact" @click="mergeOpen = true" />
       <UButton v-if="canEdit" label="Editar" icon="i-lucide-pencil" color="neutral" variant="outline" :disabled="!contact" @click="editOpen = true" />
       <UButton v-if="auth.can('contacts', 'delete')" icon="i-lucide-trash-2" color="error" variant="ghost" aria-label="Excluir contato" @click="remove" />
     </template>
@@ -277,6 +308,18 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     <SalesDrawer v-model:open="saleOpen" :sale-id="saleId" @changed="refreshAll" />
     <TransactionsDrawer v-model:open="txOpen" :transaction-id="txId" @changed="refreshAll" />
     <AppContactFormModal v-model:open="editOpen" :contact="contact" @saved="(c) => (contact = c)" />
+    <UModal v-model:open="mergeOpen" title="Mesclar duplicado" :description="`O contato escolhido será incorporado a ${contact?.name ?? 'este'}.`">
+      <template #body>
+        <AppContactSelect v-model="mergeSource" placeholder="Buscar o contato duplicado" />
+        <p v-if="mergeSource === id" class="mt-2 text-xs text-error">Escolha outro contato.</p>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Cancelar" color="neutral" variant="ghost" @click="mergeOpen = false" />
+          <UButton label="Mesclar" icon="i-lucide-merge" :loading="merging" :disabled="!mergeSource || mergeSource === id" @click="merge" />
+        </div>
+      </template>
+    </UModal>
     <UModal v-model:open="collectionOpen" title="Ação de cobrança por inadimplência" :ui="{ content: 'max-w-2xl' }">
       <template #body>
         <LegalForm :contact-id="id" :contact-name="contact?.name" @saved="navigateTo('/legal')" @cancel="collectionOpen = false" />

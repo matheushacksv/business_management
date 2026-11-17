@@ -25,6 +25,10 @@ class PatchContact(Schema):
     notes: str | None = None
 
 
+class MergeContacts(Schema):
+    source_ids: list[int]  # duplicates folded into the contact of the URL, then deleted
+
+
 class ContactOut(ModelSchema):
     class Meta:
         model = Contact

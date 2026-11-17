@@ -136,6 +136,47 @@ def delete_contact_service(*, contact_id: int) -> None:
         raise ValidationError('Contact is in use by transactions')
 
 
+MERGE_FILL_FIELDS = ('company_name', 'document', 'email', 'phone')
+
+
+def merge_contacts_service(*, user: User | None, target_id: int, source_ids: list[int]) -> Contact:
+    """Fold duplicated contacts into `target`: every reference (transactions, sales, collection
+    cases, attachments) moves to it, blank fields are filled from the sources, notes are
+    appended, and the sources are deleted."""
+    source_ids = [pk for pk in dict.fromkeys(source_ids) if pk != target_id]
+    if not source_ids:
+        raise ValidationError('Choose at least one other contact to merge')
+    target = Contact.objects.get(pk=target_id)
+    sources = list(Contact.objects.filter(pk__in=source_ids))
+    if len(sources) != len(source_ids):
+        raise ValidationError('Contact does not exist')
+
+    contact_type = ContentType.objects.get_for_model(Contact)
+    with transaction.atomic(), pghistory.context(user=user.pk if user else None, source='merge_contacts'):
+        # Every model pointing to Contact (found dynamically: new relations are covered too)
+        for relation in Contact._meta.related_objects:
+            if relation.field.name == 'pgh_obj':
+                continue  # history events keep pointing to the old id on purpose
+            relation.related_model._base_manager.filter(**{f'{relation.field.name}__in': sources}).update(
+                **{relation.field.name: target}
+            )
+        Attachment.objects.filter(content_type=contact_type, object_id__in=source_ids).update(object_id=target.pk)
+
+        changed = []
+        for source in sources:
+            for field in MERGE_FILL_FIELDS:
+                if not getattr(target, field) and getattr(source, field):
+                    setattr(target, field, getattr(source, field))
+                    changed.append(field)
+            if source.notes:
+                target.notes = '\n\n'.join(filter(None, [target.notes, f'[{source.name}] {source.notes}']))
+                changed.append('notes')
+        Contact.objects.filter(pk__in=source_ids).delete()  # first: frees a moved unique document
+        if changed:
+            target.save(update_fields=[*dict.fromkeys(changed), 'updated_at'])
+    return target
+
+
 # Accounts services
 
 def _accounts_for(user: User):
