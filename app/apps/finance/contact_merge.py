@@ -16,7 +16,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill
 
 from apps.finance.models import Contact, Group, TransactionType
-from apps.finance.services import merge_contacts_service
+from apps.finance.services import is_judicial_name, merge_contacts_service
 
 HEADER = ['Manter', 'Mesclar (some)', 'Semelhança', 'Lançamentos (manter)', 'Vendas (manter)',
           'Lançamentos (mesclar)', 'Vendas (mesclar)', 'Mesclar? (S/N)']
@@ -87,7 +87,10 @@ def suggest_pairs() -> list[tuple]:
                 score = similarity(a.name, b.name)
                 if score is None or score < 0.6:
                     continue
-                keep, drop = (a, b) if (a.txs + a.sales_count, len(a.name)) >= (b.txs + b.sales_count, len(b.name)) else (b, a)
+                # Keep the plain name over "- Acordo Judicial" (its installments go to the legal case);
+                # then the one with more data
+                rank = lambda c: (not is_judicial_name(c.name), c.txs + c.sales_count, len(c.name))
+                keep, drop = (a, b) if rank(a) >= rank(b) else (b, a)
                 pairs.append((keep, drop, score))
     # Sale on one side and transactions on the other first: the merges that fix sales x installments
     useful = lambda p: (p[0].sales_count > 0) != (p[1].sales_count > 0) and (p[0].txs > 0 or p[1].txs > 0)
@@ -118,6 +121,7 @@ def write_suggestions(path) -> int:
 class MergeResult:
     merged: list[tuple[str, str]] = field(default_factory=list)
     errors: list[tuple[int, str]] = field(default_factory=list)
+    conflicts: list[tuple[int, str]] = field(default_factory=list)  # "N" pairs joined by a chain of "S"
 
 
 def apply_merges(path, *, user) -> MergeResult:
@@ -125,31 +129,48 @@ def apply_merges(path, *, user) -> MergeResult:
     reviewer are fine: A is always kept."""
     result = MergeResult()
     merged_into: dict[str, str] = {}  # chains: B -> A on one row, C -> B on the next
+    refused: list[tuple[int, str, str]] = []  # "N" rows, checked against the chains at the end
 
     def resolve(name: str) -> str:
         while name in merged_into:
             name = merged_into[name]
         return name
 
+    def one(name: str) -> Contact | None:
+        # Same name written twice = same contact: fold them first (most data kept)
+        same = list(Contact.objects.filter(name=name).annotate(n=Count('transactions', distinct=True) + Count('sales', distinct=True)).order_by('-n', 'pk'))
+        if len(same) > 1:
+            merge_contacts_service(user=user, target_id=same[0].pk, source_ids=[c.pk for c in same[1:]])
+            result.merged.append((name, f'{name} (cadastro repetido x{len(same) - 1})'))
+        return same[0] if same else None
+
     ws = load_workbook(path, read_only=True).active
     for row_number, values in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         values = list(values) + [None] * len(HEADER)
-        if str(values[DECISION_COL] or '').strip().upper() not in ('S', 'SIM'):
+        decision = str(values[DECISION_COL] or '').strip().upper()
+        names = str(values[0] or '').strip(), str(values[1] or '').strip()
+        if decision in ('N', 'NAO', 'NÃO'):
+            refused.append((row_number, *names))
+        if decision not in ('S', 'SIM'):
             continue
-        keep_name, drop_name = resolve(str(values[0] or '').strip()), resolve(str(values[1] or '').strip())
-        keep = list(Contact.objects.filter(name=keep_name)[:2])
-        drop = list(Contact.objects.filter(name=drop_name)[:2])
-        problem = next((f'{label} "{name}": {"não encontrado" if not found else "nome repetido"}'
-                        for label, name, found in (('manter', keep_name, keep), ('mesclar', drop_name, drop))
-                        if len(found) != 1), None)
-        if problem:
-            result.errors.append((row_number, problem))
+        keep_name, drop_name = resolve(names[0]), resolve(names[1])
+        if is_judicial_name(keep_name) and not is_judicial_name(drop_name):
+            keep_name, drop_name = drop_name, keep_name  # the plain name stays (see merge_contacts_service)
+        keep, drop = one(keep_name), one(drop_name)
+        if keep is None or drop is None:
+            result.errors.append((row_number, f'{"manter" if keep is None else "mesclar"} '
+                                              f'"{keep_name if keep is None else drop_name}": não encontrado'))
             continue
-        if keep[0].pk == drop[0].pk:
+        if keep.pk == drop.pk:
             continue
-        merge_contacts_service(user=user, target_id=keep[0].pk, source_ids=[drop[0].pk])
+        merge_contacts_service(user=user, target_id=keep.pk, source_ids=[drop.pk])
         merged_into[drop_name] = keep_name
         result.merged.append((keep_name, drop_name))
+
+    for row_number, a, b in refused:
+        if resolve(a) == resolve(b):
+            result.conflicts.append((row_number, f'"{a}" e "{b}" marcados N, mas foram unidos por outras linhas S '
+                                                 f'(ficaram em "{resolve(a)}")'))
     return result
 
 

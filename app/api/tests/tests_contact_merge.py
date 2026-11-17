@@ -53,6 +53,29 @@ class ContactMergeTests(TestCase):
         self.assertIn('[ALMD Advogados (Sammuel)] veio da venda', self.keep.notes)
         self.assertTrue(self.keep.notes.startswith('cliente antigo'))
 
+    def test_judicial_duplicate_goes_to_the_collection_case(self):
+        franciele = Contact.objects.create(name='Franciele Tatiane Advogada')
+        agreement = Contact.objects.create(name='Franciele Tatiane Advogada - Acordo Judicial')
+        normal = self.tx(franciele, '4000', 0)
+        paid = self.tx(agreement, '1000', 30)
+        planned = self.tx(agreement, '1000', 60, status=TransactionStatus.PLANNED)
+        services.merge_contacts_service(user=self.admin, target_id=franciele.pk, source_ids=[agreement.pk])
+
+        case = CollectionCase.objects.get(contact=franciele)
+        self.assertEqual(case.stage, 'agreement')
+        self.assertIn('Franciele Tatiane Advogada - Acordo Judicial', case.agreement)
+        for tx, case_id in ((normal, None), (paid, case.pk), (planned, case.pk)):
+            tx.refresh_from_db()
+            self.assertEqual((tx.contact_id, tx.collection_case_id), (franciele.pk, case_id))
+        self.assertEqual(case.comments.count(), 1)
+
+        # A second judicial duplicate reuses the open case
+        other = Contact.objects.create(name='Franciele Tatiane Advogada (Ação)')
+        self.tx(other, '500', 90)
+        services.merge_contacts_service(user=self.admin, target_id=franciele.pk, source_ids=[other.pk])
+        self.assertEqual(CollectionCase.objects.filter(contact=franciele).count(), 1)
+        self.assertEqual(case.transactions.count(), 3)
+
     def test_merge_needs_change_and_delete(self):
         finance = User.objects.create_user(email='fin@test.com', password='Str@ngPassw8rd2026', role=Role.ACCOUNTANT)
         response = self.client.post(f'/api/contact/{self.keep.pk}/merge', data={'source_ids': [self.dup.pk]},
@@ -67,6 +90,25 @@ class ContactMergeTests(TestCase):
         self.assertIsNotNone(similarity('ALDM Advogados', 'ALMD Advogados (Sammuel)'))
         self.assertIsNone(similarity('Luni Digital - 2', 'Luni Digital'))  # numbered contracts are distinct
         self.assertIsNone(similarity('VMS Advocacia', 'Elmano Bastos Advocacia'))
+
+    def test_suggestions_keep_the_plain_name_and_file_order_is_fixed(self):
+        plain = Contact.objects.create(name='Cimenart Revestimentos')
+        judicial = Contact.objects.create(name='Cimenart Revestimentos - Acordo')
+        for _ in range(3):
+            self.tx(judicial, '10', 0)  # more data on the judicial side
+        Sale.objects.create(company=self.company, contact=plain, date=dt.date(2025, 1, 1), amount=30)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'dups.xlsx'
+            write_suggestions(path)
+            wb = load_workbook(path)
+            row = next(r for r in wb.active.iter_rows(min_row=2) if 'Cimenart' in r[0].value)
+            self.assertEqual((row[0].value, row[1].value), ('Cimenart Revestimentos', 'Cimenart Revestimentos - Acordo'))
+            row[0].value, row[1].value, row[7].value = row[1].value, row[0].value, 'S'  # reviewer swapped them
+            wb.save(path)
+            run_merges(path, user=None, commit=True)
+        self.assertEqual(list(Contact.objects.filter(name__startswith='Cimenart').values_list('name', flat=True)),
+                         ['Cimenart Revestimentos'])
+        self.assertEqual(CollectionCase.objects.get().transactions.count(), 3)
 
     def test_suggestions_file_roundtrip_with_chains(self):
         third = Contact.objects.create(name='ALDM Advogados.')

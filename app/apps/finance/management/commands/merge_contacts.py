@@ -18,6 +18,8 @@ class Command(BaseCommand):
             out(f'  - "{drop}" -> "{keep}"')
         for row, problem in result.errors:
             out(self.style.ERROR(f'  ! row {row}: {problem}'))
+        for row, problem in result.conflicts:
+            out(self.style.WARNING(f'  ? row {row}: {problem}'))
         if commit:
             out(self.style.SUCCESS('Merges committed.'))
         else:

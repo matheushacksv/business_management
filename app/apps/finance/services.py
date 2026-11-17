@@ -1,5 +1,7 @@
 import calendar
 import datetime as dt
+import re
+import unicodedata
 from decimal import ROUND_DOWN, Decimal
 
 import pghistory
@@ -137,12 +139,41 @@ def delete_contact_service(*, contact_id: int) -> None:
 
 
 MERGE_FILL_FIELDS = ('company_name', 'document', 'email', 'phone')
+# Spreadsheet convention: "Fulano - Acordo Judicial" / "Fulano (Ação)" = money from the legal route
+JUDICIAL_NAME_RE = re.compile(r'[-(|]\s*(acordo|acao)\b')  # after a separator: not "Ação Digital"
+
+
+def is_judicial_name(name: str) -> bool:
+    plain = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode().casefold()
+    return bool(JUDICIAL_NAME_RE.search(plain))
+
+
+def _link_judicial(user: User | None, target: Contact, source_name: str, tx_ids: list[int]) -> None:
+    """Inflows of a "- Acordo"/"(Ação)" duplicate keep their legal origin: they are linked to the
+    customer's collection case (the open one of that company, else a new one at "Acordo ou Sentença")."""
+    from apps.legal.models import CaseComment, CaseStage, CollectionCase  # local: legal depends on finance
+
+    by_company: dict[int, list[int]] = {}
+    for pk, company_id in Transaction.objects.filter(pk__in=tx_ids).values_list('pk', 'company_id'):
+        by_company.setdefault(company_id, []).append(pk)
+    for company_id, ids in by_company.items():
+        cases = CollectionCase.objects.filter(company_id=company_id, contact=target).order_by('-updated_at')
+        case = cases.exclude(stage=CaseStage.DONE).first() or cases.first()
+        if case is None:
+            case = CollectionCase.objects.create(
+                company_id=company_id, contact=target, stage=CaseStage.AGREEMENT, created_by=user,
+                agreement=f'Acordo importado da planilha (nome original: {source_name})',
+            )
+        Transaction.objects.filter(pk__in=ids).update(collection_case=case)
+        CaseComment.objects.create(case=case, author=user, text=(
+            f'{len(ids)} lançamento(s) de "{source_name}" vinculado(s) a este caso ao mesclar os contatos.'))
 
 
 def merge_contacts_service(*, user: User | None, target_id: int, source_ids: list[int]) -> Contact:
     """Fold duplicated contacts into `target`: every reference (transactions, sales, collection
     cases, attachments) moves to it, blank fields are filled from the sources, notes are
-    appended, and the sources are deleted."""
+    appended, and the sources are deleted. Inflows of a judicial-named source ("- Acordo",
+    "(Ação)") are also linked to the customer's collection case."""
     source_ids = [pk for pk in dict.fromkeys(source_ids) if pk != target_id]
     if not source_ids:
         raise ValidationError('Choose at least one other contact to merge')
@@ -152,6 +183,11 @@ def merge_contacts_service(*, user: User | None, target_id: int, source_ids: lis
         raise ValidationError('Contact does not exist')
 
     contact_type = ContentType.objects.get_for_model(Contact)
+    judicial = {
+        source.name: list(Transaction.objects.filter(contact=source, type=TransactionType.INFLOW,
+                                                     collection_case__isnull=True).values_list('pk', flat=True))
+        for source in sources if is_judicial_name(source.name) and not is_judicial_name(target.name)
+    }
     with transaction.atomic(), pghistory.context(user=user.pk if user else None, source='merge_contacts'):
         # Every model pointing to Contact (found dynamically: new relations are covered too)
         for relation in Contact._meta.related_objects:
@@ -161,6 +197,9 @@ def merge_contacts_service(*, user: User | None, target_id: int, source_ids: lis
                 **{relation.field.name: target}
             )
         Attachment.objects.filter(content_type=contact_type, object_id__in=source_ids).update(object_id=target.pk)
+        for source_name, tx_ids in judicial.items():
+            if tx_ids:
+                _link_judicial(user, target, source_name, tx_ids)
 
         changed = []
         for source in sources:

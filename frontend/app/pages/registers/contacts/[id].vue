@@ -312,6 +312,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
       <template #body>
         <AppContactSelect v-model="mergeSource" placeholder="Buscar o contato duplicado" />
         <p v-if="mergeSource === id" class="mt-2 text-xs text-error">Escolha outro contato.</p>
+        <p class="mt-2 text-xs text-dimmed">
+          Se o duplicado tiver "- Acordo" ou "(Ação)" no nome, as entradas dele também são vinculadas ao caso de cobrança deste cliente.
+        </p>
       </template>
       <template #footer>
         <div class="flex w-full justify-end gap-2">
