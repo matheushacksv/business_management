@@ -62,10 +62,24 @@ async function remove(c: Commission) {
   }
 }
 
+async function setValue(c: Commission, value: number | null) {
+  if (!value) return
+  try {
+    await unwrap(api.PATCH('/api/commission/{commission_id}', {
+      params: { path: { commission_id: c.id } },
+      body: isPercent(c.kind) ? { percent: value.toFixed(2) } : { fixed_amount: value.toFixed(2) },
+    }))
+  } catch (e) {
+    notifyError(e)
+  }
+  await load()
+}
+
 // Split one total equally among the unpaid lines of the same kind (cents go to the last one)
 const split = reactive({ open: false, kind: '' as string, total: 10 })
 const splitLines = computed(() => items.value.filter(c => c.kind === split.kind && !c.payment_id))
-const kindsToSplit = computed(() => Object.keys(LABELS.commissionKind)
+// ponytail: only % kinds split equally; fixed kinds (CRM 500 + 250) are typed per person
+const kindsToSplit = computed(() => PERCENT_COMMISSION_KINDS
   .filter(k => items.value.filter(c => c.kind === k && !c.payment_id).length > 1))
 function openSplit(kind: string) {
   const lines = items.value.filter(c => c.kind === kind && !c.payment_id)
@@ -101,9 +115,17 @@ async function applySplit() {
           <p class="truncate text-highlighted">{{ c.salesperson_name }}</p>
           <p class="truncate text-xs text-dimmed">
             {{ LABELS.commissionKind[c.kind] }}{{ c.description ? ` · ${c.description}` : '' }}
-            · {{ isPercent(c.kind) ? `${Number(c.percent).toLocaleString('pt-BR')}%` : 'valor fixo' }}
           </p>
         </div>
+        <template v-if="canChange && !c.payment_id">
+          <UInputNumber v-if="isPercent(c.kind)" :model-value="Number(c.percent)" :min="0" :max="100" :step="0.01"
+                        :increment="false" :decrement="false" size="xs" class="w-20" aria-label="Percentual"
+                        @update:model-value="v => setValue(c, v)" />
+          <UInputNumber v-else :model-value="Number(c.fixed_amount)" :min="0" :step="0.01" :increment="false" :decrement="false"
+                        :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" size="xs" class="w-28"
+                        aria-label="Valor" @update:model-value="v => setValue(c, v)" />
+        </template>
+        <span v-else-if="isPercent(c.kind)" class="text-xs text-muted tabular">{{ Number(c.percent).toLocaleString('pt-BR') }}%</span>
         <UBadge :label="c.payment_id ? 'Paga' : 'A pagar'" :color="c.payment_id ? 'success' : 'warning'" variant="subtle" size="sm" />
         <span class="w-28 text-right tabular">{{ formatMoney(c.amount) }}</span>
         <UButton v-if="canChange && !c.payment_id" icon="i-lucide-trash-2" color="neutral" variant="ghost" size="xs"
