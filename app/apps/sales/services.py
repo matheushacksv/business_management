@@ -13,7 +13,7 @@ from django.db.models.functions import Coalesce
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, SubGroup, Transaction, TransactionStatus, TransactionType
 from apps.finance.services import create_contact_service, create_series_service, create_transaction_service
-from apps.sales.models import PERCENT_KINDS, Commission, Product, SalaryPayment, Sale, Salesperson, SaleStatus, StatementShare
+from apps.sales.models import PERCENT_KINDS, Adjustment, Commission, Product, SalaryPayment, Sale, Salesperson, SaleStatus, StatementShare
 from apps.users.models import User
 
 ZERO = Decimal('0')
@@ -399,6 +399,7 @@ def salary_statement_service(*, user: User, salesperson_id: int, month: dt.date)
         'salary': paid.amount if paid else person.monthly_salary,
         'salary_payment_id': paid.payment_id if paid else None,
         'salary_paid_on': paid.payment.date if paid else None,
+        'adjustments': list(Adjustment.objects.filter(salesperson=person, month=month).select_related('payment')),
         'commissions': list(list_commissions_service(user=user, month=month, salesperson_id=[person.pk])
                             .select_related('sale__company', 'sale__contact', 'salesperson', 'payment')),
     }
@@ -422,6 +423,53 @@ def pay_salary_service(*, user: User, salesperson_id: int, month: dt.date, date:
         )
         SalaryPayment.objects.create(salesperson=person, month=month, amount=amount, payment=tx)
     return tx
+
+
+# Adjustments: bonuses and deductions of a month
+
+def create_adjustment_service(*, user: User, salesperson_id: int, month: dt.date, description: str, amount: Decimal) -> Adjustment:
+    if not amount:
+        raise ValidationError('Amount cannot be zero')
+    person = Salesperson.objects.get(pk=salesperson_id)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        return Adjustment.objects.create(salesperson=person, month=month.replace(day=1),
+                                         description=description.strip(), amount=amount)
+
+
+def delete_adjustment_service(*, user: User, adjustment_id: int) -> None:
+    adj = Adjustment.objects.get(pk=adjustment_id)
+    if adj.payment_id is not None:  # type:ignore
+        raise ValidationError('Paid adjustments cannot be removed')
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        adj.delete()
+
+
+def pay_adjustments_service(*, user: User, salesperson_id: int, month: dt.date, date: dt.date,
+                            company_id: int, subgroup_id: int) -> list[Transaction]:
+    """Open adjustments of the month: bonuses -> one outflow, deductions -> one reversal (inflow)."""
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        person = Salesperson.objects.get(pk=salesperson_id)
+        items = list(Adjustment.objects.select_for_update()
+                     .filter(salesperson=person, month=month.replace(day=1), payment__isnull=True))
+        if not items:
+            raise ValidationError('No open adjustments')
+        ref = f'Ajustes ref. {sales_month_for(month)[0]:%m/%Y}'
+        payments = []
+        for type, group in ((TransactionType.OUTFLOW, [a for a in items if a.amount > 0]),
+                            (TransactionType.INFLOW, [a for a in items if a.amount < 0])):
+            if not group:
+                continue
+            tx = create_transaction_service(
+                user=user, company_id=company_id, subgroup_id=subgroup_id, date=date,
+                amount=abs(sum((a.amount for a in group), ZERO)), type=type, status=TransactionStatus.REALIZED,
+                contact_id=_contact_for(person).pk, reference=ref,
+                notes='\n'.join(f'{a.description}: {a.amount}' for a in group),
+            )
+            for a in group:
+                a.payment = tx
+            Adjustment.objects.bulk_update(group, ['payment'])
+            payments.append(tx)
+    return payments
 
 
 # Public statement link: random token + generated password (stored hashed, shown once)

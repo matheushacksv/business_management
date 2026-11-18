@@ -4,6 +4,9 @@ from ninja import Query, Router
 from ninja.pagination import PageNumberPagination, paginate
 
 from api.schemas.sales_dto import (
+    AdjustmentOut,
+    CreateAdjustment,
+    PayAdjustments,
     CommissionFilters,
     CommissionOut,
     CreateCommission,
@@ -199,6 +202,26 @@ def share_statement_endpoint(request, data: ShareStatement):
 @router.post('/public/statement/{token}', auth=None, response=StatementOut)
 def public_statement_endpoint(request, token: str, data: StatementPassword):
     return services.public_statement_service(token=token, password=data.password)
+
+
+@router.post('/adjustment', response={201: AdjustmentOut})
+@require_permission('sales', CHANGE)
+def create_adjustment_endpoint(request, data: CreateAdjustment):
+    return 201, services.create_adjustment_service(user=request.user, **data.dict())
+
+
+@router.post('/adjustment/pay', response=list[TransactionOut])
+@require_permission('sales', CHANGE)
+def pay_adjustments_endpoint(request, data: PayAdjustments):
+    check_permission(request.user, 'transactions', CREATE)  # creates the outflow/reversal
+    return services.pay_adjustments_service(user=request.user, **data.dict())
+
+
+@router.delete('/adjustment/{adjustment_id}', response={204: None})
+@require_permission('sales', CHANGE)
+def delete_adjustment_endpoint(request, adjustment_id: int):
+    services.delete_adjustment_service(user=request.user, adjustment_id=adjustment_id)
+    return 204, None
 
 
 @router.post('/salary/pay', response=TransactionOut)

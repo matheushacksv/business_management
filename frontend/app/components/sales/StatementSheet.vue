@@ -4,7 +4,9 @@
 import type { components } from '~/types/api'
 
 type Commission = components['schemas']['CommissionOut']
-const props = defineProps<{ data: components['schemas']['StatementOut']; loading?: boolean }>()
+type Adjustment = components['schemas']['AdjustmentOut']
+const props = defineProps<{ data: components['schemas']['StatementOut']; loading?: boolean; editable?: boolean }>()
+const emit = defineEmits<{ add: []; remove: [adjustment: Adjustment] }>()
 
 const monthLabel = (iso: string) => `${iso.slice(5, 7)}/${iso.slice(0, 4)}`
 const salary = computed(() => Number(props.data.salary ?? 0))
@@ -14,7 +16,8 @@ const groups = computed(() => {
   return [...map].map(([kind, rows]) => ({ kind, rows, total: rows.reduce((s, c) => s + Number(c.amount), 0) }))
 })
 const commissionsTotal = computed(() => groups.value.reduce((s, g) => s + g.total, 0))
-const total = computed(() => salary.value + commissionsTotal.value)
+const adjustmentsTotal = computed(() => props.data.adjustments.reduce((s, a) => s + Number(a.amount), 0))
+const total = computed(() => salary.value + adjustmentsTotal.value + commissionsTotal.value)
 const rule = (c: Commission) => c.percent != null
   ? `${Number(c.percent).toLocaleString('pt-BR')}% de ${formatMoney(c.sale_amount)} − ${Number(c.tax_rate).toLocaleString('pt-BR')}% imp.`
   : 'valor fixo'
@@ -23,8 +26,9 @@ const rule = (c: Commission) => c.percent != null
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="grid gap-3 sm:grid-cols-3">
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <SStat label="Fixo" :value="formatMoney(salary)" :loading="loading" icon="i-lucide-wallet" />
+      <SStat label="Ajustes" :value="formatMoney(adjustmentsTotal)" :loading="loading" icon="i-lucide-plus-minus" />
       <SStat :label="`Comissões · vendas de ${monthLabel(data.sales_month)}`" :value="formatMoney(commissionsTotal)"
              :loading="loading" icon="i-lucide-hand-coins" />
       <SStat label="Total a receber" :value="formatMoney(total)" tone="primary" :loading="loading" icon="i-lucide-sigma" />
@@ -41,6 +45,26 @@ const rule = (c: Commission) => c.percent != null
                       :color="data.salary_payment_id ? 'success' : 'warning'" variant="subtle" size="sm" />
             </td>
             <td class="py-2 text-right text-highlighted">{{ formatMoney(salary) }}</td>
+          </tr>
+          <tr v-if="data.adjustments.length || editable" class="border-b border-default">
+            <td colspan="3" class="pt-4 pb-2 font-medium text-highlighted">
+              Ajustes
+              <UButton v-if="editable" icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" aria-label="Adicionar ajuste"
+                       class="ml-1" @click="emit('add')" />
+            </td>
+            <td class="pt-4 pb-2 text-right text-highlighted">{{ formatMoney(adjustmentsTotal) }}</td>
+          </tr>
+          <tr v-for="a in data.adjustments" :key="`a${a.id}`" class="border-b border-muted">
+            <td class="py-1.5 pl-3 text-toned">{{ a.description }}</td>
+            <td class="py-1.5 text-right">
+              <UButton v-if="editable && !a.payment_id" icon="i-lucide-trash-2" size="xs" color="neutral" variant="ghost"
+                       aria-label="Remover ajuste" @click="emit('remove', a)" />
+            </td>
+            <td class="py-1.5 text-right">
+              <UBadge :label="a.payment_id ? `Pago ${formatDate(a.paid_on)}` : 'A pagar'"
+                      :color="a.payment_id ? 'success' : 'warning'" variant="subtle" size="sm" />
+            </td>
+            <td class="py-1.5 text-right" :class="{ 'text-error': Number(a.amount) < 0 }">{{ formatMoney(a.amount) }}</td>
           </tr>
           <template v-for="g in groups" :key="g.kind">
             <tr class="border-b border-default">
@@ -77,6 +101,15 @@ const rule = (c: Commission) => c.percent != null
             <tr><td><b>Fixo</b></td><td><b>{{ formatMoney(salary) }}</b></td></tr>
           </tbody>
         </table>
+        <template v-if="data.adjustments.length">
+          <h2>Ajustes</h2>
+          <table>
+            <tbody>
+              <tr v-for="a in data.adjustments" :key="a.id"><td>{{ a.description }}</td><td>{{ formatMoney(a.amount) }}</td></tr>
+              <tr><td><b>Subtotal</b></td><td><b>{{ formatMoney(adjustmentsTotal) }}</b></td></tr>
+            </tbody>
+          </table>
+        </template>
         <template v-for="g in groups" :key="g.kind">
           <h2>{{ LABELS.commissionKind[g.kind] }}</h2>
           <table>

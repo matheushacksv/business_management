@@ -5530,6 +5530,114 @@
     }
    }
   },
+  "/api/adjustment": {
+   "post": {
+    "operationId": "api_endpoints_sales_create_adjustment_endpoint",
+    "summary": "Create Adjustment Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdjustmentOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateAdjustment"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/adjustment/pay": {
+   "post": {
+    "operationId": "api_endpoints_sales_pay_adjustments_endpoint",
+    "summary": "Pay Adjustments Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TransactionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PayAdjustments"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/adjustment/{adjustment_id}": {
+   "delete": {
+    "operationId": "api_endpoints_sales_delete_adjustment_endpoint",
+    "summary": "Delete Adjustment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "adjustment_id",
+      "schema": {
+       "title": "Adjustment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/salary/pay": {
    "post": {
     "operationId": "api_endpoints_sales_pay_salary_endpoint",
@@ -11281,6 +11389,64 @@
     "title": "StatementParams",
     "type": "object"
    },
+   "AdjustmentOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "payment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Id"
+     },
+     "paid_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Paid On"
+     }
+    },
+    "required": [
+     "id",
+     "salesperson_id",
+     "month",
+     "description",
+     "amount",
+     "payment_id"
+    ],
+    "title": "AdjustmentOut",
+    "type": "object"
+   },
    "StatementOut": {
     "properties": {
      "salesperson": {
@@ -11323,6 +11489,13 @@
       ],
       "title": "Salary Paid On"
      },
+     "adjustments": {
+      "items": {
+       "$ref": "#/components/schemas/AdjustmentOut"
+      },
+      "title": "Adjustments",
+      "type": "array"
+     },
      "commissions": {
       "items": {
        "$ref": "#/components/schemas/CommissionOut"
@@ -11338,6 +11511,7 @@
      "salary",
      "salary_payment_id",
      "salary_paid_on",
+     "adjustments",
      "commissions"
     ],
     "title": "StatementOut",
@@ -11399,6 +11573,79 @@
      "password"
     ],
     "title": "StatementPassword",
+    "type": "object"
+   },
+   "CreateAdjustment": {
+    "properties": {
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "description": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     }
+    },
+    "required": [
+     "salesperson_id",
+     "month",
+     "description",
+     "amount"
+    ],
+    "title": "CreateAdjustment",
+    "type": "object"
+   },
+   "PayAdjustments": {
+    "properties": {
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "subgroup_id": {
+      "title": "Subgroup Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "salesperson_id",
+     "month",
+     "date",
+     "company_id",
+     "subgroup_id"
+    ],
+    "title": "PayAdjustments",
     "type": "object"
    },
    "PaySalary": {

@@ -6,6 +6,7 @@ definePageMeta({ permission: ['sales', 'view'] })
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const auth = useAuth()
+const confirm = useConfirm()
 const route = useRoute()
 const router = useRouter()
 const lookups = useLookups()
@@ -58,6 +59,7 @@ const copy = (text: string) => navigator.clipboard.writeText(text).then(() => no
 // Pay what is still open: fixed pay (one outflow) + pending commissions (one outflow per company)
 const pendingCommissions = computed(() => (data.value?.commissions ?? []).filter(c => !c.payment_id))
 const salaryOpen = computed(() => !!data.value && !data.value.salary_payment_id && salary.value > 0)
+const pendingAdjustments = computed(() => (data.value?.adjustments ?? []).filter(a => !a.payment_id))
 const canPay = computed(() => auth.can('sales', 'change') && auth.can('transactions', 'create'))
 const subgroupItems = computed(() => (lookups.cache.value.subgroups ?? [])
   .filter(s => !INFLOW_GROUPS.includes(s.group) && s.group !== 'transfer')
@@ -68,16 +70,19 @@ const pay = reactive({
   company_id: undefined as number | undefined,
   salary_subgroup_id: undefined as number | undefined,
   commission_subgroup_id: undefined as number | undefined,
+  adjustment_subgroup_id: undefined as number | undefined,
 })
 function openPay() {
   pay.date = today()
   pay.company_id ??= lookups.cache.value.companies?.[0]?.id ?? undefined
   pay.salary_subgroup_id ??= findSubgroup(/sal[aá]rio|fixo|folha|pr[oó]-?labore/i)
   pay.commission_subgroup_id ??= findSubgroup(/comiss/i)
+  pay.adjustment_subgroup_id ??= findSubgroup(/b[oô]nus|bonifica|ajuste|premia/i)
   pay.open = true
 }
 const payReady = computed(() => !!pay.date
   && (!salaryOpen.value || (pay.company_id && pay.salary_subgroup_id))
+  && (!pendingAdjustments.value.length || (pay.company_id && pay.adjustment_subgroup_id))
   && (!pendingCommissions.value.length || pay.commission_subgroup_id))
 async function confirmPay() {
   pay.saving = true
@@ -86,6 +91,12 @@ async function confirmPay() {
       await unwrap(api.POST('/api/salary/pay', { body: {
         salesperson_id: filters.salesperson!, month: `${filters.month}-01`, date: pay.date,
         company_id: pay.company_id!, subgroup_id: pay.salary_subgroup_id!,
+      } }))
+    }
+    if (pendingAdjustments.value.length) {
+      await unwrap(api.POST('/api/adjustment/pay', { body: {
+        salesperson_id: filters.salesperson!, month: `${filters.month}-01`, date: pay.date,
+        company_id: pay.company_id!, subgroup_id: pay.adjustment_subgroup_id!,
       } }))
     }
     if (pendingCommissions.value.length) {
@@ -103,8 +114,39 @@ async function confirmPay() {
   }
 }
 const openTotal = computed(() => (salaryOpen.value ? salary.value : 0)
+  + pendingAdjustments.value.reduce((s, a) => s + Number(a.amount), 0)
   + pendingCommissions.value.reduce((s, c) => s + Number(c.amount), 0))
 const printPage = () => window.print()
+
+// Adjustments: bonus (+) or deduction (−) of the month
+const adj = reactive({ open: false, saving: false, description: '', amount: 0, deduction: false })
+function openAdjustment() {
+  Object.assign(adj, { open: true, description: '', amount: 0, deduction: false })
+}
+async function saveAdjustment() {
+  adj.saving = true
+  try {
+    await unwrap(api.POST('/api/adjustment', { body: {
+      salesperson_id: filters.salesperson!, month: `${filters.month}-01`, description: adj.description,
+      amount: (adj.deduction ? -adj.amount : adj.amount).toFixed(2),
+    } }))
+    adj.open = false
+    load()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    adj.saving = false
+  }
+}
+async function removeAdjustment(a: { id: number; description: string }) {
+  if (!await confirm({ title: `Remover "${a.description}"?`, confirmLabel: 'Remover', color: 'error' })) return
+  try {
+    await unwrap(api.DELETE('/api/adjustment/{adjustment_id}', { params: { path: { adjustment_id: a.id } } }))
+    load()
+  } catch (e) {
+    notifyError(e)
+  }
+}
 </script>
 
 <template>
@@ -113,7 +155,7 @@ const printPage = () => window.print()
       <UButton v-if="auth.can('sales', 'change')" label="Link público" icon="i-lucide-link" color="neutral" variant="outline"
                :disabled="!data" :loading="share.loading" @click="createShare" />
       <UButton label="Imprimir" icon="i-lucide-printer" color="neutral" variant="outline" :disabled="!data" @click="printPage" />
-      <UButton v-if="canPay && openTotal > 0" :label="`Pagar ${formatMoney(openTotal)}`" icon="i-lucide-banknote" @click="openPay" />
+      <UButton v-if="canPay && (salaryOpen || pendingAdjustments.length || pendingCommissions.length)" :label="`Pagar ${formatMoney(openTotal)}`" icon="i-lucide-banknote" @click="openPay" />
     </template>
     <template #toolbar>
       <USelectMenu v-model="filters.salesperson" :items="lookups.options.salespeople.value" value-key="value"
@@ -121,8 +163,32 @@ const printPage = () => window.print()
       <USelect v-model="filters.month" :items="monthItems" class="w-32" aria-label="Mês de pagamento" />
     </template>
 
-    <SalesStatementSheet v-if="data" :data="data" :loading="loading" />
+    <SalesStatementSheet v-if="data" :data="data" :loading="loading" :editable="auth.can('sales', 'change')"
+                         @add="openAdjustment" @remove="removeAdjustment" />
     <p v-else-if="!filters.salesperson" class="text-sm text-dimmed">Selecione um profissional.</p>
+
+    <UModal v-model:open="adj.open" title="Ajuste">
+      <template #body>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UFormField label="Tipo">
+            <USelect v-model="adj.deduction" :items="[{ label: 'Bônus', value: false }, { label: 'Desconto', value: true }]" class="w-full" />
+          </UFormField>
+          <UFormField label="Valor">
+            <UInputNumber v-model="adj.amount" :min="0" :step="0.01" :increment="false" :decrement="false"
+                          :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
+          </UFormField>
+          <UFormField label="Descrição" class="sm:col-span-2">
+            <UInput v-model="adj.description" placeholder="Meta batida, vale adiantado…" class="w-full" />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Cancelar" color="neutral" variant="ghost" @click="adj.open = false" />
+          <UButton label="Adicionar" :loading="adj.saving" :disabled="!adj.amount || !adj.description.trim()" @click="saveAdjustment" />
+        </div>
+      </template>
+    </UModal>
 
     <UModal v-model:open="pay.open" :title="`Pagar ${formatMoney(openTotal)}`">
       <template #body>
@@ -130,14 +196,15 @@ const printPage = () => window.print()
           <UFormField label="Data do pagamento">
             <UInput v-model="pay.date" type="date" class="w-full" />
           </UFormField>
-          <template v-if="salaryOpen">
-            <UFormField label="Empresa do fixo">
-              <USelectMenu v-model="pay.company_id" :items="lookups.options.companies.value" value-key="value" class="w-full" />
-            </UFormField>
-            <UFormField label="Subgrupo do fixo">
-              <USelectMenu v-model="pay.salary_subgroup_id" :items="subgroupItems" value-key="value" class="w-full" />
-            </UFormField>
-          </template>
+          <UFormField v-if="salaryOpen || pendingAdjustments.length" label="Empresa (fixo e ajustes)">
+            <USelectMenu v-model="pay.company_id" :items="lookups.options.companies.value" value-key="value" class="w-full" />
+          </UFormField>
+          <UFormField v-if="salaryOpen" label="Subgrupo do fixo">
+            <USelectMenu v-model="pay.salary_subgroup_id" :items="subgroupItems" value-key="value" class="w-full" />
+          </UFormField>
+          <UFormField v-if="pendingAdjustments.length" label="Subgrupo dos ajustes">
+            <USelectMenu v-model="pay.adjustment_subgroup_id" :items="subgroupItems" value-key="value" class="w-full" />
+          </UFormField>
           <UFormField v-if="pendingCommissions.length" label="Subgrupo das comissões">
             <USelectMenu v-model="pay.commission_subgroup_id" :items="subgroupItems" value-key="value" class="w-full" />
           </UFormField>

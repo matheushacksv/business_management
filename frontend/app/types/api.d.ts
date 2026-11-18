@@ -1020,6 +1020,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/adjustment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Adjustment Endpoint */
+        post: operations["api_endpoints_sales_create_adjustment_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/adjustment/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay Adjustments Endpoint */
+        post: operations["api_endpoints_sales_pay_adjustments_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/adjustment/{adjustment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Adjustment Endpoint */
+        delete: operations["api_endpoints_sales_delete_adjustment_endpoint"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/salary/pay": {
         parameters: {
             query?: never;
@@ -2710,6 +2761,26 @@ export interface components {
              */
             month: string;
         };
+        /** AdjustmentOut */
+        AdjustmentOut: {
+            /** Id */
+            id: number;
+            /** Salesperson Id */
+            salesperson_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: string;
+            /** Payment Id */
+            payment_id: number | null;
+            /** Paid On */
+            paid_on?: string | null;
+        };
         /** StatementOut */
         StatementOut: {
             salesperson: components["schemas"]["SalespersonOut"];
@@ -2729,6 +2800,8 @@ export interface components {
             salary_payment_id: number | null;
             /** Salary Paid On */
             salary_paid_on: string | null;
+            /** Adjustments */
+            adjustments: components["schemas"]["AdjustmentOut"][];
             /** Commissions */
             commissions: components["schemas"]["CommissionOut"][];
         };
@@ -2758,6 +2831,39 @@ export interface components {
         StatementPassword: {
             /** Password */
             password: string;
+        };
+        /** CreateAdjustment */
+        CreateAdjustment: {
+            /** Salesperson Id */
+            salesperson_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: number | string;
+        };
+        /** PayAdjustments */
+        PayAdjustments: {
+            /** Salesperson Id */
+            salesperson_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Company Id */
+            company_id: number;
+            /** Subgroup Id */
+            subgroup_id: number;
         };
         /** PaySalary */
         PaySalary: {
@@ -5300,6 +5406,74 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StatementOut"];
                 };
+            };
+        };
+    };
+    api_endpoints_sales_create_adjustment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdjustment"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdjustmentOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_pay_adjustments_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayAdjustments"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_delete_adjustment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjustment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

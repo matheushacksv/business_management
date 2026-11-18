@@ -204,6 +204,31 @@ class CommissionOut(Schema):
         return commission_amount(obj)
 
 
+class CreateAdjustment(Schema):
+    salesperson_id: int
+    month: dt.date
+    description: str = Field(min_length=1, max_length=200)
+    amount: Decimal = Field(max_digits=14, decimal_places=2)
+
+
+class AdjustmentOut(Schema):
+    id: int
+    salesperson_id: int
+    month: dt.date
+    description: str
+    amount: Decimal
+    payment_id: int | None
+    paid_on: dt.date | None = Field(None, alias='payment.date')
+
+
+class PayAdjustments(Schema):
+    salesperson_id: int
+    month: dt.date
+    date: dt.date
+    company_id: int
+    subgroup_id: int
+
+
 class StatementParams(Schema):
     salesperson_id: int
     month: dt.date
@@ -216,6 +241,7 @@ class StatementOut(Schema):
     salary: Decimal
     salary_payment_id: int | None
     salary_paid_on: dt.date | None
+    adjustments: list[AdjustmentOut]
     commissions: list[CommissionOut]
 
 

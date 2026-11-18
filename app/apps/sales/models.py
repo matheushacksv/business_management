@@ -148,3 +148,21 @@ class StatementShare(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint('salesperson', 'month', name='unique_statement_share_month')]
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class Adjustment(models.Model):
+    """Bonus (+) or deduction (−) of one month outside the sales: goal hit, advance to discount...
+    Paid with the statement: bonuses as an outflow, deductions as a reversal (inflow) in the same subgroup."""
+
+    salesperson = models.ForeignKey(Salesperson, on_delete=models.PROTECT, related_name='adjustments')
+    month = models.DateField()  # due month (1st day)
+    description = models.CharField(max_length=200)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)  # signed, never zero
+    payment = models.ForeignKey(
+        'finance.Transaction', on_delete=models.SET_NULL, null=True, blank=True, related_name='adjustments_paid'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']

@@ -154,3 +154,24 @@ class StatementShareTests(Base):
         new = self.api('post', '/commission/statement/share', {'salesperson_id': self.matheus.pk, 'month': '2026-11-01'}).json()
         self.assertEqual(self.open(new['password'], token=new['token']).status_code, 200)
         self.assertEqual(self.open(self.share['password']).status_code, 404)
+
+
+class AdjustmentTests(Base):
+    def adjust(self, amount, description='Bônus meta'):
+        return self.api('post', '/adjustment', {'salesperson_id': self.matheus.pk, 'month': '2026-11-01',
+                                                'description': description, 'amount': amount})
+
+    def test_bonus_and_deduction_paid_as_outflow_and_reversal(self):
+        bonus = self.adjust('800').json()
+        self.adjust('-300', 'Vale adiantado')
+        self.assertEqual(self.adjust('0').status_code, 400)
+        st = self.api('get', f'/commission/statement?salesperson_id={self.matheus.pk}&month=2026-11-01').json()
+        self.assertEqual(sum(Decimal(a['amount']) for a in st['adjustments']), Decimal('500'))
+        r = self.api('post', '/adjustment/pay', {'salesperson_id': self.matheus.pk, 'month': '2026-11-01', 'date': '2026-11-05',
+                                                 'company_id': self.company.pk, 'subgroup_id': self.subgroup.pk})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(sorted((t['type'], Decimal(t['amount'])) for t in r.json()),
+                         [('inflow', Decimal('300.00')), ('outflow', Decimal('800.00'))])
+        self.assertEqual(self.api('delete', f'/adjustment/{bonus["id"]}').status_code, 400)  # paid: locked
+        Transaction.objects.filter(type=TransactionType.OUTFLOW).delete()  # reopens the bonus
+        self.assertEqual(self.api('delete', f'/adjustment/{bonus["id"]}').status_code, 204)
