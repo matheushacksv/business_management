@@ -10,6 +10,15 @@ const lookups = useLookups()
 lookups.ensure('companies').catch(notifyError)
 const filters = useReportFilters()
 
+// Two ways to read it: "Resumo" (key numbers, chart, short table) and the full spreadsheet-like table
+const mode = ref<'summary' | 'table'>('summary')  // remembered per browser
+const modes = [
+  { label: 'Resumo', value: 'summary', icon: 'i-lucide-layout-dashboard' },
+  { label: 'Tabela completa', value: 'table', icon: 'i-lucide-table' },
+]
+onMounted(() => { if (localStorage.getItem('dre-mode') === 'table') mode.value = 'table' })
+watch(mode, v => localStorage.setItem('dre-mode', v))
+
 const now = new Date()
 const currentYear = now.getFullYear()
 const view = ref<'monthly' | 'years' | 'month'>('monthly')
@@ -43,7 +52,7 @@ async function load() {
     loading.value = false
   }
 }
-watch(query, load, { immediate: true })
+watch([query, mode], () => { if (mode.value === 'table') load() }, { immediate: true })
 
 function exportXlsx() {
   const params = toSearchParams({ ...query.value, percent: showPercent.value })
@@ -99,17 +108,23 @@ function cellClass(line: Line, i: number): string {
     </template>
 
     <template #toolbar>
-      <UTabs v-model="view" :items="views" :content="false" size="sm" />
+      <UTabs v-model="mode" :items="modes" :content="false" size="sm" />
+      <USeparator orientation="vertical" class="h-6" />
+      <UTabs v-if="mode === 'table'" v-model="view" :items="views" :content="false" size="sm" />
       <USelect v-model="year" :items="years" class="w-28" aria-label="Ano" />
-      <USelect v-if="view === 'month'" v-model="month" :items="months" class="w-24" aria-label="Mês" />
+      <USelect v-if="mode === 'table' && view === 'month'" v-model="month" :items="months" class="w-24" aria-label="Mês" />
       <USelectMenu v-model="filters.company_id.value" :items="lookups.options.companies.value" value-key="value" multiple
                    placeholder="Consolidado (todas)" class="w-56" />
       <USelect v-model="filters.status.value" :items="filters.statusOptions" class="w-52" />
-      <USwitch v-model="showPercent" label="% da receita" />
-      <USwitch v-model="hideEmpty" label="Ocultar zerados" />
+      <template v-if="mode === 'table'">
+        <USwitch v-model="showPercent" label="% da receita" />
+        <USwitch v-model="hideEmpty" label="Ocultar zerados" />
+      </template>
     </template>
 
-    <div class="s-panel overflow-auto" :class="{ 'opacity-60': loading }">
+    <ReportsDreSummary v-if="mode === 'summary'" :year="year" :filters="filters.query.value" />
+
+    <div v-else class="s-panel overflow-auto" :class="{ 'opacity-60': loading }">
       <table class="w-full text-sm tabular">
         <thead class="sticky top-0 bg-(--s-solid) z-10">
           <tr class="text-xs text-muted uppercase tracking-wide">
@@ -141,8 +156,9 @@ function cellClass(line: Line, i: number): string {
       </table>
     </div>
     <p class="text-xs text-dimmed">
+      <template v-if="mode === 'summary'">Variações comparam com o ano anterior inteiro. Com "Previsto + realizado", o ano atual inclui o que ainda está previsto. </template>
       Estornos (tipo oposto ao do grupo) subtraem do grupo. Faturamento Bruto vem das vendas e é informativo.
-      <template v-if="view !== 'monthly'">Variações em verde: custo caindo ou receita/resultado subindo.</template>
+      <template v-if="mode === 'table' && view !== 'monthly'">Variações em verde: custo caindo ou receita/resultado subindo.</template>
     </p>
   </AppPage>
 </template>

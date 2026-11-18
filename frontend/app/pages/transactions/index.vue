@@ -26,6 +26,15 @@ const filters = reactive({
   status: [] as string[],
   ordering: '-date',
 })
+// Deep links from reports, e.g. /transactions?group=fixed_costs&date_from=2026-03-01&date_to=2026-03-31
+const linkQuery = useRoute().query
+const asList = (v: unknown) => (Array.isArray(v) ? v : v != null ? [v] : []).map(String)
+for (const key of ['date_from', 'date_to'] as const) if (linkQuery[key]) filters[key] = String(linkQuery[key])
+filters.group = asList(linkQuery.group)
+filters.status = asList(linkQuery.status)
+filters.company_id = asList(linkQuery.company_id).map(Number)
+filters.subgroup_id = asList(linkQuery.subgroup_id).map(Number)
+
 const page = ref(1)
 const PAGE_SIZE = 50
 
