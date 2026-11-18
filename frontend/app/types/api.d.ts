@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password Endpoint */
+        post: operations["api_endpoints_user_change_password_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user": {
         parameters: {
             query?: never;
@@ -1068,6 +1085,15 @@ export interface components {
             permissions: {
                 [key: string]: string[];
             };
+        };
+        /** ChangePasswordDTO */
+        ChangePasswordDTO: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+            /** Repeat Password */
+            repeat_password: string;
         };
         /** UserOut */
         UserOut: {
@@ -2773,6 +2799,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MeOut"];
                 };
+            };
+        };
+    };
+    api_endpoints_user_change_password_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDTO"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

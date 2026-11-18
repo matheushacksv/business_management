@@ -148,6 +148,36 @@
     ]
    }
   },
+  "/api/me/password": {
+   "post": {
+    "operationId": "api_endpoints_user_change_password_endpoint",
+    "summary": "Change Password Endpoint",
+    "parameters": [],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Users"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ChangePasswordDTO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/user": {
    "post": {
     "operationId": "api_endpoints_user_create_user_endpoint",
@@ -5971,6 +6001,29 @@
      "permissions"
     ],
     "title": "MeOut",
+    "type": "object"
+   },
+   "ChangePasswordDTO": {
+    "properties": {
+     "current_password": {
+      "title": "Current Password",
+      "type": "string"
+     },
+     "new_password": {
+      "title": "New Password",
+      "type": "string"
+     },
+     "repeat_password": {
+      "title": "Repeat Password",
+      "type": "string"
+     }
+    },
+    "required": [
+     "current_password",
+     "new_password",
+     "repeat_password"
+    ],
+    "title": "ChangePasswordDTO",
     "type": "object"
    },
    "UserOut": {

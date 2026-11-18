@@ -70,3 +70,32 @@ class UserEndpointTests(TestCase):
         }
         response = self.client.post('/api/user', data=body, content_type='application/json', headers=self.auth)
         self.assertEqual(response.status_code, 422)
+
+
+class ChangePasswordTests(TestCase):
+
+    def setUp(self):
+        self.user = services.create_user_service(email='john@doe.com', password='Str@ngPassw8rd2026')
+        self.auth = {'Authorization': f'Bearer {AccessToken.for_user(self.user)}'}  # type: ignore
+
+    def post(self, current, new, repeat=None):
+        body = {'current_password': current, 'new_password': new, 'repeat_password': repeat or new}
+        return self.client.post('/api/me/password', data=body, content_type='application/json', headers=self.auth)
+
+    def test_changes_password(self):
+        self.assertEqual(self.post('Str@ngPassw8rd2026', 'Nov@Senha#Forte99').status_code, 204)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('Nov@Senha#Forte99'))
+
+    def test_wrong_current_password(self):
+        self.assertEqual(self.post('errada', 'Nov@Senha#Forte99').status_code, 400)
+
+    def test_weak_new_password(self):
+        self.assertEqual(self.post('Str@ngPassw8rd2026', '123').status_code, 400)
+
+    def test_repeat_mismatch(self):
+        self.assertEqual(self.post('Str@ngPassw8rd2026', 'Nov@Senha#Forte99', 'outra').status_code, 422)
+
+    def test_requires_login(self):
+        response = self.client.post('/api/me/password', data={}, content_type='application/json')
+        self.assertEqual(response.status_code, 401)

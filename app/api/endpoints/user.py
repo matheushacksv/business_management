@@ -1,6 +1,6 @@
 from ninja import Router
 
-from api.schemas.users_dto import CreateUserDTO, MeOut, PatchUserDTO, UserOut
+from api.schemas.users_dto import ChangePasswordDTO, CreateUserDTO, MeOut, PatchUserDTO, UserOut
 from apps.users import services
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
 
@@ -10,6 +10,14 @@ router = Router(tags=['Users'])
 @router.get('/me', response=MeOut)
 def me_endpoint(request):
     return request.user
+
+
+@router.post('/me/password', response={204: None})
+def change_password_endpoint(request, data: ChangePasswordDTO):
+    services.change_password_service(
+        user=request.user, current_password=data.current_password, new_password=data.new_password
+    )
+    return 204, None
 
 
 @router.post('/user', response={201: UserOut})

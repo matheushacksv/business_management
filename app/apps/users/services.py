@@ -61,3 +61,12 @@ def deactivate_user_service(*, requested_by: User, user_id: int) -> None:
     user.is_active = False
     user.deactivated_at = timezone.now()
     user.save(update_fields=['is_active', 'deactivated_at'])
+
+
+# ponytail: sessions already open elsewhere stay valid until their JWT expires (no blacklist)
+def change_password_service(*, user: User, current_password: str, new_password: str) -> None:
+    if not user.check_password(current_password):
+        raise ValidationError('Senha atual incorreta')
+    validate_password(new_password, user=user)
+    user.set_password(new_password)
+    user.save(update_fields=['password'])

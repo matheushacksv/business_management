@@ -70,8 +70,29 @@ const userMenu = computed<DropdownMenuItem[][]>(() => [
     { label: 'Tema escuro', icon: 'i-lucide-moon', type: 'checkbox', checked: colorMode.value === 'dark', onSelect: setTheme('dark') },
     { label: 'Tema claro', icon: 'i-lucide-sun', type: 'checkbox', checked: colorMode.value === 'light', onSelect: setTheme('light') },
   ],
-  [{ label: 'Sair', icon: 'i-lucide-log-out', onSelect: () => auth.logout() }],
+  [
+    { label: 'Alterar senha', icon: 'i-lucide-key-round', onSelect: () => { passwordOpen.value = true } },
+    { label: 'Sair', icon: 'i-lucide-log-out', onSelect: () => auth.logout() },
+  ],
 ])
+
+const { api, unwrap, notifyError, notifySuccess } = useApi()
+const passwordOpen = ref(false)
+const password = reactive({ current_password: '', new_password: '', repeat_password: '' })
+const saving = ref(false)
+watch(passwordOpen, open => { if (open) Object.assign(password, { current_password: '', new_password: '', repeat_password: '' }) })
+async function changePassword() {
+  saving.value = true
+  try {
+    await unwrap(api.POST('/api/me/password', { body: password }))
+    passwordOpen.value = false
+    notifySuccess('Senha alterada')
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
@@ -128,5 +149,29 @@ const userMenu = computed<DropdownMenuItem[][]>(() => [
     </UDashboardSidebar>
 
     <slot />
+
+    <UModal v-model:open="passwordOpen" title="Alterar senha">
+      <template #body>
+        <form id="change-password" class="flex flex-col gap-3" @submit.prevent="changePassword">
+          <UFormField label="Senha atual" required>
+            <UInput v-model="password.current_password" type="password" autocomplete="current-password" class="w-full" />
+          </UFormField>
+          <UFormField label="Nova senha" required>
+            <UInput v-model="password.new_password" type="password" autocomplete="new-password" class="w-full" />
+          </UFormField>
+          <UFormField label="Repita a nova senha" required
+                      :error="password.repeat_password && password.repeat_password !== password.new_password ? 'Senhas diferentes' : undefined">
+            <UInput v-model="password.repeat_password" type="password" autocomplete="new-password" class="w-full" />
+          </UFormField>
+        </form>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Cancelar" color="neutral" variant="ghost" @click="passwordOpen = false" />
+          <UButton type="submit" form="change-password" label="Salvar" :loading="saving"
+                   :disabled="!password.current_password || !password.new_password || password.new_password !== password.repeat_password" />
+        </div>
+      </template>
+    </UModal>
   </UDashboardGroup>
 </template>
