@@ -1832,6 +1832,80 @@
     ]
    }
   },
+  "/api/transaction/bulk-update": {
+   "post": {
+    "operationId": "api_endpoints_transactions_bulk_update_transactions_endpoint",
+    "summary": "Bulk Update Transactions Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesChangeOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BulkUpdateTransactions"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/transaction/bulk-delete": {
+   "post": {
+    "operationId": "api_endpoints_transactions_bulk_delete_transactions_endpoint",
+    "summary": "Bulk Delete Transactions Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesChangeOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BulkIds"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/transaction/{transaction_id}": {
    "get": {
     "operationId": "api_endpoints_transactions_get_transaction_endpoint",
@@ -7347,6 +7421,134 @@
     "title": "PagedTransactionOut",
     "type": "object"
    },
+   "SeriesChangeOut": {
+    "properties": {
+     "affected": {
+      "title": "Affected",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "affected"
+    ],
+    "title": "SeriesChangeOut",
+    "type": "object"
+   },
+   "BulkUpdateTransactions": {
+    "properties": {
+     "ids": {
+      "items": {
+       "type": "integer"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Ids",
+      "type": "array"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TransactionStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "contact_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Id"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "sale_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sale Id"
+     },
+     "date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "shift_days": {
+      "anyOf": [
+       {
+        "maximum": 3650,
+        "minimum": -3650,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shift Days"
+     }
+    },
+    "required": [
+     "ids"
+    ],
+    "title": "BulkUpdateTransactions",
+    "type": "object"
+   },
+   "BulkIds": {
+    "properties": {
+     "ids": {
+      "items": {
+       "type": "integer"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Ids",
+      "type": "array"
+     }
+    },
+    "required": [
+     "ids"
+    ],
+    "title": "BulkIds",
+    "type": "object"
+   },
    "PatchTransaction": {
     "properties": {
      "subgroup_id": {
@@ -7633,19 +7835,6 @@
      "type"
     ],
     "title": "CreateSeries",
-    "type": "object"
-   },
-   "SeriesChangeOut": {
-    "properties": {
-     "affected": {
-      "title": "Affected",
-      "type": "integer"
-     }
-    },
-    "required": [
-     "affected"
-    ],
-    "title": "SeriesChangeOut",
     "type": "object"
    },
    "PatchSeries": {

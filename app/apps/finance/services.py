@@ -373,6 +373,57 @@ def delete_transaction_service(*, user: User, transaction_id: int) -> None:
         tx.delete()
 
 
+# Bulk actions: one query to load, one to write; pghistory triggers still log every row.
+
+def _bulk_targets(user: User, ids: list[int]) -> list[Transaction]:
+    txs = list(_transactions_for(user).filter(pk__in=ids))
+    if len(txs) != len(set(ids)):
+        raise Transaction.DoesNotExist('One or more transactions do not exist')
+    if any(t.transfer_id for t in txs):  # type:ignore
+        raise ValidationError('Transfers must be changed one by one')
+    return txs
+
+
+def bulk_update_transactions_service(*, user: User, ids: list[int], shift_days: int | None = None, **fields) -> int:
+    """Set the same status/subgroup/contact/company/sale/date on many transactions, or shift their dates."""
+    txs = _bulk_targets(user, ids)
+    _check_refs(company_id=0, subgroup_id=fields.get('subgroup_id'), contact_id=fields.get('contact_id'))
+    extra = set()
+    company_id = fields.pop('company_id', None)
+    if company_id is not None:
+        company_id = list_companies_service(user=user).get(pk=company_id).pk
+        moving = [t for t in txs if t.company_id != company_id]  # type:ignore
+        if any(t.sale_id or t.collection_case_id or t.series_id for t in moving):  # type:ignore
+            raise ValidationError('Transactions linked to a sale, collection case or series cannot change company')
+        for t in moving:
+            t.company_id, t.account_id = company_id, None  # accounts belong to the company
+        extra = {'company_id', 'account_id'}
+    if fields.get('sale_id') is not None:
+        from apps.sales.models import Sale
+        sale = Sale.objects.filter(company__in=list_companies_service(user=user)).get(pk=fields['sale_id'])
+        if any(t.company_id != sale.company_id or t.type != TransactionType.INFLOW for t in txs):  # type:ignore
+            raise ValidationError('Only inflows of the sale company can be linked to it')
+    now = timezone.now()
+    for t in txs:
+        for field, value in fields.items():
+            setattr(t, field, value)
+        if shift_days:
+            t.date += dt.timedelta(days=shift_days)
+        t.updated_at = now
+    update_fields = [*fields, *extra, 'updated_at', *(['date'] if shift_days else [])]
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        Transaction.objects.bulk_update(txs, update_fields, batch_size=500)
+    return len(txs)
+
+
+def bulk_delete_transactions_service(*, user: User, ids: list[int]) -> int:
+    txs = _bulk_targets(user, ids)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        for t in txs:  # one by one: attachments (generic relation) go with each
+            t.delete()
+    return len(txs)
+
+
 def _reject_transfer_leg(tx: Transaction) -> None:
     if tx.transfer_id:  # type:ignore
         raise ValidationError('This transaction is part of a transfer: change the transfer instead')

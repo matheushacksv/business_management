@@ -405,6 +405,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/transaction/bulk-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Update Transactions Endpoint */
+        post: operations["api_endpoints_transactions_bulk_update_transactions_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transaction/bulk-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Delete Transactions Endpoint */
+        post: operations["api_endpoints_transactions_bulk_delete_transactions_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/transaction/{transaction_id}": {
         parameters: {
             query?: never;
@@ -1525,6 +1559,34 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** SeriesChangeOut */
+        SeriesChangeOut: {
+            /** Affected */
+            affected: number;
+        };
+        /** BulkUpdateTransactions */
+        BulkUpdateTransactions: {
+            /** Ids */
+            ids: number[];
+            status?: components["schemas"]["TransactionStatus"] | null;
+            /** Subgroup Id */
+            subgroup_id?: number | null;
+            /** Contact Id */
+            contact_id?: number | null;
+            /** Company Id */
+            company_id?: number | null;
+            /** Sale Id */
+            sale_id?: number | null;
+            /** Date */
+            date?: string | null;
+            /** Shift Days */
+            shift_days?: number | null;
+        };
+        /** BulkIds */
+        BulkIds: {
+            /** Ids */
+            ids: number[];
+        };
         /** PatchTransaction */
         PatchTransaction: {
             /** Subgroup Id */
@@ -1607,11 +1669,6 @@ export interface components {
              * @default
              */
             notes: string;
-        };
-        /** SeriesChangeOut */
-        SeriesChangeOut: {
-            /** Affected */
-            affected: number;
         };
         /** PatchSeries */
         PatchSeries: {
@@ -3549,6 +3606,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    api_endpoints_transactions_bulk_update_transactions_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkUpdateTransactions"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesChangeOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_bulk_delete_transactions_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIds"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesChangeOut"];
+                };
             };
         };
     };

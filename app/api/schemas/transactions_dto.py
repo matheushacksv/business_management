@@ -41,6 +41,32 @@ class PatchTransaction(Schema):
         return self
 
 
+class BulkIds(Schema):
+    ids: list[int] = Field(min_length=1, max_length=1000)
+
+
+class BulkUpdateTransactions(BulkIds):
+    status: TransactionStatus | None = None
+    subgroup_id: int | None = None
+    contact_id: int | None = None  # null = unlink
+    company_id: int | None = None
+    sale_id: int | None = None  # null = unlink
+    date: dt.date | None = None
+    shift_days: int | None = Field(None, ge=-3650, le=3650)
+
+    @model_validator(mode='after')
+    def check_changes(self):
+        changes = self.model_fields_set - {'ids'}
+        if not changes:
+            raise ValueError('nothing to change')
+        if {'date', 'shift_days'} <= changes:
+            raise ValueError('use date or shift_days, not both')
+        for field in ('status', 'subgroup_id', 'company_id', 'date', 'shift_days'):
+            if field in changes and getattr(self, field) is None:
+                raise ValueError(f'{field} cannot be null')
+        return self
+
+
 class ReportFilters(Schema):
     # Shared by the transaction list and the reports.
     # list[...] fields are multi-select: ?subgroup_id=1&subgroup_id=2

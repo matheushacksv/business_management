@@ -8,6 +8,8 @@ from ninja.files import UploadedFile
 from ninja.pagination import PageNumberPagination, paginate
 
 from api.schemas.transactions_dto import (
+    BulkIds,
+    BulkUpdateTransactions,
     CreateSeries,
     CreateTransaction,
     CreateTransfer,
@@ -25,7 +27,7 @@ from api.schemas.transactions_dto import (
 from apps.finance import services
 from apps.finance.exporter import XLSX_CONTENT_TYPE, transactions_xlsx
 from apps.finance.mapped_import import inspect_file, run_mapped_import
-from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
+from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Transactions'])
 
@@ -52,6 +54,21 @@ def export_transactions_endpoint(request, filters: Query[TransactionFilters]):
     filename = f'lancamentos-{timezone.localdate():%Y-%m-%d}.xlsx'
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+@router.post('/transaction/bulk-update', response=SeriesChangeOut)
+@require_permission('transactions', CHANGE)
+def bulk_update_transactions_endpoint(request, data: BulkUpdateTransactions):
+    fields = data.dict(exclude_unset=True)
+    if 'sale_id' in fields:
+        check_permission(request.user, 'sales', CHANGE)
+    return {'affected': services.bulk_update_transactions_service(user=request.user, **fields)}
+
+
+@router.post('/transaction/bulk-delete', response=SeriesChangeOut)
+@require_permission('transactions', DELETE)
+def bulk_delete_transactions_endpoint(request, data: BulkIds):
+    return {'affected': services.bulk_delete_transactions_service(user=request.user, ids=data.ids)}
 
 
 @router.get('/transaction/{transaction_id}', response=TransactionOut)

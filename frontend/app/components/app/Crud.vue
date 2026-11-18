@@ -29,6 +29,7 @@ const props = defineProps<{
   toForm?: (row: T) => Record<string, any>   // row -> form values (defaults to same keys)
   searchKeys?: string[]                        // client-side search over these keys
   rowTo?: (row: T) => string                   // clicking a row opens this page instead of the edit modal
+  selectable?: boolean                         // checkbox column + #bulk slot (actions over the picked rows)
 }>()
 const emit = defineEmits<{ changed: [] }>()
 
@@ -62,6 +63,9 @@ const page = ref(1)
 watch(search, () => { page.value = 1 })
 watch(() => filtered.value.length, (n) => { page.value = Math.min(page.value, Math.max(1, Math.ceil(n / PAGE_SIZE))) })
 const pageRows = computed(() => filtered.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
+
+const selection = useSelection<T>(() => pageRows.value)
+const tableColumns = computed(() => props.selectable ? [selection.column, ...props.columns] : props.columns)
 
 // Form modal
 const open = ref(false)
@@ -141,13 +145,17 @@ async function destroy() {
     </template>
 
     <div class="s-panel overflow-hidden">
-      <UTable :data="pageRows" :columns="columns" :loading="loading" sticky :empty="`Nenhum registro`"
+      <UTable :data="pageRows" :columns="tableColumns" :loading="loading" sticky :empty="`Nenhum registro`"
               class="max-h-[calc(100dvh-14rem)]" @select="(_: Event, row: any) => rowTo ? navigateTo(rowTo(row.original)) : openEdit(row.original)" />
     </div>
     <div class="flex items-center justify-between text-sm text-muted">
       <span>{{ filtered.length.toLocaleString('pt-BR') }} registro(s)</span>
       <UPagination v-if="filtered.length > PAGE_SIZE" v-model:page="page" :total="filtered.length" :items-per-page="PAGE_SIZE" />
     </div>
+
+    <AppBulkBar v-if="selectable" :count="selection.ids.value.length" @clear="selection.clear">
+      <slot name="bulk" :rows="selection.rows.value" :clear="selection.clear" :reload="reload" />
+    </AppBulkBar>
 
     <UModal v-model:open="open" :title="editingId ? `Editar ${singular.toLowerCase()}` : `Novo(a) ${singular.toLowerCase()}`"
             :ui="{ content: 'max-w-xl' }">

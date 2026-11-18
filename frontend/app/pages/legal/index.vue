@@ -103,6 +103,23 @@ const listColumns: TableColumn<Case>[] = [
   { accessorKey: 'updated_at', header: 'Atualizado', cell: ({ row }) => formatDate(row.original.updated_at!.slice(0, 10)) },
 ]
 
+// List view: pick several cases and move them to one stage
+const selection = useSelection<Case>(() => items.value)
+const tableColumns = computed(() => canChange.value ? [selection.column, ...listColumns] : listColumns)
+const bulkStage = ref<string>()
+watch(view, () => selection.clear())
+async function moveSelected(stage: string) {
+  const cards = selection.rows.value
+  const results = await Promise.allSettled(cards.map(c => unwrap(api.PATCH('/api/collection-case/{case_id}', {
+    params: { path: { case_id: c.id! } }, body: { stage: stage as any },
+  }))))
+  const failed = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
+  if (failed.length) notifyError(failed[0]!.reason, `${failed.length} de ${cards.length} não movido(s)`)
+  bulkStage.value = undefined
+  selection.clear()
+  load()
+}
+
 const selected = ref<number | null>(null)
 const drawerOpen = ref(false)
 const createOpen = ref(false)
@@ -171,10 +188,14 @@ function onCreated(id: number) {
 
     <template v-else>
       <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
-        <UTable :data="items" :columns="listColumns" :loading="loading" sticky empty="Nenhum caso de cobrança"
+        <UTable :data="items" :columns="tableColumns" :loading="loading" sticky empty="Nenhum caso de cobrança"
                 class="max-h-[calc(100dvh-16rem)]" @select="(_: Event, row: any) => openCase(row.original.id)" />
       </div>
       <p class="text-sm text-muted">{{ items.length }} caso(s)</p>
+      <AppBulkBar :count="selection.ids.value.length" @clear="selection.clear">
+        <USelect v-model="bulkStage" :items="stages" placeholder="Mover para…" size="sm" class="w-48"
+                 @update:model-value="(v: any) => v && moveSelected(v)" />
+      </AppBulkBar>
     </template>
 
     <LegalDrawer v-model:open="drawerOpen" :case-id="selected" @changed="load" />

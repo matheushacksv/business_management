@@ -114,6 +114,14 @@ const columns: TableColumn<Transaction>[] = [
   },
 ]
 
+const selection = useSelection<Transaction>(() => items.value)
+const tableColumns = computed(() => auth.can('transactions', 'change') || auth.can('transactions', 'delete')
+  ? [selection.column, ...columns] : columns)
+function afterBulk() {
+  selection.clear()
+  load()
+}
+
 const orderings = [
   { label: 'Mais recentes', value: '-date' },
   { label: 'Mais antigos', value: 'date' },
@@ -174,7 +182,7 @@ function onCreated(id: number | null) {
     </template>
 
     <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
-      <UTable :data="items" :columns="columns" :loading="loading" sticky empty="Nenhum lançamento encontrado"
+      <UTable :data="items" :columns="tableColumns" :loading="loading" sticky empty="Nenhum lançamento encontrado"
               class="max-h-[calc(100dvh-16rem)]" @select="onSelect" />
     </div>
 
@@ -183,6 +191,7 @@ function onCreated(id: number | null) {
       <UPagination v-if="count > PAGE_SIZE" v-model:page="page" :total="count" :items-per-page="PAGE_SIZE" />
     </div>
 
+    <TransactionsBulkActions :rows="selection.rows.value" @done="afterBulk" @clear="selection.clear" />
     <TransactionsDrawer v-model:open="drawerOpen" :transaction-id="selected" @changed="load" />
 
     <UModal v-model:open="createOpen" title="Novo lançamento" :ui="{ content: 'max-w-2xl' }">
