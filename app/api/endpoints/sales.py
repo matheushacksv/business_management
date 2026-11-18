@@ -9,6 +9,12 @@ from api.schemas.sales_dto import (
     CreateCommission,
     PatchCommission,
     PayCommissions,
+    PaySalary,
+    ShareStatement,
+    StatementPassword,
+    StatementShareOut,
+    StatementOut,
+    StatementParams,
     CreateSale,
     GenerateReceivables,
     NamedCreate,
@@ -77,7 +83,7 @@ def create_salesperson_endpoint(request, data: SalespersonCreate):
 @require_permission('sales', CHANGE)
 def update_salesperson_endpoint(request, salesperson_id: int, data: SalespersonPatch):
     fields = data.dict(exclude_unset=True)
-    for field in ('name', 'active'):  # only user_id may be nulled (unlink login)
+    for field in ('name', 'active', 'monthly_salary'):  # only user_id may be nulled (unlink login)
         if fields.get(field, ...) is None:
             fields.pop(field)
     return services.update_salesperson_service(salesperson_id=salesperson_id, **fields)
@@ -175,6 +181,31 @@ def export_commissions_endpoint(request, filters: Query[CommissionFilters]):
 def pay_commissions_endpoint(request, data: PayCommissions):
     check_permission(request.user, 'transactions', CREATE)  # creates the outflows
     return services.pay_commissions_service(user=request.user, **data.dict())
+
+
+@router.get('/commission/statement', response=StatementOut)
+@require_permission('sales', VIEW)
+def commission_statement_endpoint(request, params: Query[StatementParams]):
+    return services.salary_statement_service(user=request.user, **params.dict())
+
+
+@router.post('/commission/statement/share', response=StatementShareOut)
+@require_permission('sales', CHANGE)
+def share_statement_endpoint(request, data: ShareStatement):
+    share, password = services.share_statement_service(user=request.user, **data.dict())
+    return {'token': share.token, 'password': password, 'expires_at': share.expires_at}
+
+
+@router.post('/public/statement/{token}', auth=None, response=StatementOut)
+def public_statement_endpoint(request, token: str, data: StatementPassword):
+    return services.public_statement_service(token=token, password=data.password)
+
+
+@router.post('/salary/pay', response=TransactionOut)
+@require_permission('sales', CHANGE)
+def pay_salary_endpoint(request, data: PaySalary):
+    check_permission(request.user, 'transactions', CREATE)  # creates the outflow
+    return services.pay_salary_service(user=request.user, **data.dict())
 
 
 @router.patch('/commission/{commission_id}', response=CommissionOut)

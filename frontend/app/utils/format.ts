@@ -28,6 +28,16 @@ export function formatDateTime(value: string | null | undefined): string {
   return new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+/** Month select items: 3 ahead to ~2 years back, "11/2026" -> "2026-11" (native type="month" isn't supported everywhere) */
+export function monthOptions() {
+  const now = new Date()
+  return Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + 3 - i, 1)
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    return { label: `${m}/${d.getFullYear()}`, value: `${d.getFullYear()}-${m}` }
+  })
+}
+
 /** "2026-03-01" -> "Mar/2026" */
 export function formatMonth(value: string): string {
   const [y, m] = value.split('-')

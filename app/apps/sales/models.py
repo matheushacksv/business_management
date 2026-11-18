@@ -31,6 +31,7 @@ class Salesperson(models.Model):
         'users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='salesperson'
     )
     active = models.BooleanField(default=True)
+    monthly_salary = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0'))
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -116,3 +117,34 @@ class Commission(models.Model):
 
     class Meta:
         ordering = ['sale__date', 'id']
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class SalaryPayment(models.Model):
+    """Fixed pay of one month. Amount frozen at payment; deleting the outflow reopens the month."""
+
+    salesperson = models.ForeignKey(Salesperson, on_delete=models.PROTECT, related_name='salary_payments')
+    month = models.DateField()  # due month (1st day), same as the commissions paid with it
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    payment = models.OneToOneField('finance.Transaction', on_delete=models.CASCADE, related_name='salary_payment')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint('salesperson', 'month', name='unique_salary_payment_month')]
+
+
+class StatementShare(models.Model):
+    """Public link to one monthly statement, opened with a password handed to the professional.
+    Not history-tracked: it only holds a token and a password hash."""
+
+    salesperson = models.ForeignKey(Salesperson, on_delete=models.CASCADE, related_name='statement_shares')
+    month = models.DateField()  # due month (1st day)
+    token = models.CharField(max_length=64, unique=True)
+    password = models.CharField(max_length=128)  # Django hash, the plain one is shown once
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    expires_at = models.DateTimeField()
+    created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='+')  # its access scopes the link
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint('salesperson', 'month', name='unique_statement_share_month')]

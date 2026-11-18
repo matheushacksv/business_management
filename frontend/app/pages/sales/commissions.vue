@@ -19,15 +19,7 @@ const filters = reactive({
   company_id: [] as number[],
   status: undefined as 'pending' | 'paid' | undefined,
 })
-// Month picker as select: native type="month" isn't supported everywhere (shows raw "2026-11")
-const monthItems = (() => {
-  const now = new Date()
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() + 3 - i, 1)
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    return { label: `${m}/${d.getFullYear()}`, value: `${d.getFullYear()}-${m}` }
-  })
-})()
+const monthItems = monthOptions()
 const query = computed(() => {
   const q: Record<string, unknown> = {}
   if (filters.month) q.month = `${filters.month}-01`
@@ -62,11 +54,11 @@ const salesMonth = computed(() => {
   return `${MONTHS[d.getMonth()]}/${d.getFullYear()}`
 })
 const byPerson = computed(() => {
-  const map = new Map<string, { name: string; pending: number; paid: number }>()
+  const map = new Map<number, { id: number; name: string; pending: number; paid: number }>()
   for (const c of items.value) {
-    const row = map.get(c.salesperson_name) ?? { name: c.salesperson_name, pending: 0, paid: 0 }
+    const row = map.get(c.salesperson_id) ?? { id: c.salesperson_id, name: c.salesperson_name, pending: 0, paid: 0 }
     row[c.payment_id ? 'paid' : 'pending'] += Number(c.amount)
-    map.set(c.salesperson_name, row)
+    map.set(c.salesperson_id, row)
   }
   return [...map.values()]
 })
@@ -135,6 +127,8 @@ function exportXlsx() {
 <template>
   <AppPage title="Comissões">
     <template #actions>
+      <UButton label="Demonstrativo" icon="i-lucide-receipt-text" color="neutral" variant="outline"
+               :to="{ path: '/sales/statement', query: { month: filters.month } }" />
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
     </template>
     <template #toolbar>
@@ -170,8 +164,11 @@ function exportXlsx() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in byPerson" :key="p.name" class="border-t border-muted">
-              <td class="py-1.5 text-highlighted">{{ p.name }}</td>
+            <tr v-for="p in byPerson" :key="p.id" class="border-t border-muted">
+              <td class="py-1.5">
+                <NuxtLink :to="{ path: '/sales/statement', query: { salesperson: p.id, month: filters.month } }"
+                          class="text-highlighted hover:text-primary">{{ p.name }}</NuxtLink>
+              </td>
               <td class="py-1.5 text-right" :class="p.pending ? 'text-warning' : 'text-dimmed'">{{ formatMoney(p.pending) }}</td>
               <td class="py-1.5 text-right" :class="p.paid ? 'text-success' : 'text-dimmed'">{{ formatMoney(p.paid) }}</td>
             </tr>

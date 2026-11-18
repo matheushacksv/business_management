@@ -7,7 +7,7 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import services as finance
 from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
-from apps.sales.models import Commission, Sale, Salesperson, SaleStatus
+from apps.sales.models import Commission, Sale, Salesperson, SaleStatus, StatementShare
 from apps.users.models import Role, User
 
 
@@ -15,7 +15,7 @@ def auth_for(user):
     return {'Authorization': f'Bearer {AccessToken.for_user(user)}'}  # type:ignore
 
 
-class CommissionTests(TestCase):
+class Base(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
         self.company = Company.objects.create(name='A', cnpj='81585365000127', tax_rate=Decimal('10'))
@@ -34,6 +34,8 @@ class CommissionTests(TestCase):
         self.assertEqual(r.status_code, 201, r.content)
         return r.json()
 
+
+class CommissionTests(Base):
     def test_amounts_split_between_people(self):
         self.assertEqual(Decimal(self.add(self.matheus, 'advisor', percent='5')['amount']), Decimal('900.00'))  # 5% of 18.000
         self.assertEqual(Decimal(self.add(self.amanda, 'advisor', percent='5')['amount']), Decimal('900.00'))
@@ -92,3 +94,63 @@ class CommissionTests(TestCase):
         r = self.api('get', '/commission/export')
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.content.startswith(b'PK'))
+
+
+class SalaryStatementTests(Base):
+    def pay_salary(self, **extra):
+        body = {'salesperson_id': self.matheus.pk, 'month': '2026-11-01', 'date': '2026-11-05',
+                'company_id': self.company.pk, 'subgroup_id': self.subgroup.pk, **extra}
+        return self.api('post', '/salary/pay', body)
+
+    def test_statement_and_salary_frozen(self):
+        Salesperson.objects.filter(pk=self.matheus.pk).update(monthly_salary=Decimal('3000'))
+        self.add(self.matheus, 'seller', percent='10')
+        st = self.api('get', f'/commission/statement?salesperson_id={self.matheus.pk}&month=2026-11-15').json()
+        self.assertEqual((Decimal(st['salary']), st['salary_payment_id'], len(st['commissions'])), (Decimal('3000'), None, 1))
+        r = self.pay_salary()
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(r.json()['reference'], 'Fixo ref. 10/2026')
+        self.assertEqual(self.pay_salary().status_code, 400)  # once per month
+        # raise: the paid month keeps 3000, the next one shows the new value
+        Salesperson.objects.filter(pk=self.matheus.pk).update(monthly_salary=Decimal('3500'))
+        st = self.api('get', f'/commission/statement?salesperson_id={self.matheus.pk}&month=2026-11-01').json()
+        self.assertEqual((Decimal(st['salary']), st['salary_paid_on']), (Decimal('3000'), '2026-11-05'))
+        nxt = self.api('get', f'/commission/statement?salesperson_id={self.matheus.pk}&month=2026-12-01').json()
+        self.assertEqual(Decimal(nxt['salary']), Decimal('3500'))
+        # deleting the outflow reopens the month
+        Transaction.objects.get(pk=r.json()['id']).delete()
+        st = self.api('get', f'/commission/statement?salesperson_id={self.matheus.pk}&month=2026-11-01').json()
+        self.assertEqual((Decimal(st['salary']), st['salary_payment_id']), (Decimal('3500'), None))
+
+    def test_no_salary_refused(self):
+        self.assertEqual(self.pay_salary().status_code, 400)
+        self.assertEqual(self.pay_salary(amount='1200').status_code, 200)
+
+
+class StatementShareTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.add(self.matheus, 'seller', percent='10')
+        r = self.api('post', '/commission/statement/share', {'salesperson_id': self.matheus.pk, 'month': '2026-11-01'})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.share = r.json()
+
+    def open(self, password, token=None):
+        return self.client.post(f'/api/public/statement/{token or self.share["token"]}', data={'password': password},
+                                content_type='application/json')
+
+    def test_opens_without_login_with_password(self):
+        r = self.open(self.share['password'].lower())
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(len(r.json()['commissions']), 1)
+        self.assertNotIn(self.share['password'], str(StatementShare.objects.get().password))  # stored hashed
+        self.assertEqual(self.open('WRONG123').status_code, 400)
+        self.assertEqual(self.open(self.share['password'], token='nope').status_code, 404)
+
+    def test_locks_after_attempts_and_regenerating_invalidates(self):
+        for _ in range(10):
+            self.open('WRONG123')
+        self.assertEqual(self.open(self.share['password']).status_code, 404)
+        new = self.api('post', '/commission/statement/share', {'salesperson_id': self.matheus.pk, 'month': '2026-11-01'}).json()
+        self.assertEqual(self.open(new['password'], token=new['token']).status_code, 200)
+        self.assertEqual(self.open(self.share['password']).status_code, 404)

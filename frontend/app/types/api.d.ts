@@ -969,6 +969,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/commission/statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Commission Statement Endpoint */
+        get: operations["api_endpoints_sales_commission_statement_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commission/statement/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Share Statement Endpoint */
+        post: operations["api_endpoints_sales_share_statement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/statement/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Public Statement Endpoint */
+        post: operations["api_endpoints_sales_public_statement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/salary/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay Salary Endpoint */
+        post: operations["api_endpoints_sales_pay_salary_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/commission/{commission_id}": {
         parameters: {
             query?: never;
@@ -2345,6 +2413,11 @@ export interface components {
              * @default true
              */
             active: boolean;
+            /**
+             * Monthly Salary
+             * @default 0
+             */
+            monthly_salary: string;
         };
         /** SalespersonCreate */
         SalespersonCreate: {
@@ -2352,6 +2425,11 @@ export interface components {
             name: string;
             /** User Id */
             user_id?: number | null;
+            /**
+             * Monthly Salary
+             * @default 0
+             */
+            monthly_salary: number | string;
         };
         /** SalespersonPatch */
         SalespersonPatch: {
@@ -2361,6 +2439,8 @@ export interface components {
             active?: boolean | null;
             /** User Id */
             user_id?: number | null;
+            /** Monthly Salary */
+            monthly_salary?: number | string | null;
         };
         /** SaleOut */
         SaleOut: {
@@ -2619,6 +2699,86 @@ export interface components {
             date: string;
             /** Subgroup Id */
             subgroup_id: number;
+        };
+        /** StatementParams */
+        StatementParams: {
+            /** Salesperson Id */
+            salesperson_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+        };
+        /** StatementOut */
+        StatementOut: {
+            salesperson: components["schemas"]["SalespersonOut"];
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /**
+             * Sales Month
+             * Format: date
+             */
+            sales_month: string;
+            /** Salary */
+            salary: string;
+            /** Salary Payment Id */
+            salary_payment_id: number | null;
+            /** Salary Paid On */
+            salary_paid_on: string | null;
+            /** Commissions */
+            commissions: components["schemas"]["CommissionOut"][];
+        };
+        /** StatementShareOut */
+        StatementShareOut: {
+            /** Token */
+            token: string;
+            /** Password */
+            password: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ShareStatement */
+        ShareStatement: {
+            /** Salesperson Id */
+            salesperson_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+        };
+        /** StatementPassword */
+        StatementPassword: {
+            /** Password */
+            password: string;
+        };
+        /** PaySalary */
+        PaySalary: {
+            /** Salesperson Id */
+            salesperson_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Company Id */
+            company_id: number;
+            /** Subgroup Id */
+            subgroup_id: number;
+            /** Amount */
+            amount?: number | string | null;
         };
         /** PatchCommission */
         PatchCommission: {
@@ -5066,6 +5226,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_commission_statement_endpoint: {
+        parameters: {
+            query: {
+                salesperson_id: number;
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_share_statement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareStatement"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementShareOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_public_statement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementPassword"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_pay_salary_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaySalary"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionOut"];
                 };
             };
         };

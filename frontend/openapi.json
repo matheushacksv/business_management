@@ -5404,6 +5404,169 @@
     ]
    }
   },
+  "/api/commission/statement": {
+   "get": {
+    "operationId": "api_endpoints_sales_commission_statement_endpoint",
+    "summary": "Commission Statement Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "salesperson_id",
+      "schema": {
+       "title": "Salesperson Id",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "format": "date",
+       "title": "Month",
+       "type": "string"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StatementOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/commission/statement/share": {
+   "post": {
+    "operationId": "api_endpoints_sales_share_statement_endpoint",
+    "summary": "Share Statement Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StatementShareOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShareStatement"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/public/statement/{token}": {
+   "post": {
+    "operationId": "api_endpoints_sales_public_statement_endpoint",
+    "summary": "Public Statement Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "token",
+      "schema": {
+       "title": "Token",
+       "type": "string"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StatementOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StatementPassword"
+       }
+      }
+     },
+     "required": true
+    }
+   }
+  },
+  "/api/salary/pay": {
+   "post": {
+    "operationId": "api_endpoints_sales_pay_salary_endpoint",
+    "summary": "Pay Salary Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TransactionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PaySalary"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/commission/{commission_id}": {
    "patch": {
     "operationId": "api_endpoints_sales_update_commission_endpoint",
@@ -10037,6 +10200,11 @@
       "default": true,
       "title": "Active",
       "type": "boolean"
+     },
+     "monthly_salary": {
+      "default": "0",
+      "title": "Monthly Salary",
+      "type": "string"
      }
     },
     "required": [
@@ -10063,6 +10231,19 @@
        }
       ],
       "title": "User Id"
+     },
+     "monthly_salary": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": "0",
+      "title": "Monthly Salary"
      }
     },
     "required": [
@@ -10106,6 +10287,21 @@
        }
       ],
       "title": "User Id"
+     },
+     "monthly_salary": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Salary"
      }
     },
     "title": "SalespersonPatch",
@@ -11064,6 +11260,195 @@
      "subgroup_id"
     ],
     "title": "PayCommissions",
+    "type": "object"
+   },
+   "StatementParams": {
+    "properties": {
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     }
+    },
+    "required": [
+     "salesperson_id",
+     "month"
+    ],
+    "title": "StatementParams",
+    "type": "object"
+   },
+   "StatementOut": {
+    "properties": {
+     "salesperson": {
+      "$ref": "#/components/schemas/SalespersonOut"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "sales_month": {
+      "format": "date",
+      "title": "Sales Month",
+      "type": "string"
+     },
+     "salary": {
+      "title": "Salary",
+      "type": "string"
+     },
+     "salary_payment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salary Payment Id"
+     },
+     "salary_paid_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salary Paid On"
+     },
+     "commissions": {
+      "items": {
+       "$ref": "#/components/schemas/CommissionOut"
+      },
+      "title": "Commissions",
+      "type": "array"
+     }
+    },
+    "required": [
+     "salesperson",
+     "month",
+     "sales_month",
+     "salary",
+     "salary_payment_id",
+     "salary_paid_on",
+     "commissions"
+    ],
+    "title": "StatementOut",
+    "type": "object"
+   },
+   "StatementShareOut": {
+    "properties": {
+     "token": {
+      "title": "Token",
+      "type": "string"
+     },
+     "password": {
+      "title": "Password",
+      "type": "string"
+     },
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "token",
+     "password",
+     "expires_at"
+    ],
+    "title": "StatementShareOut",
+    "type": "object"
+   },
+   "ShareStatement": {
+    "properties": {
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     }
+    },
+    "required": [
+     "salesperson_id",
+     "month"
+    ],
+    "title": "ShareStatement",
+    "type": "object"
+   },
+   "StatementPassword": {
+    "properties": {
+     "password": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Password",
+      "type": "string"
+     }
+    },
+    "required": [
+     "password"
+    ],
+    "title": "StatementPassword",
+    "type": "object"
+   },
+   "PaySalary": {
+    "properties": {
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "subgroup_id": {
+      "title": "Subgroup Id",
+      "type": "integer"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     }
+    },
+    "required": [
+     "salesperson_id",
+     "month",
+     "date",
+     "company_id",
+     "subgroup_id"
+    ],
+    "title": "PaySalary",
     "type": "object"
    },
    "PatchCommission": {

@@ -1,16 +1,19 @@
 import datetime as dt
+import secrets
 from decimal import Decimal
 
 import pghistory
+from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import DecimalField, ProtectedError, Q, Sum, Value
+from django.db.models import DecimalField, F, ProtectedError, Q, Sum, Value
+from django.utils import timezone
 from django.db.models.functions import Coalesce
 
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, SubGroup, Transaction, TransactionStatus, TransactionType
 from apps.finance.services import create_contact_service, create_series_service, create_transaction_service
-from apps.sales.models import PERCENT_KINDS, Commission, Product, Sale, Salesperson, SaleStatus
+from apps.sales.models import PERCENT_KINDS, Commission, Product, SalaryPayment, Sale, Salesperson, SaleStatus, StatementShare
 from apps.users.models import User
 
 ZERO = Decimal('0')
@@ -68,8 +71,8 @@ def delete_product_service(*, product_id: int) -> None:
     _delete_protected(Product.objects.get(pk=product_id))
 
 
-def create_salesperson_service(*, name: str, user_id: int | None = None) -> Salesperson:
-    return _create_named(Salesperson, name=name, user_id=user_id)
+def create_salesperson_service(*, name: str, user_id: int | None = None, monthly_salary=Decimal('0')) -> Salesperson:
+    return _create_named(Salesperson, name=name, user_id=user_id, monthly_salary=monthly_salary)
 
 
 def list_salespeople_service(*, active: bool | None = None):
@@ -381,3 +384,72 @@ def pay_commissions_service(*, user: User, ids: list[int], date: dt.date, subgro
             Commission.objects.bulk_update(group, ['payment', 'paid_amount'])
             payments.append(tx)
     return payments
+
+
+# Monthly statement: fixed pay + commissions due in the month
+
+def salary_statement_service(*, user: User, salesperson_id: int, month: dt.date) -> dict:
+    person = Salesperson.objects.get(pk=salesperson_id)
+    month = month.replace(day=1)
+    paid = SalaryPayment.objects.filter(salesperson=person, month=month).select_related('payment').first()
+    return {
+        'salesperson': person,
+        'month': month,
+        'sales_month': sales_month_for(month)[0],
+        'salary': paid.amount if paid else person.monthly_salary,
+        'salary_payment_id': paid.payment_id if paid else None,
+        'salary_paid_on': paid.payment.date if paid else None,
+        'commissions': list(list_commissions_service(user=user, month=month, salesperson_id=[person.pk])
+                            .select_related('sale__company', 'sale__contact', 'salesperson', 'payment')),
+    }
+
+
+def pay_salary_service(*, user: User, salesperson_id: int, month: dt.date, date: dt.date,
+                       company_id: int, subgroup_id: int, amount: Decimal | None = None) -> Transaction:
+    """Realized outflow for the fixed pay; the amount is frozen in SalaryPayment (one per month)."""
+    month = month.replace(day=1)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        person = Salesperson.objects.select_for_update().get(pk=salesperson_id)
+        if SalaryPayment.objects.filter(salesperson=person, month=month).exists():
+            raise ValidationError('Fixed pay of this month is already paid')
+        amount = person.monthly_salary if amount is None else amount
+        if amount <= 0:
+            raise ValidationError(f'{person.name} has no fixed pay')
+        tx = create_transaction_service(
+            user=user, company_id=company_id, subgroup_id=subgroup_id, date=date, amount=amount,
+            type=TransactionType.OUTFLOW, status=TransactionStatus.REALIZED,
+            contact_id=_contact_for(person).pk, reference=f'Fixo ref. {sales_month_for(month)[0]:%m/%Y}',
+        )
+        SalaryPayment.objects.create(salesperson=person, month=month, amount=amount, payment=tx)
+    return tx
+
+
+# Public statement link: random token + generated password (stored hashed, shown once)
+
+SHARE_DAYS = 60
+SHARE_MAX_ATTEMPTS = 10
+_PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  # no 0/O/1/I
+
+
+def share_statement_service(*, user: User, salesperson_id: int, month: dt.date) -> tuple[StatementShare, str]:
+    """(Re)generates the link of a month: a new token and password invalidate the previous ones."""
+    person = Salesperson.objects.get(pk=salesperson_id)
+    password = ''.join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(8))
+    share, _ = StatementShare.objects.update_or_create(
+        salesperson=person, month=month.replace(day=1),
+        defaults={'token': secrets.token_urlsafe(32), 'password': make_password(password), 'failed_attempts': 0,
+                  'expires_at': timezone.now() + dt.timedelta(days=SHARE_DAYS), 'created_by': user},
+    )
+    return share, password
+
+
+def public_statement_service(*, token: str, password: str) -> dict:
+    share = StatementShare.objects.select_related('created_by').filter(
+        token=token, expires_at__gt=timezone.now(), failed_attempts__lt=SHARE_MAX_ATTEMPTS, created_by__is_active=True,
+    ).first()
+    if share is None:  # unknown, expired or locked: same answer
+        raise StatementShare.DoesNotExist('Link not found')
+    if not check_password(password.strip().upper(), share.password):
+        StatementShare.objects.filter(pk=share.pk).update(failed_attempts=F('failed_attempts') + 1)
+        raise ValidationError('Senha incorreta')
+    return salary_statement_service(user=share.created_by, salesperson_id=share.salesperson_id, month=share.month)  # type:ignore

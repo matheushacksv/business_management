@@ -19,10 +19,12 @@ class ProductPatch(Schema):
 
 class SalespersonCreate(NamedCreate):
     user_id: int | None = None
+    monthly_salary: Decimal = Field(Decimal('0'), ge=0, max_digits=14, decimal_places=2)
 
 
 class SalespersonPatch(ProductPatch):
     user_id: int | None = None
+    monthly_salary: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
 
 
 class ProductOut(ModelSchema):
@@ -36,7 +38,7 @@ class SalespersonOut(ModelSchema):
 
     class Meta:
         model = Salesperson
-        fields = ['id', 'name', 'active']
+        fields = ['id', 'name', 'active', 'monthly_salary']
 
 
 class CreateSale(Schema):
@@ -200,3 +202,42 @@ class CommissionOut(Schema):
     def resolve_amount(obj) -> Decimal:
         from apps.sales.services import commission_amount
         return commission_amount(obj)
+
+
+class StatementParams(Schema):
+    salesperson_id: int
+    month: dt.date
+
+
+class StatementOut(Schema):
+    salesperson: SalespersonOut
+    month: dt.date
+    sales_month: dt.date
+    salary: Decimal
+    salary_payment_id: int | None
+    salary_paid_on: dt.date | None
+    commissions: list[CommissionOut]
+
+
+class PaySalary(Schema):
+    salesperson_id: int
+    month: dt.date
+    date: dt.date
+    company_id: int
+    subgroup_id: int
+    amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+
+
+class ShareStatement(Schema):
+    salesperson_id: int
+    month: dt.date
+
+
+class StatementShareOut(Schema):
+    token: str
+    password: str
+    expires_at: dt.datetime
+
+
+class StatementPassword(Schema):
+    password: str = Field(min_length=1, max_length=64)
