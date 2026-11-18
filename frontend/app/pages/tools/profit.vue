@@ -1,12 +1,20 @@
 <script setup lang="ts">
 const state = reactive(structuredClone(PROFIT_DEFAULTS))
 const result = computed(() => calcProfit(state))
-const reset = () => Object.assign(state, structuredClone(PROFIT_DEFAULTS))
+// Company only feeds the tax rate; the rate stays editable for the simulation
+const { notifyError, notifySuccess } = useApi()
+const lookups = useLookups()
+lookups.ensure('companies').catch(notifyError)
+const companyId = ref<number>()
+watch(companyId, id => {
+  const c = lookups.cache.value.companies?.find(c => c.id === id)
+  if (c) state.taxPct = Number(c.tax_rate)
+})
+const reset = () => { Object.assign(state, structuredClone(PROFIT_DEFAULTS)); companyId.value = undefined }
 
 const money = { step: 0.01, min: 0, increment: false, decrement: false, locale: 'pt-BR', formatOptions: { style: 'currency', currency: 'BRL' } } as const
 const percent = { step: 0.01, min: 0, max: 100, increment: false, decrement: false, locale: 'pt-BR', formatOptions: { maximumFractionDigits: 2 } } as const
 
-const { notifySuccess } = useApi()
 function copy() {
   const r = result.value
   const lines = r.lines.flatMap((l, i) => [
@@ -31,7 +39,10 @@ const printPage = () => window.print()
     <div class="grid items-start gap-4 lg:grid-cols-[1fr_24rem]">
       <div class="flex flex-col gap-4">
         <SPanel title="Contrato">
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid gap-4 sm:grid-cols-3">
+            <UFormField label="Empresa">
+              <USelectMenu v-model="companyId" :items="lookups.options.companies.value" value-key="value" class="w-full" />
+            </UFormField>
             <UFormField label="Valor bruto">
               <UInputNumber v-model="state.gross" v-bind="money" class="w-full" />
             </UFormField>
