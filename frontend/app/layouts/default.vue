@@ -41,9 +41,11 @@ const items = computed<NavigationMenuItem[][]>(() => {
     can('legal') && { label: 'Cobranças', icon: 'i-lucide-scale', to: '/legal' },
   ])
 
-  const tools = section('Ferramentas', [
-    { label: 'Lucro do contrato', icon: 'i-lucide-calculator', to: '/tools/profit' },
-    { label: 'Rescisão', icon: 'i-lucide-file-x', to: '/tools/termination' },
+  const tools = keep<NavigationMenuItem>([
+    parent({ label: 'Ferramentas', icon: 'i-lucide-calculator' }, ['/tools'], [
+      { label: 'Lucro do contrato', to: '/tools/profit' },
+      { label: 'Rescisão', to: '/tools/termination' },
+    ]),
   ])
 
   const settings = keep<NavigationMenuItem>([
