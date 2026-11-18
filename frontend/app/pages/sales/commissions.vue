@@ -19,6 +19,15 @@ const filters = reactive({
   company_id: [] as number[],
   status: undefined as 'pending' | 'paid' | undefined,
 })
+// Month picker as select: native type="month" isn't supported everywhere (shows raw "2026-11")
+const monthItems = (() => {
+  const now = new Date()
+  return Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + 3 - i, 1)
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    return { label: `${m}/${d.getFullYear()}`, value: `${d.getFullYear()}-${m}` }
+  })
+})()
 const query = computed(() => {
   const q: Record<string, unknown> = {}
   if (filters.month) q.month = `${filters.month}-01`
@@ -129,7 +138,7 @@ function exportXlsx() {
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
     </template>
     <template #toolbar>
-      <UInput v-model="filters.month" type="month" class="w-44" aria-label="Mês de pagamento" />
+      <USelect v-model="filters.month" :items="monthItems" class="w-32" aria-label="Mês de pagamento" />
       <USelectMenu v-model="filters.salesperson_id" :items="lookups.options.salespeople.value" value-key="value" multiple
                    placeholder="Profissionais" class="w-48" />
       <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple

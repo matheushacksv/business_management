@@ -82,7 +82,7 @@ async function saved() {
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="sale?.contact_name ?? (sale ? `Venda #${sale.id}` : 'Venda')" :ui="{ content: 'max-w-2xl' }">
+  <UModal v-model:open="open" :title="sale?.contact_name ?? (sale ? `Venda #${sale.id}` : 'Venda')" :ui="{ content: 'sm:max-w-4xl' }">
     <template #body>
       <USkeleton v-if="!sale" class="h-40 w-full" />
       <div v-else class="space-y-5">
@@ -102,10 +102,7 @@ async function saved() {
           </div>
         </div>
 
-        <div class="@container">
-          <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full"
-                 :ui="{ trigger: 'group min-w-0', label: 'hidden group-data-[state=active]:block @xl:block' }" />
-        </div>
+        <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full" />
 
         <template v-if="tab === 'summary'">
           <SalesForm v-if="editing" :sale="sale" @saved="saved" @cancel="editing = false" />
@@ -168,5 +165,5 @@ async function saved() {
         <AppHistory v-else target="sale" :target-id="sale.id!" />
       </div>
     </template>
-  </USlideover>
+  </UModal>
 </template>
