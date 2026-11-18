@@ -33,7 +33,7 @@ const find = (t: Table | null, key: string) => t?.lines.find(l => l.key === key)
 const COSTS = ['group:variable_costs', 'group:fixed_costs', 'group:non_operating_expenses']
 
 // Cards: this year x last year
-interface Card { label: string; value: number; previous: number; share?: number | null; better: 'up' | 'down'; hint: string }
+interface Card { label: string; value: number; previous: number; share?: number | null; better: 'up' | 'down' }
 const cards = computed<Card[]>(() => {
   const y = years.value
   if (!y) return []
@@ -44,12 +44,11 @@ const cards = computed<Card[]>(() => {
   const costs = COSTS.map(pick).reduce((a, c) => ({ value: a.value + c.value, previous: a.previous + c.previous }), { value: 0, previous: 0 })
   const revenue = pick('group:operating_revenue')
   return [
-    { label: 'Receita operacional', ...revenue, share: null, better: 'up', hint: 'Vendas e serviços do ano' },
-    { label: 'Custos e despesas', ...costs, share: revenue.value ? costs.value / revenue.value : null, better: 'down',
-      hint: 'Variáveis + fixos + não operacionais' },
-    { label: 'Margem de contribuição', ...pick('contribution_margin'), better: 'up', hint: 'Receita − custos variáveis' },
-    { label: 'Margem de lucro', ...pick('profit_margin'), better: 'up', hint: 'Margem de contribuição − custos fixos' },
-    { label: 'Resultado líquido', ...pick('net_result'), better: 'up', hint: 'O que sobrou no fim' },
+    { label: 'Receita operacional', ...revenue, share: null, better: 'up' },
+    { label: 'Custos e despesas', ...costs, share: revenue.value ? costs.value / revenue.value : null, better: 'down' },
+    { label: 'Margem de contribuição', ...pick('contribution_margin'), better: 'up' },
+    { label: 'Margem de lucro', ...pick('profit_margin'), better: 'up' },
+    { label: 'Resultado líquido', ...pick('net_result'), better: 'up' },
   ]
 })
 function variation(card: Card) {
@@ -155,7 +154,6 @@ function drill(row: Row, i: number) {
             {{ variation(card)!.text }} vs {{ year - 1 }}
           </span>
         </div>
-        <p class="mt-1 text-xs text-dimmed">{{ card.hint }}</p>
       </div>
     </div>
 
