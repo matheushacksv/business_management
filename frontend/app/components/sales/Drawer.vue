@@ -102,7 +102,10 @@ async function saved() {
           </div>
         </div>
 
-        <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full" />
+        <div class="@container">
+          <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full"
+                 :ui="{ trigger: 'group min-w-0', label: 'hidden group-data-[state=active]:block @xl:block' }" />
+        </div>
 
         <template v-if="tab === 'summary'">
           <SalesForm v-if="editing" :sale="sale" @saved="saved" @cancel="editing = false" />
