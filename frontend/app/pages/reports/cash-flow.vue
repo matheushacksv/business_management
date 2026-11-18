@@ -76,7 +76,7 @@ const totals = computed(() => (flow.value?.periods ?? []).reduce(
              :loading="loading && !flow" icon="i-lucide-landmark" />
     </div>
 
-    <SPanel title="Entradas, saídas e saldo" :description="filters.status.value === 'all' ? 'Inclui o previsto: é a projeção do caixa' : undefined">
+    <SPanel title="Entradas, saídas e saldo">
       <SChart type="bar" :labels="chart.labels" :series="chart.series" money :height="300" />
     </SPanel>
 

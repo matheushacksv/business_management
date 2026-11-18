@@ -140,7 +140,7 @@ async function saved() {
                 <UFormField label="Subgrupo de receita" required class="sm:col-span-2">
                   <USelect v-model="gen.subgroup_id" :items="revenueSubgroups" placeholder="Ex.: Mentorias e Treinamentos" class="w-full" />
                 </UFormField>
-                <UFormField label="Entrada" hint="0 = sem entrada">
+                <UFormField label="Entrada">
                   <UInputNumber v-model="gen.down_payment" :min="0" :step="0.01" :increment="false" :decrement="false"
                                 :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
                 </UFormField>

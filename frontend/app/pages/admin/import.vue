@@ -61,7 +61,7 @@ watch(file, () => { result.value = null })
     <SPanel title="1. Planilha">
       <div class="grid gap-4 sm:grid-cols-2">
         <UFileUpload v-model="file" accept=".xlsx" label="Solte o .xlsx aqui" icon="i-lucide-file-spreadsheet" class="min-h-32 sm:col-span-2" />
-        <UFormField label="Empresa padrão" required hint="Linhas sem empresa na planilha vão para ela">
+        <UFormField label="Empresa padrão" required>
           <USelect v-model="defaultCompany" :items="lookups.options.companies.value" placeholder="Escolha" class="w-full" />
         </UFormField>
         <div class="flex items-end">
@@ -72,8 +72,7 @@ watch(file, () => { result.value = null })
     </SPanel>
 
     <template v-if="result">
-      <SPanel v-if="result.company_names.length" title="2. Empresas da planilha"
-              description="Cada nome da coluna Empresa precisa apontar para uma empresa do sistema.">
+      <SPanel v-if="result.company_names.length" title="2. Empresas da planilha">
         <div class="grid gap-3 sm:grid-cols-2">
           <UFormField v-for="name in result.company_names" :key="name" :label="name" required>
             <USelect v-model="mapping[name]" :items="lookups.options.companies.value" placeholder="Escolha" class="w-full" />
@@ -92,7 +91,7 @@ watch(file, () => { result.value = null })
         <SStat label="Linhas puladas" :value="String(result.skipped.length)" tone="error" icon="i-lucide-circle-slash" />
       </div>
 
-      <SPanel v-if="result.skipped.length" title="Linhas puladas" description="Revise na planilha; elas não entram no sistema.">
+      <SPanel v-if="result.skipped.length" title="Linhas puladas">
         <ul class="mb-4 flex flex-wrap gap-2">
           <li v-for="[reason, n] in skippedByReason" :key="reason">
             <UBadge :label="`${reason}: ${n}`" color="neutral" variant="subtle" />
@@ -120,8 +119,7 @@ watch(file, () => { result.value = null })
                    :disabled="!!unmapped.length" @click="send(true)" />
         </div>
       </SPanel>
-      <UAlert v-else color="success" variant="subtle" icon="i-lucide-circle-check" title="Importação concluída"
-              description="Os dados já aparecem em Lançamentos, DRE e Vendas." />
+      <UAlert v-else color="success" variant="subtle" icon="i-lucide-circle-check" title="Importação concluída" />
     </template>
   </AppPage>
 </template>

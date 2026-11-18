@@ -15,7 +15,7 @@ const columns = [
 const fields = [
   { key: 'name', label: 'Nome', required: true, span: 2 as const },
   { key: 'company_name', label: 'Razão social' },
-  { key: 'document', label: 'CPF/CNPJ', hint: 'Com ou sem pontuação' },
+  { key: 'document', label: 'CPF/CNPJ' },
   { key: 'email', label: 'E-mail', type: 'email' as const },
   { key: 'phone', label: 'Telefone' },
 ]

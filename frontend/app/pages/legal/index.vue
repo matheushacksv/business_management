@@ -183,7 +183,7 @@ function onCreated(id: number) {
         <LegalForm @saved="onCreated" @cancel="createOpen = false" />
       </template>
     </UModal>
-    <UModal v-model:open="agreement.open" title="Acordo ou sentença" description="Obrigatório para mover para esta etapa.">
+    <UModal v-model:open="agreement.open" title="Acordo ou sentença">
       <template #body>
         <UTextarea v-model="agreement.text" :rows="3" autoresize class="w-full"
                    placeholder="Ex.: R$ 20.000,00 em 10x de R$ 2.000,00, primeiro vencimento dia 10/12" />

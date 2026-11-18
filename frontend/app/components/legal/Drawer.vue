@@ -105,7 +105,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
         </div>
 
         <UAlert v-if="incomplete && !editing" color="warning" variant="subtle" icon="i-lucide-triangle-alert"
-                title="Caso incompleto" description="Preencha os campos obrigatórios (veio da planilha)." />
+                title="Caso incompleto" />
 
         <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full" />
 
@@ -157,7 +157,6 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </li>
           </ul>
           <p v-else class="text-sm text-dimmed">Nenhuma parcela vinculada.</p>
-          <p class="text-xs text-dimmed">Parcelas previstas ficam fora da DRE e do fluxo de caixa. Ao marcar como realizada (em Lançamentos), voltam a contar.</p>
         </template>
       </div>
     </template>

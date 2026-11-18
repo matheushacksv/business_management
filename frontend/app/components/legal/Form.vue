@@ -88,10 +88,10 @@ async function submit() {
       <AppContactSelect v-if="!c" v-model="state.contact_id" :initial-label="contactName" />
       <p v-else class="text-sm text-highlighted">{{ c.contact_name }}</p>
     </UFormField>
-    <UFormField label="Empresa" required hint="do cliente">
+    <UFormField label="Empresa do cliente" required>
       <UInput v-model="state.client_company" class="w-full" />
     </UFormField>
-    <UFormField label="Contato" required hint="telefone, e-mail, pessoa">
+    <UFormField label="Contato" required>
       <UInput v-model="state.contact_info" class="w-full" />
     </UFormField>
     <UFormField label="O que foi entregue" required class="sm:col-span-2">
@@ -117,14 +117,10 @@ async function submit() {
     <UFormField label="Etapa" :class="c ? 'sm:col-span-2' : ''">
       <USelect v-model="state.stage" :items="stageOptions" class="w-full" />
     </UFormField>
-    <UFormField v-if="needsAgreement || state.agreement" label="Acordo ou sentença" :required="needsAgreement"
-                hint="valor, parcelas, 1º vencimento" class="sm:col-span-2">
+    <UFormField v-if="needsAgreement || state.agreement" label="Acordo ou sentença" :required="needsAgreement" class="sm:col-span-2">
       <UTextarea v-model="state.agreement" :rows="2" autoresize
                  placeholder="Ex.: R$ 20.000,00 em 10x de R$ 2.000,00, primeiro vencimento dia 10/12" class="w-full" />
     </UFormField>
-    <p v-if="!c" class="sm:col-span-2 text-xs text-dimmed">
-      As parcelas em aberto desse cliente nessa empresa serão vinculadas ao caso e saem da DRE e do fluxo de caixa até serem recebidas.
-    </p>
     <div class="sm:col-span-2 flex justify-end gap-2">
       <UButton label="Cancelar" color="neutral" variant="ghost" @click="emit('cancel')" />
       <UButton type="submit" :label="c ? 'Salvar' : 'Abrir caso'" :loading="saving" />

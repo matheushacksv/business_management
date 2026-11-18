@@ -63,11 +63,10 @@ const rate = computed(() => {
       <SStat label="Vendido" :value="formatMoney(report?.total_sold)" tone="primary" :loading="loading && !report" icon="i-lucide-handshake" />
       <SStat label="Recebido" :value="formatMoney(report?.total_received)" tone="success" :loading="loading && !report" icon="i-lucide-banknote" />
       <SStat label="Vendas" :value="String(report?.sales_count ?? 0)" :loading="loading && !report" icon="i-lucide-hash" />
-      <SStat label="Recebido / vendido" :value="formatPercent(rate)" :loading="loading && !report" icon="i-lucide-percent"
-             hint="Venda e recebimento caem em meses diferentes" />
+      <SStat label="Recebido / vendido" :value="formatPercent(rate)" :loading="loading && !report" icon="i-lucide-percent" />
     </div>
 
-    <SPanel title="Por mês" description="Vendido pela data da venda; recebido pela data de pagamento das parcelas ligadas às vendas">
+    <SPanel title="Por mês">
       <SChart type="bar" :labels="chart.labels" :series="chart.series" money :height="320" />
     </SPanel>
   </AppPage>

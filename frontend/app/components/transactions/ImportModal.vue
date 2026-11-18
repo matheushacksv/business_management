@@ -33,7 +33,7 @@ const skipDuplicates = ref(true)
 const FIELDS: { key: FieldKey; label: string; required?: boolean; fixed?: boolean; hint?: string }[] = [
   { key: 'date', label: 'Data', required: true },
   { key: 'amount', label: 'Valor', required: true },
-  { key: 'type', label: 'Tipo', required: true, hint: 'Entrada ou saída' },
+  { key: 'type', label: 'Tipo', required: true },
   { key: 'subgroup', label: 'Subgrupo', required: true, fixed: true },
   { key: 'status', label: 'Status', fixed: true },
   { key: 'company', label: 'Empresa', required: true, fixed: true },
@@ -267,7 +267,6 @@ const steps = [{ title: 'Arquivo' }, { title: 'Colunas' }, { title: 'Revisar' }]
       <!-- 1. File -->
       <div v-if="step === 1" class="space-y-4">
         <UFileUpload v-model="file" accept=".xlsx,.csv" label="Solte o arquivo .xlsx ou .csv aqui"
-                     description="Extrato do banco, planilha de controle… até 20 MB e 10 mil linhas"
                      icon="i-lucide-file-spreadsheet" class="min-h-36 w-full" />
         <div v-if="inspect" class="flex flex-wrap items-end gap-4">
           <UFormField v-if="inspect.sheets.length > 1" label="Aba">
@@ -307,13 +306,12 @@ const steps = [{ title: 'Arquivo' }, { title: 'Colunas' }, { title: 'Revisar' }]
         <div class="grid gap-3 sm:grid-cols-5">
           <SStat label="Válidas" :value="String(result.valid_count)" tone="success" />
           <SStat label="Com erro" :value="String(result.error_count)" :tone="result.error_count ? 'error' : 'default'" />
-          <SStat label="Duplicadas" :value="String(result.duplicate_count)" hint="mesma data, valor, empresa e subgrupo" />
+          <SStat label="Duplicadas" :value="String(result.duplicate_count)" />
           <SStat label="Novos contatos" :value="String(result.new_contacts)" />
           <SStat label="Serão importadas" :value="String(result.to_create)" tone="primary" />
         </div>
 
-        <SPanel v-if="Object.keys(unknownSeen).length" title="Valores não reconhecidos"
-                description="Escolha o equivalente no sistema: vale para todas as linhas com esse valor.">
+        <SPanel v-if="Object.keys(unknownSeen).length" title="Valores não reconhecidos">
           <div class="space-y-4">
             <div v-for="(values, field) in unknownSeen" :key="field">
               <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">{{ FIELD_LABEL[field] }}</p>

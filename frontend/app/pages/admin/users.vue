@@ -33,7 +33,7 @@ const fields = computed(() => [
   { key: 'name', label: 'Nome' },
   { key: 'role', label: 'Perfil', type: 'select' as const, options: ROLE_OPTIONS, required: true },
   { key: 'company_ids', label: 'Empresas que pode acessar', type: 'multiselect' as const, options: lookups.options.companies.value,
-    span: 2 as const, hint: 'Administradores acessam todas' },
+    span: 2 as const },
 ])
 
 async function deactivate(id: number | null, close: () => void, reload: () => void) {

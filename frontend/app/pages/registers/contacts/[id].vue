@@ -308,13 +308,10 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     <SalesDrawer v-model:open="saleOpen" :sale-id="saleId" @changed="refreshAll" />
     <TransactionsDrawer v-model:open="txOpen" :transaction-id="txId" @changed="refreshAll" />
     <AppContactFormModal v-model:open="editOpen" :contact="contact" @saved="(c) => (contact = c)" />
-    <UModal v-model:open="mergeOpen" title="Mesclar duplicado" :description="`O contato escolhido será incorporado a ${contact?.name ?? 'este'}.`">
+    <UModal v-model:open="mergeOpen" title="Mesclar duplicado">
       <template #body>
         <AppContactSelect v-model="mergeSource" placeholder="Buscar o contato duplicado" />
         <p v-if="mergeSource === id" class="mt-2 text-xs text-error">Escolha outro contato.</p>
-        <p class="mt-2 text-xs text-dimmed">
-          Se o duplicado tiver "- Acordo" ou "(Ação)" no nome, as entradas dele também são vinculadas ao caso de cobrança deste cliente.
-        </p>
       </template>
       <template #footer>
         <div class="flex w-full justify-end gap-2">

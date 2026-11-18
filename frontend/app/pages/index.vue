@@ -84,16 +84,14 @@ const greeting = computed(() => {
     <template v-if="auth.can('reports')">
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SStat label="Receitas operacionais no mês" :value="formatMoney(at('group:operating_revenue'))" tone="primary"
-               :loading="loading" icon="i-lucide-trending-up" hint="Previsto + realizado" />
-        <SStat label="Custos no mês" :value="formatMoney(costs)" tone="error" :loading="loading" icon="i-lucide-trending-down"
-               hint="Variáveis + fixos" />
+               :loading="loading" icon="i-lucide-trending-up" />
+        <SStat label="Custos no mês" :value="formatMoney(costs)" tone="error" :loading="loading" icon="i-lucide-trending-down" />
         <SStat label="Resultado líquido no mês" :value="formatMoney(at('net_result'))"
                :tone="Number(at('net_result')) < 0 ? 'error' : 'success'" :loading="loading" icon="i-lucide-scale" />
-        <SStat label="Saldo em caixa hoje" :value="formatMoney(cash?.closing)" :loading="loading" icon="i-lucide-landmark"
-               hint="Somente realizado" />
+        <SStat label="Saldo em caixa hoje" :value="formatMoney(cash?.closing)" :loading="loading" icon="i-lucide-landmark" />
       </div>
 
-      <SPanel title="Evolução mensal" description="Receitas operacionais, custos e resultado líquido por mês">
+      <SPanel title="Evolução mensal">
         <template #actions>
           <div class="flex items-center gap-2">
             <USelect v-model="chartYear" :items="yearOptions" size="sm" class="w-24" aria-label="Ano do gráfico" />

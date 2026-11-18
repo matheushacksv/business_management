@@ -69,7 +69,6 @@ watch(() => props.targetId, load, { immediate: true })
       :disabled="uploading"
       accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.xml,.xlsx,.xls,.csv,.doc,.docx,.txt"
       label="Solte o arquivo ou clique para enviar"
-      description="PDF, imagem, XML de NF-e, planilha ou documento · até 20 MB"
       icon="i-lucide-upload"
       class="w-full min-h-28"
     />

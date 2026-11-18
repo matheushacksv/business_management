@@ -17,7 +17,7 @@ const columns = [
 const fields = [
   { key: 'name', label: 'Nome', required: true, span: 2 as const },
   { key: 'cnpj', label: 'CNPJ', required: true },
-  { key: 'initial_balance', label: 'Saldo inicial', type: 'money' as const, hint: 'Base do fluxo de caixa' },
+  { key: 'initial_balance', label: 'Saldo inicial', type: 'money' as const },
 ]
 </script>
 

@@ -19,8 +19,7 @@ const fields = computed(() => [
   { key: 'name', label: 'Nome', required: true },
   { key: 'active', label: 'Ativo', type: 'switch' as const },
   ...(auth.me.value?.is_admin
-    ? [{ key: 'user_id', label: 'Usuário (opcional)', type: 'select' as const, options: lookups.options.users.value, span: 2 as const,
-         hint: 'Vincule se o vendedor também acessa o sistema' }]
+    ? [{ key: 'user_id', label: 'Usuário (opcional)', type: 'select' as const, options: lookups.options.users.value, span: 2 as const }]
     : []),
 ])
 </script>
