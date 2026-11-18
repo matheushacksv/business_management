@@ -74,15 +74,15 @@ const chart = computed(() => {
 })
 
 // Short table: groups and results only, subgroups on demand
-const LAYOUT: { key: string; sign: string; explain?: string }[] = [
+const LAYOUT: { key: string; sign: string }[] = [
   { key: 'group:operating_revenue', sign: '' },
   { key: 'group:variable_costs', sign: '(−)' },
-  { key: 'contribution_margin', sign: '=', explain: 'Receita operacional − custos variáveis: quanto sobra das vendas para pagar a estrutura.' },
+  { key: 'contribution_margin', sign: '=' },
   { key: 'group:fixed_costs', sign: '(−)' },
-  { key: 'profit_margin', sign: '=', explain: 'Margem de contribuição − custos fixos: o resultado da operação.' },
+  { key: 'profit_margin', sign: '=' },
   { key: 'group:non_operating_revenue', sign: '(+)' },
   { key: 'group:non_operating_expenses', sign: '(−)' },
-  { key: 'net_result', sign: '=', explain: 'Margem de lucro + receitas − despesas não operacionais: o que sobrou no fim.' },
+  { key: 'net_result', sign: '=' },
 ]
 const open = ref<Set<string>>(new Set())
 function toggle(key: string) {
@@ -92,14 +92,14 @@ function toggle(key: string) {
 }
 const expandAll = computed(() => open.value.size > 0)
 
-interface Row { line: Line; sign: string; explain?: string; child: boolean; group: string }
+interface Row { line: Line; sign: string; child: boolean; group: string }
 const rows = computed<Row[]>(() => {
   const lines = monthly.value?.lines ?? []
   const out: Row[] = []
   for (const item of LAYOUT) {
     const index = lines.findIndex(l => l.key === item.key)
     if (index < 0) continue
-    out.push({ line: lines[index]!, sign: item.sign, explain: item.explain, child: false, group: item.key })
+    out.push({ line: lines[index]!, sign: item.sign, child: false, group: item.key })
     if (!open.value.has(item.key)) continue
     for (const sub of lines.slice(index + 1)) {
       if (sub.kind !== 'subgroup') break
@@ -157,13 +157,12 @@ function drill(row: Row, i: number) {
       </div>
     </div>
 
-    <SPanel title="O ano mês a mês" description="Barras: receita × custos e despesas. Linha: resultado líquido.">
+    <SPanel title="O ano mês a mês">
       <SChart type="bar" :labels="chart.labels" :series="chart.series" money :height="280" />
     </SPanel>
 
     <div class="s-panel overflow-auto">
-      <div class="flex items-center justify-between gap-2 px-4 pt-3">
-        <p class="text-xs text-dimmed">Clique num grupo para abrir os subgrupos; clique num valor para ver os lançamentos.</p>
+      <div class="flex items-center justify-end gap-2 px-4 pt-3">
         <UButton :label="expandAll ? 'Recolher tudo' : 'Expandir tudo'" size="xs" color="neutral" variant="ghost"
                  :icon="expandAll ? 'i-lucide-chevrons-down-up' : 'i-lucide-chevrons-up-down'"
                  @click="open = expandAll ? new Set() : new Set(groupKeys)" />
@@ -189,9 +188,6 @@ function drill(row: Row, i: number) {
               </button>
               <span v-else class="inline-flex items-center gap-1.5">
                 <span v-if="row.sign" class="w-6 text-primary">{{ row.sign }}</span>{{ row.line.label }}
-                <UTooltip v-if="row.explain" :text="row.explain">
-                  <UIcon name="i-lucide-info" class="size-3.5 text-dimmed" />
-                </UTooltip>
               </span>
             </td>
             <td v-for="(value, i) in row.line.values" :key="i" :title="formatMoney(value)"

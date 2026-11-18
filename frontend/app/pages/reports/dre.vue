@@ -155,10 +155,5 @@ function cellClass(line: Line, i: number): string {
         </tbody>
       </table>
     </div>
-    <p class="text-xs text-dimmed">
-      <template v-if="mode === 'summary'">Variações comparam com o ano anterior inteiro. Com "Previsto + realizado", o ano atual inclui o que ainda está previsto. </template>
-      Estornos (tipo oposto ao do grupo) subtraem do grupo. Faturamento Bruto vem das vendas e é informativo.
-      <template v-if="mode === 'table' && view !== 'monthly'">Variações em verde: custo caindo ou receita/resultado subindo.</template>
-    </p>
   </AppPage>
 </template>
