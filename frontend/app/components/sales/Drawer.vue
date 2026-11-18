@@ -20,6 +20,7 @@ const canChange = computed(() => auth.can('sales', 'change'))
 const tabs = [
   { label: 'Resumo', value: 'summary', icon: 'i-lucide-file-text' },
   { label: 'Parcelas', value: 'receivables', icon: 'i-lucide-calendar-range' },
+  { label: 'Comissões', value: 'commissions', icon: 'i-lucide-hand-coins' },
   { label: 'Contrato', value: 'contract', icon: 'i-lucide-file-signature' },
   { label: 'Histórico', value: 'history', icon: 'i-lucide-history' },
 ]
@@ -159,6 +160,7 @@ async function saved() {
           </template>
         </template>
 
+        <SalesCommissions v-else-if="tab === 'commissions'" :sale-id="sale.id!" />
         <AppAttachments v-else-if="tab === 'contract'" target="sale" :target-id="sale.id!" :editable="canChange" />
         <AppHistory v-else target="sale" :target-id="sale.id!" />
       </div>

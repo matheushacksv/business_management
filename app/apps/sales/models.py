@@ -83,3 +83,36 @@ class Sale(models.Model):
 
     def __str__(self):
         return f'{self.date} - {self.amount}'
+
+
+class CommissionKind(models.TextChoices):
+    SELLER = 'seller', 'Vendedor'
+    ADVISOR = 'advisor', 'Assessor'
+    SCHEDULING = 'scheduling', 'Agendamento'
+    CRM = 'crm', 'Implementação de CRM'
+    OTHER = 'other', 'Outro'
+
+
+PERCENT_KINDS = {CommissionKind.SELLER, CommissionKind.ADVISOR}  # % of the sale after tax; the rest is a fixed value
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class Commission(models.Model):
+    """Who earns what on a sale. Due the month after the sale, whether the customer paid or not."""
+
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='commissions')
+    salesperson = models.ForeignKey(Salesperson, on_delete=models.PROTECT, related_name='commissions')
+    kind = models.CharField(max_length=12, choices=CommissionKind.choices)
+    percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    fixed_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    description = models.CharField(max_length=120, blank=True)
+    # Paid = linked to the outflow that paid it; the amount is frozen then (deleting the outflow reopens it)
+    payment = models.ForeignKey(
+        'finance.Transaction', on_delete=models.SET_NULL, null=True, blank=True, related_name='commissions_paid'
+    )
+    paid_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sale__date', 'id']

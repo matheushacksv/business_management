@@ -5074,6 +5074,411 @@
     ]
    }
   },
+  "/api/sale/{sale_id}/commissions": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_sale_commissions_endpoint",
+    "summary": "List Sale Commissions Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CommissionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_sales_create_commission_endpoint",
+    "summary": "Create Commission Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CommissionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateCommission"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/commission": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_commissions_endpoint",
+    "summary": "List Commissions Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Month"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "salesperson_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Salesperson Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "pending",
+          "paid"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CommissionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/commission/export": {
+   "get": {
+    "operationId": "api_endpoints_sales_export_commissions_endpoint",
+    "summary": "Export Commissions Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Month"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "salesperson_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Salesperson Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "pending",
+          "paid"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/commission/pay": {
+   "post": {
+    "operationId": "api_endpoints_sales_pay_commissions_endpoint",
+    "summary": "Pay Commissions Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TransactionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PayCommissions"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/commission/{commission_id}": {
+   "patch": {
+    "operationId": "api_endpoints_sales_update_commission_endpoint",
+    "summary": "Update Commission Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "commission_id",
+      "schema": {
+       "title": "Commission Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CommissionOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchCommission"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_sales_delete_commission_endpoint",
+    "summary": "Delete Commission Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "commission_id",
+      "schema": {
+       "title": "Commission Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/sales": {
    "get": {
     "operationId": "api_endpoints_sales_sales_report_endpoint",
@@ -6304,6 +6709,11 @@
       "default": "0",
       "title": "Initial Balance",
       "type": "string"
+     },
+     "tax_rate": {
+      "default": "10",
+      "title": "Tax Rate",
+      "type": "string"
      }
     },
     "required": [
@@ -6333,6 +6743,20 @@
        }
       ],
       "title": "Initial Balance"
+     },
+     "tax_rate": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": "10",
+      "title": "Tax Rate"
      }
     },
     "required": [
@@ -6380,6 +6804,22 @@
        }
       ],
       "title": "Initial Balance"
+     },
+     "tax_rate": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Tax Rate"
      }
     },
     "title": "CompanyUpdateDTO",
@@ -10343,6 +10783,356 @@
      "installments"
     ],
     "title": "GenerateReceivables",
+    "type": "object"
+   },
+   "CommissionKind": {
+    "enum": [
+     "seller",
+     "advisor",
+     "scheduling",
+     "crm",
+     "other"
+    ],
+    "title": "CommissionKind",
+    "type": "string"
+   },
+   "CommissionOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "sale_id": {
+      "title": "Sale Id",
+      "type": "integer"
+     },
+     "sale_date": {
+      "format": "date",
+      "title": "Sale Date",
+      "type": "string"
+     },
+     "sale_amount": {
+      "title": "Sale Amount",
+      "type": "string"
+     },
+     "contact_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contact Name"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "tax_rate": {
+      "title": "Tax Rate",
+      "type": "string"
+     },
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "salesperson_name": {
+      "title": "Salesperson Name",
+      "type": "string"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/CommissionKind"
+     },
+     "percent": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percent"
+     },
+     "fixed_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Amount"
+     },
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "payment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Payment Id"
+     },
+     "paid_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Paid On"
+     }
+    },
+    "required": [
+     "id",
+     "sale_id",
+     "sale_date",
+     "sale_amount",
+     "company_id",
+     "company_name",
+     "tax_rate",
+     "salesperson_id",
+     "salesperson_name",
+     "kind",
+     "percent",
+     "fixed_amount",
+     "description",
+     "amount",
+     "payment_id"
+    ],
+    "title": "CommissionOut",
+    "type": "object"
+   },
+   "CreateCommission": {
+    "properties": {
+     "salesperson_id": {
+      "title": "Salesperson Id",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/CommissionKind"
+     },
+     "percent": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "maximum": 100.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percent"
+     },
+     "fixed_amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Amount"
+     },
+     "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+     }
+    },
+    "required": [
+     "salesperson_id",
+     "kind"
+    ],
+    "title": "CreateCommission",
+    "type": "object"
+   },
+   "CommissionFilters": {
+    "properties": {
+     "month": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Month"
+     },
+     "salesperson_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Id"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "status": {
+      "anyOf": [
+       {
+        "enum": [
+         "pending",
+         "paid"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     }
+    },
+    "title": "CommissionFilters",
+    "type": "object"
+   },
+   "PayCommissions": {
+    "properties": {
+     "ids": {
+      "items": {
+       "type": "integer"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Ids",
+      "type": "array"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "subgroup_id": {
+      "title": "Subgroup Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "ids",
+     "date",
+     "subgroup_id"
+    ],
+    "title": "PayCommissions",
+    "type": "object"
+   },
+   "PatchCommission": {
+    "properties": {
+     "salesperson_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Salesperson Id"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/CommissionKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "percent": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "maximum": 100.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Percent"
+     },
+     "fixed_amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fixed Amount"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     }
+    },
+    "title": "PatchCommission",
     "type": "object"
    },
    "SalesReportParams": {

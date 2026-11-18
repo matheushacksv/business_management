@@ -5,7 +5,7 @@ from typing import Literal
 from ninja import ModelSchema, Schema
 from pydantic import Field, model_validator
 
-from apps.sales.models import Product, Sale, Salesperson, SaleStatus
+from apps.sales.models import CommissionKind, Product, Sale, Salesperson, SaleStatus
 
 
 class NamedCreate(Schema):
@@ -139,3 +139,64 @@ class SalesReportOut(Schema):
     total_received: Decimal
     sales_count: int
     periods: list[SalesReportPeriod]
+
+
+class CreateCommission(Schema):
+    salesperson_id: int
+    kind: CommissionKind
+    percent: Decimal | None = Field(None, gt=0, le=100, max_digits=5, decimal_places=2)
+    fixed_amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    description: str = ''
+
+
+class PatchCommission(Schema):
+    salesperson_id: int | None = None
+    kind: CommissionKind | None = None
+    percent: Decimal | None = Field(None, gt=0, le=100, max_digits=5, decimal_places=2)
+    fixed_amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    description: str | None = None
+
+    @model_validator(mode='after')
+    def reject_null_on_required(self):
+        for field in ('salesperson_id', 'kind', 'description'):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f'{field} cannot be null')
+        return self
+
+
+class CommissionFilters(Schema):
+    month: dt.date | None = None  # month the commission is due (sales of the previous month)
+    salesperson_id: list[int] | None = None
+    company_id: list[int] | None = None
+    status: Literal['pending', 'paid'] | None = None
+
+
+class PayCommissions(Schema):
+    ids: list[int] = Field(min_length=1, max_length=1000)
+    date: dt.date
+    subgroup_id: int
+
+
+class CommissionOut(Schema):
+    id: int
+    sale_id: int
+    sale_date: dt.date = Field(alias='sale.date')
+    sale_amount: Decimal = Field(alias='sale.amount')
+    contact_name: str | None = Field(None, alias='sale.contact.name')
+    company_id: int = Field(alias='sale.company_id')
+    company_name: str = Field(alias='sale.company.name')
+    tax_rate: Decimal = Field(alias='sale.company.tax_rate')
+    salesperson_id: int
+    salesperson_name: str = Field(alias='salesperson.name')
+    kind: CommissionKind
+    percent: Decimal | None
+    fixed_amount: Decimal | None
+    description: str
+    amount: Decimal
+    payment_id: int | None
+    paid_on: dt.date | None = Field(None, alias='payment.date')
+
+    @staticmethod
+    def resolve_amount(obj) -> Decimal:
+        from apps.sales.services import commission_amount
+        return commission_amount(obj)

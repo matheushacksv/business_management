@@ -53,7 +53,13 @@ export const LABELS = {
     new: 'Nova Ação', stand_by: 'Stand By', requested: 'Solicitada ao Jurídico', filed: 'Ação Protocolada',
     in_progress: 'Em andamento', agreement: 'Acordo ou Sentença', awaiting_judge: 'Aguardando Juiz', done: 'Concluída',
   } as Record<string, string>,
+  commissionKind: {
+    seller: 'Vendedor', advisor: 'Assessor', scheduling: 'Agendamento', crm: 'Implementação de CRM', other: 'Outro',
+  } as Record<string, string>,
 }
+
+/** Sellers and advisors earn a % of the sale after tax; the other kinds a fixed value (same rule as the backend). */
+export const PERCENT_COMMISSION_KINDS = ['seller', 'advisor']
 
 export const TYPE_OPTIONS = [
   { label: 'Entrada', value: 'inflow' },

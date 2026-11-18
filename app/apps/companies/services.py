@@ -16,7 +16,7 @@ def normalize_cnpj(cnpj: str) -> str:
 
 
 def create_company_service(
-    user: User, name: str, cnpj: str, initial_balance: Decimal
+    user: User, name: str, cnpj: str, initial_balance: Decimal, tax_rate: Decimal = Decimal('10')
 ) -> Company:
     check_permission(user, 'companies', CREATE)
     cnpj = normalize_cnpj(cnpj)
@@ -24,7 +24,7 @@ def create_company_service(
     try:
         with transaction.atomic():
             return Company.objects.create(
-                name=name.strip(), cnpj=cnpj, initial_balance=initial_balance
+                name=name.strip(), cnpj=cnpj, initial_balance=initial_balance, tax_rate=tax_rate
             )
     except IntegrityError:
         raise ValidationError('Company with this CNPJ already exists')

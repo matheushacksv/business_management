@@ -14,6 +14,8 @@ export interface CrudField {
   placeholder?: string
   hint?: string
   span?: 2
+  step?: number             // number fields: decimals allowed
+  default?: unknown         // initial value when creating
 }
 
 const props = defineProps<{
@@ -75,6 +77,7 @@ const saving = ref(false)
 const visibleFields = computed(() => props.fields.filter(f => !(editingId.value && f.createOnly)))
 
 function blank(field: CrudField) {
+  if (field.default !== undefined) return field.default
   return field.type === 'multiselect' ? [] : field.type === 'switch' ? false : field.type === 'money' || field.type === 'number' ? 0 : field.type === 'select' ? undefined : ''
 }
 
@@ -171,7 +174,7 @@ async function destroy() {
             <UTextarea v-else-if="f.type === 'textarea'" v-model="state[f.key]" :rows="3" class="w-full" />
             <UInputNumber v-else-if="f.type === 'money'" v-model="state[f.key]" :step="0.01" :increment="false" :decrement="false"
                           :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
-            <UInputNumber v-else-if="f.type === 'number'" v-model="state[f.key]" class="w-full" />
+            <UInputNumber v-else-if="f.type === 'number'" v-model="state[f.key]" :step="f.step" class="w-full" />
             <UInput v-else v-model="state[f.key]" :type="f.type ?? 'text'" :placeholder="f.placeholder"
                     :disabled="!!editingId && f.readonlyOnEdit" class="w-full" />
           </UFormField>

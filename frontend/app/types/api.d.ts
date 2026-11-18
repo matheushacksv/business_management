@@ -900,6 +900,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sale/{sale_id}/commissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sale Commissions Endpoint */
+        get: operations["api_endpoints_sales_list_sale_commissions_endpoint"];
+        put?: never;
+        /** Create Commission Endpoint */
+        post: operations["api_endpoints_sales_create_commission_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Commissions Endpoint */
+        get: operations["api_endpoints_sales_list_commissions_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commission/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Commissions Endpoint */
+        get: operations["api_endpoints_sales_export_commissions_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commission/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay Commissions Endpoint */
+        post: operations["api_endpoints_sales_pay_commissions_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commission/{commission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Commission Endpoint */
+        delete: operations["api_endpoints_sales_delete_commission_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Commission Endpoint */
+        patch: operations["api_endpoints_sales_update_commission_endpoint"];
+        trace?: never;
+    };
     "/api/reports/sales": {
         parameters: {
             query?: never;
@@ -1213,6 +1300,11 @@ export interface components {
              * @default 0
              */
             initial_balance: string;
+            /**
+             * Tax Rate
+             * @default 10
+             */
+            tax_rate: string;
         };
         /** CompanyCreateDTO */
         CompanyCreateDTO: {
@@ -1222,6 +1314,11 @@ export interface components {
             cnpj: string;
             /** Initial Balance */
             initial_balance: number | string;
+            /**
+             * Tax Rate
+             * @default 10
+             */
+            tax_rate: number | string;
         };
         /** CompanyUpdateDTO */
         CompanyUpdateDTO: {
@@ -1231,6 +1328,8 @@ export interface components {
             cnpj?: string | null;
             /** Initial Balance */
             initial_balance?: number | string | null;
+            /** Tax Rate */
+            tax_rate?: number | string | null;
         };
         /** SubgroupOut */
         SubgroupOut: {
@@ -2438,6 +2537,100 @@ export interface components {
             down_payment_date?: string | null;
             /** Account Id */
             account_id?: number | null;
+        };
+        /**
+         * CommissionKind
+         * @enum {string}
+         */
+        CommissionKind: "seller" | "advisor" | "scheduling" | "crm" | "other";
+        /** CommissionOut */
+        CommissionOut: {
+            /** Id */
+            id: number;
+            /** Sale Id */
+            sale_id: number;
+            /**
+             * Sale Date
+             * Format: date
+             */
+            sale_date: string;
+            /** Sale Amount */
+            sale_amount: string;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Tax Rate */
+            tax_rate: string;
+            /** Salesperson Id */
+            salesperson_id: number;
+            /** Salesperson Name */
+            salesperson_name: string;
+            kind: components["schemas"]["CommissionKind"];
+            /** Percent */
+            percent: string | null;
+            /** Fixed Amount */
+            fixed_amount: string | null;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: string;
+            /** Payment Id */
+            payment_id: number | null;
+            /** Paid On */
+            paid_on?: string | null;
+        };
+        /** CreateCommission */
+        CreateCommission: {
+            /** Salesperson Id */
+            salesperson_id: number;
+            kind: components["schemas"]["CommissionKind"];
+            /** Percent */
+            percent?: number | string | null;
+            /** Fixed Amount */
+            fixed_amount?: number | string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
+        /** CommissionFilters */
+        CommissionFilters: {
+            /** Month */
+            month?: string | null;
+            /** Salesperson Id */
+            salesperson_id?: number[] | null;
+            /** Company Id */
+            company_id?: number[] | null;
+            /** Status */
+            status?: ("pending" | "paid") | null;
+        };
+        /** PayCommissions */
+        PayCommissions: {
+            /** Ids */
+            ids: number[];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Subgroup Id */
+            subgroup_id: number;
+        };
+        /** PatchCommission */
+        PatchCommission: {
+            /** Salesperson Id */
+            salesperson_id?: number | null;
+            kind?: components["schemas"]["CommissionKind"] | null;
+            /** Percent */
+            percent?: number | string | null;
+            /** Fixed Amount */
+            fixed_amount?: number | string | null;
+            /** Description */
+            description?: string | null;
         };
         /** SalesReportParams */
         SalesReportParams: {
@@ -4753,6 +4946,172 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_list_sale_commissions_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommissionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_create_commission_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommission"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommissionOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_list_commissions_endpoint: {
+        parameters: {
+            query?: {
+                month?: string | null;
+                salesperson_id?: number[] | null;
+                company_id?: number[] | null;
+                status?: ("pending" | "paid") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommissionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_export_commissions_endpoint: {
+        parameters: {
+            query?: {
+                month?: string | null;
+                salesperson_id?: number[] | null;
+                company_id?: number[] | null;
+                status?: ("pending" | "paid") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_sales_pay_commissions_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayCommissions"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_delete_commission_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commission_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_sales_update_commission_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commission_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchCommission"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommissionOut"];
                 };
             };
         };

@@ -1,0 +1,198 @@
+<script setup lang="ts">
+import { h, resolveComponent } from 'vue'
+import type { TableColumn } from '@nuxt/ui'
+import type { components } from '~/types/api'
+
+type Commission = components['schemas']['CommissionOut']
+definePageMeta({ permission: ['sales', 'view'] })
+
+const { api, unwrap, download, notifyError, notifySuccess } = useApi()
+const auth = useAuth()
+const lookups = useLookups()
+lookups.ensure('companies', 'salespeople', 'subgroups').catch(notifyError)
+const UBadge = resolveComponent('UBadge')
+
+// Month the commissions are due (sales of the previous month)
+const filters = reactive({
+  month: today().slice(0, 7),
+  salesperson_id: [] as number[],
+  company_id: [] as number[],
+  status: undefined as 'pending' | 'paid' | undefined,
+})
+const query = computed(() => {
+  const q: Record<string, unknown> = {}
+  if (filters.month) q.month = `${filters.month}-01`
+  for (const key of ['salesperson_id', 'company_id', 'status'] as const) {
+    const v = filters[key]
+    if (Array.isArray(v) ? v.length : v) q[key] = v
+  }
+  return q
+})
+
+const items = ref<Commission[]>([])
+const loading = ref(false)
+async function load() {
+  loading.value = true
+  try {
+    items.value = await unwrap(api.GET('/api/commission', { params: { query: query.value as any } }))
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    loading.value = false
+  }
+}
+watch(query, load, { immediate: true })
+
+const sum = (list: Commission[]) => list.reduce((s, c) => s + Number(c.amount), 0)
+const pending = computed(() => items.value.filter(c => !c.payment_id))
+const paid = computed(() => items.value.filter(c => c.payment_id))
+const salesMonth = computed(() => {
+  if (!filters.month) return ''
+  const [y, m] = filters.month.split('-').map(Number)
+  const d = new Date(y!, m! - 2, 1)
+  return `${MONTHS[d.getMonth()]}/${d.getFullYear()}`
+})
+const byPerson = computed(() => {
+  const map = new Map<string, { name: string; pending: number; paid: number }>()
+  for (const c of items.value) {
+    const row = map.get(c.salesperson_name) ?? { name: c.salesperson_name, pending: 0, paid: 0 }
+    row[c.payment_id ? 'paid' : 'pending'] += Number(c.amount)
+    map.set(c.salesperson_name, row)
+  }
+  return [...map.values()]
+})
+
+const selection = useSelection<Commission>(() => items.value)
+const canPay = computed(() => auth.can('sales', 'change') && auth.can('transactions', 'create'))
+const toPay = computed(() => selection.rows.value.filter(c => !c.payment_id))
+
+const columns = computed<TableColumn<Commission>[]>(() => [
+  ...(canPay.value ? [selection.column] : []),
+  { accessorKey: 'salesperson_name', header: 'Profissional' },
+  { accessorKey: 'kind', header: 'Tipo', cell: ({ row }) => h('div', [
+    h('p', LABELS.commissionKind[row.original.kind]),
+    row.original.description ? h('p', { class: 'text-xs text-dimmed' }, row.original.description) : null,
+  ]) },
+  { accessorKey: 'contact_name', header: 'Cliente', cell: ({ row }) => h('div', [
+    h('p', { class: 'truncate max-w-64 text-highlighted' }, row.original.contact_name ?? `Venda #${row.original.sale_id}`),
+    h('p', { class: 'text-xs text-dimmed' }, `${formatDate(row.original.sale_date)} · ${row.original.company_name}`),
+  ]) },
+  { accessorKey: 'sale_amount', header: () => h('span', { class: 'block text-right' }, 'Venda'),
+    cell: ({ row }) => h('p', { class: 'text-right tabular' }, formatMoney(row.original.sale_amount)) },
+  { id: 'rule', header: () => h('span', { class: 'block text-right' }, 'Regra'),
+    cell: ({ row }) => h('p', { class: 'text-right tabular text-muted' }, row.original.percent != null
+      ? `${Number(row.original.percent).toLocaleString('pt-BR')}% (−${Number(row.original.tax_rate).toLocaleString('pt-BR')}% imp.)`
+      : 'fixo') },
+  { accessorKey: 'amount', header: () => h('span', { class: 'block text-right' }, 'Comissão'),
+    cell: ({ row }) => h('p', { class: 'text-right tabular text-highlighted' }, formatMoney(row.original.amount)) },
+  { id: 'status', header: 'Status', cell: ({ row }) => h(UBadge, {
+    label: row.original.payment_id ? `Paga ${formatDate(row.original.paid_on)}` : 'A pagar',
+    color: row.original.payment_id ? 'success' : 'warning', variant: 'subtle',
+  }) },
+])
+
+// Pay: one outflow per professional and company
+const pay = reactive({ open: false, date: today(), subgroup_id: undefined as number | undefined, saving: false })
+const costSubgroups = computed(() => (lookups.cache.value.subgroups ?? [])
+  .filter(s => !INFLOW_GROUPS.includes(s.group) && s.group !== 'transfer')
+  .map(s => ({ label: s.name, value: s.id!, description: lookups.groupLabel(s.group) })))
+function openPay() {
+  pay.date = today()
+  pay.subgroup_id ??= (lookups.cache.value.subgroups ?? []).find(s => /comiss/i.test(s.name))?.id ?? undefined
+  pay.open = true
+}
+async function confirmPay() {
+  pay.saving = true
+  try {
+    const txs = await unwrap(api.POST('/api/commission/pay', {
+      body: { ids: toPay.value.map(c => c.id), date: pay.date, subgroup_id: pay.subgroup_id! },
+    }))
+    notifySuccess(`${txs.length} pagamento(s) lançado(s)`)
+    pay.open = false
+    selection.clear()
+    load()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    pay.saving = false
+  }
+}
+
+function exportXlsx() {
+  download(`/api/commission/export?${toSearchParams(query.value)}`, 'comissoes.xlsx').catch(notifyError)
+}
+</script>
+
+<template>
+  <AppPage title="Comissões">
+    <template #actions>
+      <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
+    </template>
+    <template #toolbar>
+      <UInput v-model="filters.month" type="month" class="w-44" aria-label="Mês de pagamento" />
+      <USelectMenu v-model="filters.salesperson_id" :items="lookups.options.salespeople.value" value-key="value" multiple
+                   placeholder="Profissionais" class="w-48" />
+      <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple
+                   placeholder="Empresas" class="w-44" />
+      <USelect v-model="filters.status" :items="[{ label: 'A pagar', value: 'pending' }, { label: 'Pagas', value: 'paid' }]"
+               placeholder="Status" class="w-32" />
+      <UButton v-if="filters.status" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Limpar status"
+               @click="filters.status = undefined" />
+    </template>
+
+    <div class="grid gap-3 sm:grid-cols-3">
+      <SStat :label="salesMonth ? `Total · vendas de ${salesMonth}` : 'Total'" :value="formatMoney(sum(items))" :loading="loading" icon="i-lucide-hand-coins" />
+      <SStat label="A pagar" :value="formatMoney(sum(pending))" tone="primary" :loading="loading" icon="i-lucide-clock" />
+      <SStat label="Pago" :value="formatMoney(sum(paid))" tone="success" :loading="loading" icon="i-lucide-check-check" />
+    </div>
+
+    <div class="grid items-start gap-4 xl:grid-cols-[1fr_20rem]">
+      <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
+        <UTable :data="items" :columns="columns" :loading="loading" sticky empty="Nenhuma comissão"
+                class="max-h-[calc(100dvh-20rem)]" />
+      </div>
+      <SPanel title="Por profissional">
+        <table class="w-full text-sm tabular">
+          <thead>
+            <tr class="text-xs text-muted">
+              <th class="pb-2 text-left font-medium">Profissional</th>
+              <th class="pb-2 text-right font-medium">A pagar</th>
+              <th class="pb-2 text-right font-medium">Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in byPerson" :key="p.name" class="border-t border-muted">
+              <td class="py-1.5 text-highlighted">{{ p.name }}</td>
+              <td class="py-1.5 text-right" :class="p.pending ? 'text-warning' : 'text-dimmed'">{{ formatMoney(p.pending) }}</td>
+              <td class="py-1.5 text-right" :class="p.paid ? 'text-success' : 'text-dimmed'">{{ formatMoney(p.paid) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </SPanel>
+    </div>
+
+    <AppBulkBar :count="selection.ids.value.length" @clear="selection.clear">
+      <span class="text-sm tabular text-warning whitespace-nowrap">{{ formatMoney(sum(toPay)) }}</span>
+      <UButton label="Pagar" icon="i-lucide-banknote" size="sm" variant="soft" :disabled="!toPay.length" @click="openPay" />
+    </AppBulkBar>
+
+    <UModal v-model:open="pay.open" :title="`Pagar ${toPay.length} comissão(ões) · ${formatMoney(sum(toPay))}`">
+      <template #body>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UFormField label="Data do pagamento">
+            <UInput v-model="pay.date" type="date" class="w-full" />
+          </UFormField>
+          <UFormField label="Subgrupo">
+            <USelectMenu v-model="pay.subgroup_id" :items="costSubgroups" value-key="value" class="w-full" />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Cancelar" color="neutral" variant="ghost" @click="pay.open = false" />
+          <UButton label="Pagar" :loading="pay.saving" :disabled="!pay.subgroup_id || !pay.date" @click="confirmPay" />
+        </div>
+      </template>
+    </UModal>
+  </AppPage>
+</template>

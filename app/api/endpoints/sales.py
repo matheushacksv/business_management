@@ -1,7 +1,14 @@
+from django.http import HttpResponse
+from django.utils import timezone
 from ninja import Query, Router
 from ninja.pagination import PageNumberPagination, paginate
 
 from api.schemas.sales_dto import (
+    CommissionFilters,
+    CommissionOut,
+    CreateCommission,
+    PatchCommission,
+    PayCommissions,
     CreateSale,
     GenerateReceivables,
     NamedCreate,
@@ -17,7 +24,9 @@ from api.schemas.sales_dto import (
     SalesReportParams,
 )
 from api.schemas.transactions_dto import TransactionOut
+from apps.finance.exporter import XLSX_CONTENT_TYPE
 from apps.sales import selectors, services
+from apps.sales.exporter import commissions_xlsx
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Sales'])
@@ -128,6 +137,59 @@ def list_receivables_endpoint(request, sale_id: int):
 def generate_receivables_endpoint(request, sale_id: int, data: GenerateReceivables):
     check_permission(request.user, 'transactions', CREATE)  # creates transactions too
     return 201, services.generate_receivables_service(user=request.user, sale_id=sale_id, **data.dict())
+
+
+# Commissions
+
+@router.get('/sale/{sale_id}/commissions', response=list[CommissionOut])
+@require_permission('sales', VIEW)
+def list_sale_commissions_endpoint(request, sale_id: int):
+    return services.list_sale_commissions_service(user=request.user, sale_id=sale_id)
+
+
+@router.post('/sale/{sale_id}/commissions', response={201: CommissionOut})
+@require_permission('sales', CHANGE)
+def create_commission_endpoint(request, sale_id: int, data: CreateCommission):
+    return 201, services.create_commission_service(user=request.user, sale_id=sale_id, **data.dict())
+
+
+@router.get('/commission', response=list[CommissionOut])
+@require_permission('sales', VIEW)
+def list_commissions_endpoint(request, filters: Query[CommissionFilters]):
+    return services.list_commissions_service(user=request.user, **filters.dict())
+
+
+@router.get('/commission/export')
+@require_permission('sales', VIEW)
+def export_commissions_endpoint(request, filters: Query[CommissionFilters]):
+    response = HttpResponse(
+        commissions_xlsx(services.list_commissions_service(user=request.user, **filters.dict())),
+        content_type=XLSX_CONTENT_TYPE,
+    )
+    response['Content-Disposition'] = f'attachment; filename="comissoes-{timezone.localdate():%Y-%m-%d}.xlsx"'
+    return response
+
+
+@router.post('/commission/pay', response=list[TransactionOut])
+@require_permission('sales', CHANGE)
+def pay_commissions_endpoint(request, data: PayCommissions):
+    check_permission(request.user, 'transactions', CREATE)  # creates the outflows
+    return services.pay_commissions_service(user=request.user, **data.dict())
+
+
+@router.patch('/commission/{commission_id}', response=CommissionOut)
+@require_permission('sales', CHANGE)
+def update_commission_endpoint(request, commission_id: int, data: PatchCommission):
+    return services.update_commission_service(
+        user=request.user, commission_id=commission_id, **data.dict(exclude_unset=True)
+    )
+
+
+@router.delete('/commission/{commission_id}', response={204: None})
+@require_permission('sales', CHANGE)
+def delete_commission_endpoint(request, commission_id: int):
+    services.delete_commission_service(user=request.user, commission_id=commission_id)
+    return 204, None
 
 
 # Report
