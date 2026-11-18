@@ -10,7 +10,7 @@ await lookups.ensure('users')
 
 const TARGETS: Record<string, string> = {
   transaction: 'Lançamento', invoice: 'Nota fiscal', sale: 'Venda', contact: 'Contato', company: 'Empresa',
-  subgroup: 'Subgrupo', account: 'Conta', product: 'Produto', salesperson: 'Vendedor', user: 'Usuário', attachment: 'Anexo',
+  subgroup: 'Subgrupo', account: 'Conta', product: 'Produto', salesperson: 'Equipe', user: 'Usuário', attachment: 'Anexo',
 }
 const targetOptions = Object.entries(TARGETS).filter(([k]) => k !== 'attachment').map(([value, label]) => ({ value, label }))
 

@@ -26,7 +26,7 @@ const fields = computed(() => [
 
 <template>
   <AppCrud
-    title="Vendedores e assessores" module="sales" singular="Vendedor"
+    title="Equipe" module="sales" singular="Integrante"
     :columns="columns" :fields="fields" :search-keys="['name']"
     :load="() => unwrap(api.GET('/api/salesperson', { params: { query: {} } })) as Promise<Salesperson[]>"
     :create="(d) => unwrap(api.POST('/api/salesperson', { body: { name: d.name, user_id: d.user_id ?? null } }))"
