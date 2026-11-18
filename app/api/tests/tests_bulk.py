@@ -106,3 +106,20 @@ class BulkTransactionTests(TestCase):
         self.assertEqual(r.json(), {'affected': 2})
         self.assertFalse(Transaction.objects.filter(pk__in=self.ids()).exists())
         self.assertTrue(pghistory.models.Events.objects.filter(pgh_label='delete', pgh_context__user=self.admin.pk).exists())
+
+
+class AmountSearchTests(TestCase):
+    def test_parse_amount(self):
+        from apps.finance.services import parse_amount
+        for text, value in [('3.333,33', '3333.33'), ('R$ 3333,33', '3333.33'), ('3333.33', '3333.33'),
+                            ('3.333', '3333'), ('100', '100'), ('abc', None), ('12/12', None)]:
+            self.assertEqual(parse_amount(text), Decimal(value) if value else None, text)
+
+    def test_search_finds_amount(self):
+        admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
+        company = Company.objects.create(name='A', cnpj='81585365000127')
+        rent = services.create_subgroup_service(name='Rent', group=Group.FIXED_COSTS)
+        tx = services.create_transaction_service(user=admin, company_id=company.pk, subgroup_id=rent.pk,
+                                                 date=date(2026, 1, 1), amount=Decimal('3333.33'), type='outflow')
+        found = services.list_transactions_service(user=admin, search='3.333,33')
+        self.assertEqual(list(found), [tx])

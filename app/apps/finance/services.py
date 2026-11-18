@@ -2,7 +2,7 @@ import calendar
 import datetime as dt
 import re
 import unicodedata
-from decimal import ROUND_DOWN, Decimal
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 
 import pghistory
 from django.core.exceptions import ValidationError
@@ -299,6 +299,21 @@ def create_transaction_service(
         raise ValidationError('Invalid transaction')
 
 
+def parse_amount(text: str) -> Decimal | None:
+    """'3.333,33', 'R$ 3333,33', '3333.33', '3333' -> Decimal; anything else -> None."""
+    raw = text.replace('R$', '').replace(' ', '').strip()
+    if not re.fullmatch(r'\d[\d.,]*', raw):
+        return None
+    if ',' in raw:  # pt-BR: dots are thousands
+        raw = raw.replace('.', '').replace(',', '.')
+    elif re.fullmatch(r'\d{1,3}(\.\d{3})+', raw):  # '3.333' = three thousand
+        raw = raw.replace('.', '')
+    try:
+        return Decimal(raw)
+    except InvalidOperation:
+        return None
+
+
 TRANSACTION_ORDERING = ('date', '-date', 'amount', '-amount', 'created_at', '-created_at')
 
 
@@ -331,6 +346,7 @@ def list_transactions_service(
             | Q(subgroup__name__icontains=search)
             | Q(contact__name__icontains=search)
             | Q(contact__company_name__icontains=search)
+            | (Q(amount=amount) if (amount := parse_amount(search)) is not None else Q(pk__in=[]))
         )
     if ordering:
         if ordering not in TRANSACTION_ORDERING:

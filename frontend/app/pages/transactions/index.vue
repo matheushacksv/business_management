@@ -166,7 +166,7 @@ function onCreated(id: number | null) {
     </template>
 
     <template #toolbar>
-      <UInput v-model="filters.search" icon="i-lucide-search" placeholder="Buscar referência, observação, contato…" class="w-64" />
+      <UInput v-model="filters.search" icon="i-lucide-search" placeholder="Buscar contato, referência, valor…" class="w-64" />
       <UInput v-model="filters.date_from" type="date" class="w-40" aria-label="De" />
       <UInput v-model="filters.date_to" type="date" class="w-40" aria-label="Até" />
       <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple
