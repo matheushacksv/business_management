@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { h } from 'vue'
 import type { components } from '~/types/api'
 
 type Contact = components['schemas']['ContactOut']
@@ -29,12 +30,19 @@ async function confirmMerge() {
   }
 }
 
+const SStatusBadge = resolveComponent('SStatusBadge')
 const columns = [
   { accessorKey: 'name', header: 'Nome' },
   { accessorKey: 'company_name', header: 'Razão social' },
   { accessorKey: 'document', header: 'CPF/CNPJ' },
   { accessorKey: 'email', header: 'E-mail' },
   { accessorKey: 'phone', header: 'Telefone' },
+  { accessorKey: 'situation', header: 'Situação',
+    cell: ({ row }: any) => row.original.situation ? h(SStatusBadge, { kind: 'situation', value: row.original.situation }) : null },
+]
+const situation = ref<string>()
+const situationItems = [
+  { label: 'Regularizado', value: 'ok' }, { label: 'Atenção', value: 'attention' }, { label: 'Crítico', value: 'critical' },
 ]
 const fields = [
   { key: 'name', label: 'Nome', required: true, span: 2 as const },
@@ -53,8 +61,12 @@ const fields = [
     :create="(d) => unwrap(api.POST('/api/contact', { body: d as any }))"
     :update="(id, d) => unwrap(api.PATCH('/api/contact/{contact_id}', { params: { path: { contact_id: id } }, body: d }))"
     :remove="(id) => unwrap(api.DELETE('/api/contact/{contact_id}', { params: { path: { contact_id: id } } }))"
-    :selectable="canMerge"
+    :selectable="canMerge" :row-filter="situation ? (c) => c.situation === situation : undefined"
   >
+    <template #toolbar>
+      <USelect v-model="situation" :items="situationItems" placeholder="Situação" class="w-40" />
+      <UButton v-if="situation" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Limpar situação" @click="situation = undefined" />
+    </template>
     <template #bulk="{ rows, clear, reload }">
       <UButton label="Mesclar" icon="i-lucide-merge" size="sm" variant="soft" :disabled="rows.length < 2"
                @click="openMerge(rows as Contact[], () => { clear(); reload() })" />

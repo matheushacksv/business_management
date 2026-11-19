@@ -101,8 +101,9 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
         </header>
         <div class="flex max-h-[calc(100dvh-15rem)] min-h-24 flex-col gap-1.5 overflow-y-auto p-1.5">
           <article v-for="card in col.cards" :key="card.id" :draggable="canChange && !card.closed_at"
-                   class="cursor-pointer rounded-lg bg-default p-2.5 text-sm ring ring-default hover:ring-primary/60"
-                   :class="{ 'opacity-40': dragging === card.id, 'opacity-60': card.closed_at }"
+                   class="cursor-pointer rounded-lg border-l-3 bg-default p-2.5 text-sm ring ring-default hover:ring-primary/60"
+                   :class="[card.closed_at ? 'border-l-transparent opacity-60' : card.critical ? 'border-l-error' : 'border-l-warning',
+                            { 'opacity-40': dragging === card.id }]"
                    @dragstart="dragging = card.id" @dragend="dragging = null" @click="openCard(card.id)">
             <div class="flex items-start justify-between gap-2">
               <p class="font-medium text-highlighted line-clamp-2">{{ card.contact_name }}</p>

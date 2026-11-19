@@ -9,10 +9,14 @@ const auth = useAuth()
 
 // Installments due before this date stay out of the funnel
 const startDate = ref('')
-unwrap(api.GET('/api/dunning/config')).then(c => { startDate.value = c.start_date ?? '' }).catch(notifyError)
+let criticalDays = 30
+unwrap(api.GET('/api/dunning/config')).then((c) => {
+  startDate.value = c.start_date ?? ''
+  criticalDays = c.critical_days ?? 30
+}).catch(notifyError)
 async function saveStart() {
   try {
-    await unwrap(api.PUT('/api/dunning/config', { body: { start_date: startDate.value || null } }))
+    await unwrap(api.PUT('/api/dunning/config', { body: { start_date: startDate.value || null, critical_days: criticalDays } }))
     notifySuccess('Data de início salva')
   } catch (e) {
     notifyError(e)

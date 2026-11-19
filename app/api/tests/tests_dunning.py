@@ -140,3 +140,40 @@ class DunningTests(TestCase):
         self.assertEqual(self.api('post', f'/dunning/send/{self.client_.pk}').json()[0]['id'], r.json()[0]['id'])
         Transaction.objects.update(status=TransactionStatus.REALIZED)
         self.assertIsNotNone(self.cards()[0]['closed_at'])
+
+    def test_situation_traffic_light(self):
+        from apps.dunning.services import situations_service
+        from apps.legal.models import CollectionCase
+        Config.objects.update(critical_days=30)
+        situation = lambda: situations_service(user=self.admin)[self.client_.pk]  # noqa: E731
+        tx = self.installment(dt.date(2026, 12, 10))  # not due yet
+        self.assertEqual(situation(), 'ok')
+        tx.date = dt.date(2026, 11, 10)
+        tx.save()
+        self.assertEqual(situation(), 'attention')
+        self.assertEqual(self.api('get', f'/contact/{self.client_.pk}/summary').json()['situation'], 'attention')
+        tx.date = dt.date(2026, 10, 10)  # 41 days late
+        tx.save()
+        self.assertEqual(situation(), 'critical')
+        tx.date = dt.date(2026, 11, 10)
+        tx.save()
+        card = self.cards()[0]
+        self.assertFalse(card['critical'])
+        Stage.objects.filter(pk=card['stage_id']).update(severity='critical')
+        self.assertEqual(situation(), 'critical')
+        self.assertTrue(self.cards()[0]['critical'])
+        Stage.objects.update(severity='attention')
+        CollectionCase.objects.create(company=self.company, contact=self.client_)
+        self.assertEqual(situation(), 'critical')
+        listed = {c['id']: c['situation'] for c in self.api('get', '/contact').json()}
+        self.assertEqual(listed[self.client_.pk], 'critical')
+
+    def test_unrecoverable_is_a_separate_mark(self):
+        from apps.legal.models import CollectionCase
+        case = CollectionCase.objects.create(company=self.company, contact=self.client_)
+        r = self.api('patch', f'/collection-case/{case.pk}', {'unrecoverable': True})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual((r.json()['unrecoverable_at'], r.json()['unrecoverable_by_name'], r.json()['stage']),
+                         ('2026-11-20', 'admin@test.com', 'new'))
+        r = self.api('patch', f'/collection-case/{case.pk}', {'unrecoverable': False})
+        self.assertIsNone(r.json()['unrecoverable_at'])

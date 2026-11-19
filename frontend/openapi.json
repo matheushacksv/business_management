@@ -8076,6 +8076,22 @@
    },
    "ContactOut": {
     "properties": {
+     "situation": {
+      "anyOf": [
+       {
+        "enum": [
+         "ok",
+         "attention",
+         "critical"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Situation"
+     },
      "id": {
       "anyOf": [
        {
@@ -8387,6 +8403,22 @@
         "type": "null"
        }
       ]
+     },
+     "situation": {
+      "anyOf": [
+       {
+        "enum": [
+         "ok",
+         "attention",
+         "critical"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Situation"
      }
     },
     "required": [
@@ -13030,6 +13062,14 @@
       ],
       "default": "open"
      },
+     "severity": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/Severity"
+       }
+      ],
+      "default": "attention"
+     },
      "id": {
       "title": "Id",
       "type": "integer"
@@ -13139,6 +13179,17 @@
       "title": "Received Amount",
       "type": "string"
      },
+     "unrecoverable_by_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unrecoverable By Name"
+     },
      "id": {
       "anyOf": [
        {
@@ -13246,6 +13297,18 @@
        }
       ],
       "title": "Agreement"
+     },
+     "unrecoverable_at": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unrecoverable At"
      },
      "created_at": {
       "format": "date-time",
@@ -13475,6 +13538,17 @@
        }
       ],
       "title": "Agreement"
+     },
+     "unrecoverable": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unrecoverable"
      }
     },
     "title": "PatchCase",
@@ -13684,6 +13758,10 @@
      "late_activities": {
       "title": "Late Activities",
       "type": "integer"
+     },
+     "critical": {
+      "title": "Critical",
+      "type": "boolean"
      }
     },
     "required": [
@@ -13702,7 +13780,8 @@
      "overdue_amount",
      "overdue_count",
      "next_activity",
-     "late_activities"
+     "late_activities",
+     "critical"
     ],
     "title": "CardOut",
     "type": "object"
@@ -14210,6 +14289,15 @@
     "title": "ProductivityOut",
     "type": "object"
    },
+   "Severity": {
+    "description": "Traffic light of PDF section 15 (green = nothing late, not stored).",
+    "enum": [
+     "attention",
+     "critical"
+    ],
+    "title": "Severity",
+    "type": "string"
+   },
    "StageKind": {
     "enum": [
      "open",
@@ -14240,6 +14328,14 @@
        }
       ],
       "default": "open"
+     },
+     "severity": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/Severity"
+       }
+      ],
+      "default": "attention"
      }
     },
     "required": [
@@ -14338,6 +14434,13 @@
        }
       ],
       "title": "Start Date"
+     },
+     "critical_days": {
+      "default": 30,
+      "maximum": 365,
+      "minimum": 1,
+      "title": "Critical Days",
+      "type": "integer"
      }
     },
     "required": [

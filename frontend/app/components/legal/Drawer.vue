@@ -66,6 +66,21 @@ async function saved() {
   emit('changed')
 }
 
+// Loss: separate from the stage (sent to legal is not the same as unrecoverable)
+async function toggleUnrecoverable() {
+  const mark = !item.value!.unrecoverable_at
+  if (mark && !await confirm({ title: 'Marcar como irrecuperável?', confirmLabel: 'Marcar', color: 'error' })) return
+  try {
+    item.value = await unwrap(api.PATCH('/api/collection-case/{case_id}', {
+      params: { path: { case_id: props.caseId! } }, body: { unrecoverable: mark },
+    }))
+    emit('changed')
+    load()
+  } catch (e) {
+    notifyError(e)
+  }
+}
+
 async function remove() {
   if (!item.value) return
   const ok = await confirm({
@@ -102,6 +117,14 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           <div class="min-w-0"><p class="text-dimmed">Recebido (parcelas)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Valor da proposta</p><p class="text-sm text-highlighted tabular truncate">{{ item.proposal_amount != null ? formatMoney(item.proposal_amount) : '—' }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Pago pelo cliente</p><p class="text-sm text-highlighted tabular truncate">{{ item.paid_amount != null ? formatMoney(item.paid_amount) : '—' }}</p></div>
+        </div>
+
+        <div v-if="item.unrecoverable_at || canChange" class="flex items-center justify-between gap-2">
+          <UBadge v-if="item.unrecoverable_at" color="neutral" variant="solid" icon="i-lucide-ban"
+                  :label="`Irrecuperável desde ${formatDate(item.unrecoverable_at)}${item.unrecoverable_by_name ? ` · ${item.unrecoverable_by_name}` : ''}`" />
+          <span v-else />
+          <UButton v-if="canChange" :label="item.unrecoverable_at ? 'Desmarcar irrecuperável' : 'Marcar irrecuperável'"
+                   icon="i-lucide-ban" size="xs" color="neutral" variant="ghost" @click="toggleUnrecoverable" />
         </div>
 
         <UAlert v-if="incomplete && !editing" color="warning" variant="subtle" icon="i-lucide-triangle-alert"

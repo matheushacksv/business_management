@@ -34,6 +34,7 @@ class PatchCase(Schema):
     drive_link: HttpUrl | None = None
     stage: CaseStage | None = None
     agreement: str | None = None
+    unrecoverable: bool | None = None
 
 
 class CaseOut(ModelSchema):
@@ -43,11 +44,17 @@ class CaseOut(ModelSchema):
     contact_name: str = Field(alias='contact.name')
     open_amount: Decimal  # linked installments still planned: what is owed
     received_amount: Decimal  # linked installments realized
+    unrecoverable_by_name: str | None = None
 
     class Meta:
         model = CollectionCase
         fields = ['id', 'client_company', 'contact_info', 'delivered', 'proposal_amount', 'paid_amount',
-                  'summary', 'drive_link', 'stage', 'agreement', 'created_at', 'updated_at']
+                  'summary', 'drive_link', 'stage', 'agreement', 'unrecoverable_at', 'created_at', 'updated_at']
+
+    @staticmethod
+    def resolve_unrecoverable_by_name(obj) -> str | None:
+        u = obj.unrecoverable_by
+        return (u.name or u.email) if u else None
 
 
 class CaseFilters(Schema):

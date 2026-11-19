@@ -32,6 +32,7 @@ const props = defineProps<{
   searchKeys?: string[]                        // client-side search over these keys
   rowTo?: (row: T) => string                   // clicking a row opens this page instead of the edit modal
   selectable?: boolean                         // checkbox column + #bulk slot (actions over the picked rows)
+  rowFilter?: (row: T) => boolean              // extra client-side filter (e.g. a select in #toolbar)
 }>()
 const emit = defineEmits<{ changed: [] }>()
 
@@ -53,8 +54,9 @@ defineExpose({ reload })
 
 const filtered = computed(() => {
   const term = search.value.trim().toLowerCase()
-  if (!term || !props.searchKeys) return rows.value
-  return rows.value.filter(r => props.searchKeys!.some(k => String((r as any)[k] ?? '').toLowerCase().includes(term)))
+  const base = props.rowFilter ? rows.value.filter(props.rowFilter) : rows.value
+  if (!term || !props.searchKeys) return base
+  return base.filter(r => props.searchKeys!.some(k => String((r as any)[k] ?? '').toLowerCase().includes(term)))
 })
 
 // Client-side pages: the API returns every row (small lists), but rendering hundreds of

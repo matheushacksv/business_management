@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // SORA badges: semantic tint (10-20% fill) + colored text
-const props = defineProps<{ kind: 'type' | 'status' | 'sale' | 'invoice'; value?: string | null }>()
+const props = defineProps<{ kind: 'type' | 'status' | 'sale' | 'invoice' | 'situation'; value?: string | null }>()
 
 const map: Record<string, Record<string, { label: string; color: 'success' | 'error' | 'primary' | 'neutral' | 'warning' }>> = {
   type: {
@@ -15,6 +15,12 @@ const map: Record<string, Record<string, { label: string; color: 'success' | 'er
     active: { label: 'Ativa', color: 'primary' },
     completed: { label: 'Concluída', color: 'success' },
     canceled: { label: 'Cancelada', color: 'neutral' },
+  },
+  // Customer traffic light (PDF 15)
+  situation: {
+    ok: { label: 'Regularizado', color: 'success' },
+    attention: { label: 'Atenção', color: 'warning' },
+    critical: { label: 'Crítico', color: 'error' },
   },
   invoice: {
     missing_invoice: { label: 'Sem nota', color: 'warning' },

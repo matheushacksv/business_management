@@ -168,4 +168,4 @@ def get_config_endpoint(request):
 @router.put('/dunning/config', response=ConfigIO)
 @require_permission('dunning', CHANGE)
 def update_config_endpoint(request, data: ConfigIO):
-    return services.update_config_service(start_date=data.start_date)
+    return services.update_config_service(**data.dict())

@@ -4,13 +4,14 @@ from decimal import Decimal
 from ninja import Schema
 from pydantic import Field
 
-from apps.dunning.models import ActivityKind, StageKind
+from apps.dunning.models import ActivityKind, Severity, StageKind
 
 
 class StageIn(Schema):
     name: str = Field(min_length=1, max_length=60)
     position: int = Field(0, ge=0)
     kind: StageKind = StageKind.OPEN
+    severity: Severity = Severity.ATTENTION
 
 
 class StageOut(StageIn):
@@ -53,6 +54,7 @@ class CardOut(Schema):
     overdue_count: int
     next_activity: dt.date | None
     late_activities: int
+    critical: bool
 
     @staticmethod
     def resolve_assignee_name(obj) -> str | None:
@@ -148,3 +150,4 @@ class ProductivityOut(Schema):
 
 class ConfigIO(Schema):
     start_date: dt.date | None
+    critical_days: int = Field(30, ge=1, le=365)

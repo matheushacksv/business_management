@@ -29,7 +29,12 @@ class MergeContacts(Schema):
     source_ids: list[int]  # duplicates folded into the contact of the URL, then deleted
 
 
+Situation = Literal['ok', 'attention', 'critical']
+
+
 class ContactOut(ModelSchema):
+    situation: Situation | None = None  # customers only, on the list (PDF 15 traffic light)
+
     class Meta:
         model = Contact
         fields = ['id', 'name', 'company_name', 'document', 'email', 'phone', 'notes', 'created_at', 'updated_at']
@@ -58,3 +63,4 @@ class ContactSummaryOut(Schema):
     """Each block is null when the user's role can't see that module."""
     sales: ContactSalesSummary | None
     money: ContactMoneySummary | None
+    situation: Situation | None = None

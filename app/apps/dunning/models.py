@@ -9,6 +9,13 @@ import pghistory
 from django.db import models
 
 
+class Severity(models.TextChoices):
+    """Traffic light of PDF section 15 (green = nothing late, not stored)."""
+
+    ATTENTION = 'attention', 'Atenção'
+    CRITICAL = 'critical', 'Crítico'
+
+
 class StageKind(models.TextChoices):
     OPEN = 'open', 'Em andamento'
     RESOLVED = 'resolved', 'Resolvido'  # closes the card; only when nothing is overdue
@@ -22,6 +29,7 @@ class Stage(models.Model):
     name = models.CharField(max_length=60)
     position = models.PositiveSmallIntegerField(default=0)
     kind = models.CharField(max_length=10, choices=StageKind.choices, default=StageKind.OPEN)
+    severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.ATTENTION)  # open stages
 
     class Meta:
         ordering = ['position', 'id']
@@ -93,6 +101,7 @@ class Config(models.Model):
     """Single row. Installments due before `start_date` stay out of the funnel (old backlog)."""
 
     start_date = models.DateField(null=True, blank=True)
+    critical_days = models.PositiveSmallIntegerField(default=30)  # late this long = red
 
     @classmethod
     def get(cls) -> 'Config':

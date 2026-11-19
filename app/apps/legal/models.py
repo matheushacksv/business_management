@@ -35,6 +35,9 @@ class CollectionCase(models.Model):
     drive_link = models.URLField(max_length=500, blank=True)
     stage = models.CharField(max_length=20, choices=CaseStage.choices, default=CaseStage.NEW)
     agreement = models.TextField(blank=True)  # required from the "Acordo ou Sentença" stage on
+    # Loss classification, apart from the stage: sent to legal is not the same as unrecoverable (PDF 15)
+    unrecoverable_at = models.DateField(null=True, blank=True)
+    unrecoverable_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

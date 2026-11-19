@@ -176,6 +176,7 @@ function onCreated(id: number) {
               </UTooltip>
             </div>
             <p v-if="card.client_company" class="text-xs text-dimmed truncate">{{ card.client_company }}</p>
+            <UBadge v-if="card.unrecoverable_at" label="Perda" icon="i-lucide-ban" color="neutral" variant="solid" size="sm" class="mt-1" />
             <div class="mt-2 flex flex-wrap items-end justify-between gap-x-2 text-xs">
               <span class="text-dimmed">{{ formatDate(card.updated_at!.slice(0, 10)) }}</span>
               <span class="tabular text-error">{{ formatMoney(card.open_amount) }}</span>

@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, Transaction, TransactionStatus, TransactionType
@@ -25,7 +26,7 @@ def _cases_for(user: User):
     return (CollectionCase.objects.filter(company__in=list_companies_service(user=user))
             .annotate(open_amount=_linked(TransactionStatus.PLANNED),  # still owed
                       received_amount=_linked(TransactionStatus.REALIZED))
-            .select_related('company', 'contact'))
+            .select_related('company', 'contact', 'unrecoverable_by'))
 
 
 def _check(case: CollectionCase) -> None:
@@ -79,6 +80,12 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
     # ponytail: company/contact are immutable (the linked installments belong to them)
     case = get_case_service(user=user, case_id=case_id)
     old_stage = case.stage
+    unrecoverable = fields.pop('unrecoverable', None)
+    log = []
+    if unrecoverable is not None and unrecoverable != bool(case.unrecoverable_at):
+        fields.update(unrecoverable_at=timezone.localdate() if unrecoverable else None,
+                      unrecoverable_by=user if unrecoverable else None)
+        log.append('Marcado como irrecuperável' if unrecoverable else 'Desmarcado como irrecuperável')
     for field in TEXT_FIELDS:
         if field in fields:
             fields[field] = fields[field].strip()
@@ -91,6 +98,8 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
             text = f'Etapa: {CaseStage(old_stage).label} → {CaseStage(case.stage).label}'
             if case.stage in AGREEMENT_STAGES:
                 text += f'\nAcordo: {case.agreement}'
+            _log(user, case, text)
+        for text in log:
             _log(user, case, text)
     return get_case_service(user=user, case_id=case.pk)
 

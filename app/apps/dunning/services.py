@@ -4,12 +4,12 @@ from decimal import Decimal
 import pghistory
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Count, DecimalField, F, Min, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import BooleanField, Case, Count, DecimalField, F, When, Min, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.companies.services import list_companies_service
-from apps.dunning.models import Activity, CadenceStep, Card, Config, Stage, StageKind
+from apps.dunning.models import Activity, CadenceStep, Card, Config, Severity, Stage, StageKind
 from apps.finance.models import Transaction, TransactionStatus, TransactionType
 from apps.legal.services import create_case_service
 from apps.users.models import User
@@ -102,6 +102,7 @@ def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:
 # Cards
 
 def _cards_for(user: User, today: dt.date):
+    critical_since = today - dt.timedelta(days=Config.get().critical_days)
     overdue = _late(today).filter(company_id=OuterRef('company_id'), contact_id=OuterRef('contact_id'),
                                   date__gte=OuterRef('overdue_since'))
     pending = Activity.objects.filter(card=OuterRef('pk'), done_at__isnull=True)
@@ -114,6 +115,8 @@ def _cards_for(user: User, today: dt.date):
                 next_activity=Subquery(pending.order_by('due_date').values('due_date')[:1]),
                 late_activities=Coalesce(Subquery(pending.filter(due_date__lt=today).values('card')
                                                   .annotate(n=Count('id')).values('n')), 0),
+                critical=Case(When(Q(stage__severity=Severity.CRITICAL) | Q(overdue_since__lte=critical_since), then=True),
+                              default=False, output_field=BooleanField()),
             ))
 
 
@@ -300,8 +303,42 @@ def delete_step_service(*, user: User, step_id: int) -> None:
         CadenceStep.objects.get(pk=step_id).delete()
 
 
-def update_config_service(*, start_date: dt.date | None) -> Config:
+def update_config_service(*, start_date: dt.date | None, critical_days: int) -> Config:
     config = Config.get()
-    config.start_date = start_date
+    config.start_date, config.critical_days = start_date, critical_days
     config.save()
     return config
+
+
+# Customer situation (PDF 15): critical > attention > ok, worst case among the user's companies
+
+def situations_service(*, user: User, contact_ids=None) -> dict[int, str]:
+    """contact_id -> 'ok' | 'attention' | 'critical', for customers (contacts with inflows or sales).
+    Red: open legal action, late for `critical_days` or more, or card in a critical stage.
+    Yellow: anything late, or an open card. Unrecoverable is a separate mark (legal) and changes nothing here."""
+    from apps.legal.models import CaseStage, CollectionCase
+    from apps.sales.models import Sale
+
+    today = timezone.localdate()
+    companies = list_companies_service(user=user)
+    critical_since = today - dt.timedelta(days=Config.get().critical_days)
+
+    def scoped(qs, field='contact_id'):
+        qs = qs.filter(company__in=companies)
+        return qs.filter(**{f'{field}__in': contact_ids}) if contact_ids is not None else qs
+
+    customers = set(scoped(Transaction.objects.filter(type=TransactionType.INFLOW)).values_list('contact_id', flat=True)) \
+        | set(scoped(Sale.objects.all()).values_list('contact_id', flat=True))
+    result = {c: 'ok' for c in customers if c}
+    rank = {'ok': 0, 'attention': 1, 'critical': 2}
+
+    def mark(contact_id, level):
+        if rank[level] > rank[result.get(contact_id, 'ok')]:
+            result[contact_id] = level
+    for contact_id, since in scoped(_overdue(today)).values('contact_id').annotate(since=Min('date')).values_list('contact_id', 'since'):
+        mark(contact_id, 'critical' if since <= critical_since else 'attention')
+    for contact_id, severity in scoped(Card.objects.filter(closed_at__isnull=True)).values_list('contact_id', 'stage__severity'):
+        mark(contact_id, 'critical' if severity == Severity.CRITICAL else 'attention')
+    for contact_id in scoped(CollectionCase.objects.exclude(stage=CaseStage.DONE)).values_list('contact_id', flat=True):
+        mark(contact_id, 'critical')
+    return result

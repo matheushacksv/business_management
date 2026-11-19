@@ -220,6 +220,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 <template>
   <AppPage :title="contact?.name ?? 'Cliente/fornecedor'">
     <template #actions>
+      <SStatusBadge v-if="summary?.situation" kind="situation" :value="summary.situation" class="self-center" />
       <UButton v-if="auth.can('dunning', 'change')" label="Enviar para cobrança" icon="i-lucide-phone-call" color="neutral" variant="outline"
                :disabled="!contact" :loading="sending" @click="sendToDunning" />
       <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" color="neutral" variant="outline"

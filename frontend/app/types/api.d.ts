@@ -1734,6 +1734,8 @@ export interface components {
         };
         /** ContactOut */
         ContactOut: {
+            /** Situation */
+            situation?: ("ok" | "attention" | "critical") | null;
             /** ID */
             id?: number | null;
             /** Name */
@@ -1839,6 +1841,8 @@ export interface components {
         ContactSummaryOut: {
             sales: components["schemas"]["ContactSalesSummary"] | null;
             money: components["schemas"]["ContactMoneySummary"] | null;
+            /** Situation */
+            situation?: ("ok" | "attention" | "critical") | null;
         };
         /** MergeContacts */
         MergeContacts: {
@@ -3288,6 +3292,8 @@ export interface components {
             position: number;
             /** @default open */
             kind: components["schemas"]["StageKind"];
+            /** @default attention */
+            severity: components["schemas"]["Severity"];
             /** Id */
             id: number;
         };
@@ -3322,6 +3328,8 @@ export interface components {
             open_amount: string;
             /** Received Amount */
             received_amount: string;
+            /** Unrecoverable By Name */
+            unrecoverable_by_name?: string | null;
             /** ID */
             id?: number | null;
             /** Client Company */
@@ -3345,6 +3353,8 @@ export interface components {
             stage: string;
             /** Agreement */
             agreement?: string | null;
+            /** Unrecoverable At */
+            unrecoverable_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -3409,6 +3419,8 @@ export interface components {
             stage?: components["schemas"]["CaseStage"] | null;
             /** Agreement */
             agreement?: string | null;
+            /** Unrecoverable */
+            unrecoverable?: boolean | null;
         };
         /** CommentOut */
         CommentOut: {
@@ -3477,6 +3489,8 @@ export interface components {
             next_activity: string | null;
             /** Late Activities */
             late_activities: number;
+            /** Critical */
+            critical: boolean;
         };
         /** PatchCard */
         PatchCard: {
@@ -3648,6 +3662,12 @@ export interface components {
             people: components["schemas"]["PersonProductivity"][];
         };
         /**
+         * Severity
+         * @description Traffic light of PDF section 15 (green = nothing late, not stored).
+         * @enum {string}
+         */
+        Severity: "attention" | "critical";
+        /**
          * StageKind
          * @enum {string}
          */
@@ -3663,6 +3683,8 @@ export interface components {
             position: number;
             /** @default open */
             kind: components["schemas"]["StageKind"];
+            /** @default attention */
+            severity: components["schemas"]["Severity"];
         };
         /** StepOut */
         StepOut: {
@@ -3706,6 +3728,11 @@ export interface components {
         ConfigIO: {
             /** Start Date */
             start_date: string | null;
+            /**
+             * Critical Days
+             * @default 30
+             */
+            critical_days: number;
         };
     };
     responses: never;
