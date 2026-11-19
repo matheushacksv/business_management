@@ -1521,6 +1521,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/webhooks/pipedrive/deal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pipedrive Deal Webhook */
+        post: operations["api_endpoints_integrations_pipedrive_deal_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/pipedrive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pipedrive Config */
+        get: operations["api_endpoints_integrations_get_pipedrive_config"];
+        /** Update Pipedrive Config */
+        put: operations["api_endpoints_integrations_update_pipedrive_config"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/pipedrive/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Pipedrive Credentials */
+        post: operations["api_endpoints_integrations_generate_pipedrive_credentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Events */
+        get: operations["api_endpoints_integrations_list_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/events/{event_id}/reprocess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reprocess Event */
+        post: operations["api_endpoints_integrations_reprocess_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3733,6 +3819,70 @@ export interface components {
              * @default 30
              */
             critical_days: number;
+        };
+        /**
+         * EventStatus
+         * @enum {string}
+         */
+        EventStatus: "processed" | "ignored" | "error";
+        /** WebhookResult */
+        WebhookResult: {
+            status: components["schemas"]["EventStatus"];
+            /** Message */
+            message: string;
+            /** Sale Id */
+            sale_id: number | null;
+        };
+        /** PipedriveConfigOut */
+        PipedriveConfigOut: {
+            /** Username */
+            username: string;
+            /** User Email */
+            user_email?: string | null;
+            /** Subgroup Id */
+            subgroup_id: number | null;
+        };
+        /** PipedriveConfigIn */
+        PipedriveConfigIn: {
+            /** Subgroup Id */
+            subgroup_id: number | null;
+        };
+        /** CredentialsOut */
+        CredentialsOut: {
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+        };
+        /** EventOut */
+        EventOut: {
+            /** Id */
+            id: number;
+            /** Key */
+            key: string;
+            status: components["schemas"]["EventStatus"];
+            /** Message */
+            message: string;
+            /** Sale Id */
+            sale_id: number | null;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Processed At */
+            processed_at: string | null;
+        };
+        /** PagedEventOut */
+        PagedEventOut: {
+            /** Items */
+            items: components["schemas"]["EventOut"][];
+            /** Count */
+            count: number;
         };
     };
     responses: never;
@@ -6931,6 +7081,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfigIO"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_pipedrive_deal_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_get_pipedrive_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipedriveConfigOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_update_pipedrive_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PipedriveConfigIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PipedriveConfigOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_generate_pipedrive_credentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialsOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_list_events: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                page?: number;
+                page_size?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedEventOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_reprocess_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
                 };
             };
         };

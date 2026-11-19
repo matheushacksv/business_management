@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.sales',
     'apps.legal',
     'apps.dunning',
+    'apps.integrations',
 ]
 
 AUTH_USER_MODEL = 'users.User'

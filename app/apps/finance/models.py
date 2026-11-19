@@ -56,6 +56,7 @@ class Contact(models.Model):
     email = models.EmailField(max_length=100, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     notes = models.TextField(blank=True)
+    pipedrive_id = models.PositiveBigIntegerField(null=True, blank=True, unique=True)  # person id
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

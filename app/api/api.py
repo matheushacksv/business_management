@@ -11,6 +11,7 @@ from api.endpoints.contacts import router as contact_router
 from api.endpoints.dunning import router as dunning_router
 from api.endpoints.history import router as history_router
 from api.endpoints.imports import router as import_router
+from api.endpoints.integrations import router as integrations_router
 from api.endpoints.invoices import router as invoice_router
 from api.endpoints.legal import router as legal_router
 from api.endpoints.reports import router as report_router
@@ -50,3 +51,4 @@ api.add_router('/', import_router)
 api.add_router('/', history_router)
 api.add_router('/', legal_router)
 api.add_router('/', dunning_router)
+api.add_router('/', integrations_router)

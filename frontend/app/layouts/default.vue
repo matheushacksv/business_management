@@ -66,6 +66,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
     !!auth.me.value?.is_admin && parent({ label: 'Administração', icon: 'i-lucide-settings' }, ['/admin'], [
       { label: 'Usuários', to: '/admin/users' },
       { label: 'Importar planilha', to: '/admin/import' },
+      { label: 'Integrações', to: '/admin/integrations' },
       { label: 'Auditoria', to: '/admin/audit' },
     ]),
   ])

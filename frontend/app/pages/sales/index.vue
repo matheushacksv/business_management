@@ -75,6 +75,12 @@ function onCreated(id: number) {
   selected.value = id
   drawerOpen.value = true
 }
+// /sales?sale=<id> (e.g. from the integrations log) opens that sale
+const saleQuery = useRoute().query.sale
+if (saleQuery) {
+  selected.value = Number(saleQuery)
+  drawerOpen.value = true
+}
 </script>
 
 <template>

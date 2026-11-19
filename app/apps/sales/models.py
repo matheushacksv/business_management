@@ -70,6 +70,7 @@ class Sale(models.Model):
     installments_count = models.PositiveSmallIntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=SaleStatus.choices, default=SaleStatus.ACTIVE)
     notes = models.TextField(blank=True)
+    pipedrive_id = models.PositiveBigIntegerField(null=True, blank=True, unique=True)  # deal id (import dedupe)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

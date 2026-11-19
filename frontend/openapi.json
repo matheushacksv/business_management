@@ -7514,6 +7514,250 @@
      }
     ]
    }
+  },
+  "/api/webhooks/pipedrive/deal": {
+   "post": {
+    "operationId": "api_endpoints_integrations_pipedrive_deal_webhook",
+    "summary": "Pipedrive Deal Webhook",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WebhookResult"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ]
+   }
+  },
+  "/api/integrations/pipedrive": {
+   "get": {
+    "operationId": "api_endpoints_integrations_get_pipedrive_config",
+    "summary": "Get Pipedrive Config",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PipedriveConfigOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "put": {
+    "operationId": "api_endpoints_integrations_update_pipedrive_config",
+    "summary": "Update Pipedrive Config",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PipedriveConfigOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PipedriveConfigIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/pipedrive/credentials": {
+   "post": {
+    "operationId": "api_endpoints_integrations_generate_pipedrive_credentials",
+    "summary": "Generate Pipedrive Credentials",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CredentialsOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/events": {
+   "get": {
+    "operationId": "api_endpoints_integrations_list_events",
+    "summary": "List Events",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page",
+      "schema": {
+       "default": 1,
+       "minimum": 1,
+       "title": "Page",
+       "type": "integer"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "page_size",
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Page Size"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PagedEventOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/events/{event_id}/reprocess": {
+   "post": {
+    "operationId": "api_endpoints_integrations_reprocess_event",
+    "summary": "Reprocess Event",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "event_id",
+      "schema": {
+       "title": "Event Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EventOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
   }
  },
  "components": {
@@ -14447,6 +14691,203 @@
      "start_date"
     ],
     "title": "ConfigIO",
+    "type": "object"
+   },
+   "EventStatus": {
+    "enum": [
+     "processed",
+     "ignored",
+     "error"
+    ],
+    "title": "EventStatus",
+    "type": "string"
+   },
+   "WebhookResult": {
+    "properties": {
+     "status": {
+      "$ref": "#/components/schemas/EventStatus"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "sale_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sale Id"
+     }
+    },
+    "required": [
+     "status",
+     "message",
+     "sale_id"
+    ],
+    "title": "WebhookResult",
+    "type": "object"
+   },
+   "PipedriveConfigOut": {
+    "properties": {
+     "username": {
+      "title": "Username",
+      "type": "string"
+     },
+     "user_email": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Email"
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     }
+    },
+    "required": [
+     "username",
+     "subgroup_id"
+    ],
+    "title": "PipedriveConfigOut",
+    "type": "object"
+   },
+   "PipedriveConfigIn": {
+    "properties": {
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     }
+    },
+    "required": [
+     "subgroup_id"
+    ],
+    "title": "PipedriveConfigIn",
+    "type": "object"
+   },
+   "CredentialsOut": {
+    "properties": {
+     "username": {
+      "title": "Username",
+      "type": "string"
+     },
+     "password": {
+      "title": "Password",
+      "type": "string"
+     }
+    },
+    "required": [
+     "username",
+     "password"
+    ],
+    "title": "CredentialsOut",
+    "type": "object"
+   },
+   "EventOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/components/schemas/EventStatus"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "sale_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sale Id"
+     },
+     "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+     },
+     "received_at": {
+      "format": "date-time",
+      "title": "Received At",
+      "type": "string"
+     },
+     "processed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Processed At"
+     }
+    },
+    "required": [
+     "id",
+     "key",
+     "status",
+     "message",
+     "sale_id",
+     "payload",
+     "received_at",
+     "processed_at"
+    ],
+    "title": "EventOut",
+    "type": "object"
+   },
+   "PagedEventOut": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/EventOut"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "items",
+     "count"
+    ],
+    "title": "PagedEventOut",
     "type": "object"
    }
   },
