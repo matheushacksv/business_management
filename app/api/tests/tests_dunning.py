@@ -52,11 +52,25 @@ class DunningTests(TestCase):
         card = cards[0]
         self.assertEqual((Decimal(card['overdue_amount']), card['overdue_count']), (Decimal('1500'), 2))
         self.assertEqual(card['stage_id'], Stage.objects.filter(kind=StageKind.OPEN).first().pk)
-        # backlog (10/11) starts the cadence today: day 1 = today, day 3 = today + 2
-        dues = sorted(Activity.objects.values_list('due_date', flat=True))
-        self.assertEqual(dues, [TODAY, TODAY + dt.timedelta(days=2), TODAY + dt.timedelta(days=3), TODAY + dt.timedelta(days=4)])
+        self.assertEqual(card['oldest_overdue'], '2026-11-10')
+        # backlog (10/11) starts the cadence today; each step is created when its day comes
+        dues = lambda: sorted(Activity.objects.values_list('due_date', flat=True))  # noqa: E731
+        self.assertEqual(dues(), [TODAY])
         self.cards()
         self.assertEqual(Card.objects.count(), 1)
+        services.sync_cards_service(today=TODAY + dt.timedelta(days=3))  # day 4: steps of days 3 and 4
+        services.sync_cards_service(today=TODAY + dt.timedelta(days=3))
+        self.assertEqual(dues(), [TODAY, TODAY + dt.timedelta(days=2), TODAY + dt.timedelta(days=3)])
+
+    def test_team_notes(self):
+        self.installment(dt.date(2026, 11, 19))
+        card = self.cards()[0]
+        r = self.api('post', f'/dunning/card/{card["id"]}/notes', {'text': '  prometeu pagar sexta  '})
+        self.assertEqual(r.status_code, 201, r.content)
+        notes = self.api('get', f'/dunning/card/{card["id"]}/notes').json()
+        self.assertEqual([(n['text'], n['author_name']) for n in notes], [('prometeu pagar sexta', 'admin@test.com')])
+        manager = User.objects.create_user(email='m@test.com', password='Str@ngPassw8rd2026', role=Role.MANAGER)
+        self.assertEqual(self.api('post', f'/dunning/card/{card["id"]}/notes', {'text': 'x'}, user=manager).status_code, 403)
 
     def test_paid_off_resolves_and_new_delay_opens_new_card(self):
         tx = self.installment(dt.date(2026, 11, 19))
@@ -100,7 +114,7 @@ class DunningTests(TestCase):
         self.assertEqual(self.api('get', '/dunning/agenda').json(), [])  # day 1 done, the rest is in the future
         p = self.api('get', '/dunning/productivity?start=2026-11-01&end=2026-11-30').json()
         me = p['people'][0]
-        self.assertEqual((me['done'], me['messages'], me['no_answer'], me['pending']), (1, 1, 1, 3))
+        self.assertEqual((me['done'], me['messages'], me['no_answer'], me['pending']), (1, 1, 1, 0))  # later steps not created yet
         self.assertEqual((p['open_cards'], Decimal(p['overdue_amount'])), (1, Decimal('1000')))
 
     def test_assignee_must_be_able_to_collect(self):

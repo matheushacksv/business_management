@@ -1380,6 +1380,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dunning/card/{card_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notes Endpoint */
+        get: operations["api_endpoints_dunning_list_notes_endpoint"];
+        put?: never;
+        /** Add Note Endpoint */
+        post: operations["api_endpoints_dunning_add_note_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dunning/activity/{activity_id}": {
         parameters: {
             query?: never;
@@ -3609,6 +3627,8 @@ export interface components {
             overdue_amount: string;
             /** Overdue Count */
             overdue_count: number;
+            /** Oldest Overdue */
+            oldest_overdue?: string | null;
             /** Next Activity */
             next_activity: string | null;
             /** Late Activities */
@@ -3684,6 +3704,25 @@ export interface components {
              * Format: date
              */
             due_date: string;
+        };
+        /** NoteOut */
+        NoteOut: {
+            /** Id */
+            id: number;
+            /** Text */
+            text: string;
+            /** Author Name */
+            author_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** NoteIn */
+        NoteIn: {
+            /** Text */
+            text: string;
         };
         /** PatchActivity */
         PatchActivity: {
@@ -6828,6 +6867,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_list_notes_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_add_note_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteOut"];
                 };
             };
         };

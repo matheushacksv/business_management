@@ -7031,6 +7031,92 @@
     ]
    }
   },
+  "/api/dunning/card/{card_id}/notes": {
+   "get": {
+    "operationId": "api_endpoints_dunning_list_notes_endpoint",
+    "summary": "List Notes Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/NoteOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_dunning_add_note_endpoint",
+    "summary": "Add Note Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/NoteOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NoteIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/dunning/activity/{activity_id}": {
    "patch": {
     "operationId": "api_endpoints_dunning_update_activity_endpoint",
@@ -14111,6 +14197,18 @@
       "title": "Overdue Count",
       "type": "integer"
      },
+     "oldest_overdue": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Oldest Overdue"
+     },
      "next_activity": {
       "anyOf": [
        {
@@ -14339,6 +14437,55 @@
      "due_date"
     ],
     "title": "ActivityIn",
+    "type": "object"
+   },
+   "NoteOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     },
+     "author_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Author Name"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "text",
+     "created_at"
+    ],
+    "title": "NoteOut",
+    "type": "object"
+   },
+   "NoteIn": {
+    "properties": {
+     "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "text"
+    ],
+    "title": "NoteIn",
     "type": "object"
    },
    "PatchActivity": {

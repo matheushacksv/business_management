@@ -9,6 +9,8 @@ from api.schemas.dunning_dto import (
     CardOut,
     ConfigIO,
     InstallmentOut,
+    NoteIn,
+    NoteOut,
     PatchActivity,
     PatchCard,
     ProductivityOut,
@@ -70,6 +72,18 @@ def list_activities_endpoint(request, card_id: int):
 @require_permission('dunning', CHANGE)
 def create_activity_endpoint(request, card_id: int, data: ActivityIn):
     return 201, services.create_activity_service(user=request.user, card_id=card_id, **data.dict())
+
+
+@router.get('/dunning/card/{card_id}/notes', response=list[NoteOut])
+@require_permission('dunning', VIEW)
+def list_notes_endpoint(request, card_id: int):
+    return services.list_notes_service(user=request.user, card_id=card_id)
+
+
+@router.post('/dunning/card/{card_id}/notes', response={201: NoteOut})
+@require_permission('dunning', CHANGE)
+def add_note_endpoint(request, card_id: int, data: NoteIn):
+    return 201, services.add_note_service(user=request.user, card_id=card_id, text=data.text)
 
 
 @router.patch('/dunning/activity/{activity_id}', response=ActivityOut)

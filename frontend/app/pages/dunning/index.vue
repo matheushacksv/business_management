@@ -113,14 +113,16 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
                 </span>
               </UTooltip>
             </div>
-            <p class="truncate text-xs text-dimmed">{{ card.company_name }} · {{ card.overdue_count }} parcela(s)</p>
+            <p class="truncate text-xs text-dimmed">
+              {{ card.company_name }} · {{ card.overdue_count }} parcela(s)<template v-if="!card.closed_at && card.oldest_overdue">
+                · <span class="text-error">{{ daysLate(card.oldest_overdue) }} dia(s)</span></template>
+            </p>
             <div class="mt-2 flex flex-wrap items-end justify-between gap-x-2 text-xs">
               <span v-if="card.closed_at" class="text-dimmed">{{ formatDate(card.closed_at) }}</span>
               <span v-else-if="card.next_activity" class="flex items-center gap-1 tabular"
                     :class="card.late_activities ? 'text-error' : card.next_activity === today() ? 'text-warning' : 'text-dimmed'">
                 <UIcon name="i-lucide-calendar-clock" /> {{ formatDate(card.next_activity) }}
               </span>
-              <span v-else class="text-dimmed">{{ daysLate(card.overdue_since) }} dia(s)</span>
               <span class="tabular text-error">{{ formatMoney(card.overdue_amount) }}</span>
             </div>
           </article>

@@ -9,7 +9,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.companies.services import list_companies_service
-from apps.dunning.models import Activity, CadenceStep, Card, Config, Severity, Stage, StageKind
+from apps.dunning.models import Activity, CadenceStep, Card, CardNote, Config, Severity, Stage, StageKind
 from apps.finance.models import Transaction, TransactionStatus, TransactionType
 from apps.legal.services import create_case_service
 from apps.users.models import User
@@ -38,16 +38,27 @@ def _overdue_of(card: Card, today: dt.date):
     return _late(today).filter(company_id=card.company_id, contact_id=card.contact_id, date__gte=card.overdue_since)  # type:ignore
 
 
-def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date, stage: Stage, steps) -> Card:
-    with transaction.atomic():
-        card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since)
-        # day 1 = first day late; an old backlog starts its cadence today instead of all late at once
-        day_one = max(since + dt.timedelta(days=1), today)
-        Activity.objects.bulk_create(Activity(
-            card=card, kind=s.kind, title=s.title, message=s.template,
-            due_date=day_one + dt.timedelta(days=s.day - 1),
-        ) for s in steps)
-    return card
+def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date, stage: Stage) -> Card:
+    # day 1 = first day late; an old backlog starts its cadence today instead of all late at once
+    return Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since,
+                               cadence_start=max(since + dt.timedelta(days=1), today))
+
+
+def _run_cadence(today: dt.date, cards=None) -> None:
+    """Creates each step's activity when its day comes (day 1 → step 1, day 2 → step 2...).
+    Cards opened before this rule (cadence_start null) already got all of theirs."""
+    steps = list(CadenceStep.objects.filter(active=True))
+    if not steps:
+        return
+    cards = cards if cards is not None else Card.objects.filter(closed_at__isnull=True, cadence_start__isnull=False)
+    cards = [c for c in cards if c.cadence_start]
+    done = set(Activity.objects.filter(card__in=cards, step__isnull=False).values_list('card_id', 'step_id'))
+    Activity.objects.bulk_create(
+        Activity(card=c, step=s, kind=s.kind, title=s.title, message=s.template,
+                 due_date=c.cadence_start + dt.timedelta(days=s.day - 1))
+        for c in cards for s in steps
+        if (c.pk, s.pk) not in done and c.cadence_start + dt.timedelta(days=s.day - 1) <= today
+    )
 
 
 # Sync: open cards on the 1st day late, resolve the ones with nothing overdue
@@ -61,14 +72,13 @@ def sync_cards_service(*, today: dt.date | None = None) -> None:
     open_cards = {(c.company_id, c.contact_id): c for c in Card.objects.filter(closed_at__isnull=True)}  # type:ignore
     first = Stage.objects.filter(kind=StageKind.OPEN).first()
     resolved = Stage.objects.filter(kind=StageKind.RESOLVED).first()
-    steps = list(CadenceStep.objects.filter(active=True))
-
     if first:
         for (company_id, contact_id), since in overdue.items():
             if (company_id, contact_id) in open_cards:
                 continue
             try:
-                _open_card(company_id, contact_id, since, today, first, steps)
+                with transaction.atomic():
+                    _open_card(company_id, contact_id, since, today, first)
             except IntegrityError:  # another request opened it meanwhile
                 continue
 
@@ -77,6 +87,8 @@ def sync_cards_service(*, today: dt.date | None = None) -> None:
         for card in paid_off:
             card.stage, card.closed_at, card.updated_at = resolved, today, timezone.now()
         Card.objects.bulk_update(paid_off, ['stage', 'closed_at', 'updated_at'])
+
+    _run_cadence(today)
 
 
 def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:
@@ -89,13 +101,13 @@ def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:
     if not late:
         raise ValidationError('This customer has no overdue installments')
     first = Stage.objects.filter(kind=StageKind.OPEN).first()
-    steps = list(CadenceStep.objects.filter(active=True))
     ids = []
     with pghistory.context(user=user.pk):
         for r in late:
             card = Card.objects.filter(company_id=r['company_id'], contact_id=contact_id, closed_at__isnull=True).first() \
-                or _open_card(r['company_id'], contact_id, r['since'], today, first, steps)  # type:ignore
+                or _open_card(r['company_id'], contact_id, r['since'], today, first)  # type:ignore
             ids.append(card.pk)
+        _run_cadence(today, Card.objects.filter(pk__in=ids, closed_at__isnull=True))
     return list(_cards_for(user, today).filter(pk__in=ids))
 
 
@@ -112,6 +124,7 @@ def _cards_for(user: User, today: dt.date):
                 overdue_amount=Coalesce(Subquery(overdue.values('contact_id').annotate(s=Sum('amount')).values('s')),
                                         Value(ZERO), output_field=MONEY),
                 overdue_count=Coalesce(Subquery(overdue.values('contact_id').annotate(n=Count('id')).values('n')), 0),
+                oldest_overdue=Subquery(overdue.order_by('date').values('date')[:1]),
                 next_activity=Subquery(pending.order_by('due_date').values('due_date')[:1]),
                 late_activities=Coalesce(Subquery(pending.filter(due_date__lt=today).values('card')
                                                   .annotate(n=Count('id')).values('n')), 0),
@@ -342,3 +355,17 @@ def situations_service(*, user: User, contact_ids=None) -> dict[int, str]:
     for contact_id in scoped(CollectionCase.objects.exclude(stage=CaseStage.DONE)).values_list('contact_id', flat=True):
         mark(contact_id, 'critical')
     return result
+
+
+# Team notes
+
+def list_notes_service(*, user: User, card_id: int):
+    return CardNote.objects.filter(card=get_card_service(user=user, card_id=card_id)).select_related('author')
+
+
+def add_note_service(*, user: User, card_id: int, text: str) -> CardNote:
+    if not text.strip():
+        raise ValidationError('Empty note')
+    card = get_card_service(user=user, card_id=card_id)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        return CardNote.objects.create(card=card, author=user, text=text.strip())

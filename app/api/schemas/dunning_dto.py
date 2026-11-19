@@ -52,6 +52,7 @@ class CardOut(Schema):
     legal_case_id: int | None
     overdue_amount: Decimal
     overdue_count: int
+    oldest_overdue: dt.date | None = None  # days late count from here
     next_activity: dt.date | None
     late_activities: int
     critical: bool
@@ -151,3 +152,18 @@ class ProductivityOut(Schema):
 class ConfigIO(Schema):
     start_date: dt.date | None
     critical_days: int = Field(30, ge=1, le=365)
+
+
+class NoteIn(Schema):
+    text: str = Field(min_length=1)
+
+
+class NoteOut(Schema):
+    id: int
+    text: str
+    author_name: str | None = None
+    created_at: dt.datetime
+
+    @staticmethod
+    def resolve_author_name(obj) -> str | None:
+        return (obj.author.name or obj.author.email) if obj.author else None

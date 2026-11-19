@@ -66,6 +66,7 @@ class Card(models.Model):
     stage = models.ForeignKey(Stage, on_delete=models.PROTECT, related_name='cards')
     assignee = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     overdue_since = models.DateField()  # oldest overdue due date when the card opened
+    cadence_start = models.DateField(null=True, blank=True)  # cadence day 1; each step is created when its day comes
     closed_at = models.DateField(null=True, blank=True)  # resolved or sent to legal
     legal_case = models.ForeignKey('legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -83,6 +84,7 @@ class Activity(models.Model):
     """To-do of a card (the card's assignee does it). `message` is the template copied at creation."""
 
     card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='activities')
+    step = models.ForeignKey(CadenceStep, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')  # null = by hand
     kind = models.CharField(max_length=10, choices=ActivityKind.choices)
     title = models.CharField(max_length=120)
     message = models.TextField(blank=True)
@@ -95,6 +97,19 @@ class Activity(models.Model):
 
     class Meta:
         ordering = ['due_date', 'id']
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class CardNote(models.Model):
+    """Team notes on a card."""
+
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='notes')
+    author = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='+')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
 
 
 class Config(models.Model):

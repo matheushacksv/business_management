@@ -18,20 +18,39 @@ const canChange = computed(() => auth.can('dunning', 'change'))
 const card = ref<Card | null>(null)
 const activities = ref<Activity[]>([])
 const installments = ref<Installment[]>([])
+const notes = ref<components['schemas']['NoteOut'][]>([])
 async function load() {
   if (!props.cardId) return
   const path = { card_id: props.cardId }
   try {
-    ;[card.value, activities.value, installments.value] = await Promise.all([
+    ;[card.value, activities.value, installments.value, notes.value] = await Promise.all([
       unwrap(api.GET('/api/dunning/card/{card_id}', { params: { path } })),
       unwrap(api.GET('/api/dunning/card/{card_id}/activities', { params: { path } })),
       unwrap(api.GET('/api/dunning/card/{card_id}/installments', { params: { path } })),
+      unwrap(api.GET('/api/dunning/card/{card_id}/notes', { params: { path } })),
     ])
   } catch (e) {
     notifyError(e)
   }
 }
 watch(() => [open.value, props.cardId], () => { if (open.value) load() }, { immediate: true })
+
+const note = reactive({ text: '', sending: false })
+async function addNote() {
+  if (!note.text.trim()) return
+  note.sending = true
+  try {
+    const created = await unwrap(api.POST('/api/dunning/card/{card_id}/notes', {
+      params: { path: { card_id: props.cardId! } }, body: { text: note.text },
+    }))
+    notes.value.unshift(created)
+    note.text = ''
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    note.sending = false
+  }
+}
 
 const stageItems = computed(() => props.stages.map(s => ({ label: s.name, value: s.id })))
 async function patchCard(body: { stage_id?: number; assignee_id?: number | null }) {
@@ -110,7 +129,7 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="card?.contact_name ?? 'Cobrança'" :ui="{ content: 'sm:max-w-4xl' }">
+  <UModal v-model:open="open" :title="card?.contact_name ?? 'Cobrança'" :ui="{ content: 'sm:max-w-5xl' }">
     <template #body>
       <USkeleton v-if="!card" class="h-40 w-full" />
       <div v-else class="space-y-5">
@@ -123,7 +142,7 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
           <div>
             <p class="text-xs text-dimmed">Desde</p>
             <p class="text-highlighted">{{ formatDate(card.overdue_since) }}</p>
-            <p class="text-xs text-muted">{{ daysLate(card.overdue_since) }} dia(s)</p>
+            <p v-if="card.oldest_overdue" class="text-xs text-error">{{ daysLate(card.oldest_overdue) }} dia(s) de atraso</p>
           </div>
           <UFormField label="Etapa">
             <USelect :model-value="card.stage_id" :items="stageItems" :disabled="!canChange || !isOpen" class="w-full"
@@ -142,7 +161,7 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
           </div>
         </div>
 
-        <div class="grid items-start gap-4 lg:grid-cols-[1fr_18rem]">
+        <div class="grid items-start gap-4 lg:grid-cols-[1fr_22rem]">
           <SPanel title="Atividades">
             <template v-if="canChange && isOpen" #actions>
               <UButton label="Nova" icon="i-lucide-plus" size="sm" color="neutral" variant="outline" @click="form.open = !form.open" />
@@ -219,6 +238,22 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
             </template>
           </SPanel>
 
+          <div class="flex flex-col gap-4">
+          <SPanel title="Observações">
+            <form v-if="canChange" class="flex flex-col gap-2" @submit.prevent="addNote">
+              <UTextarea v-model="note.text" :rows="2" autoresize class="w-full" />
+              <UButton type="submit" label="Adicionar" icon="i-lucide-send" size="sm" :loading="note.sending"
+                       :disabled="!note.text.trim()" class="self-end" />
+            </form>
+            <ul class="mt-3 flex max-h-80 flex-col gap-2 overflow-y-auto">
+              <li v-for="n in notes" :key="n.id" class="rounded-lg bg-elevated/50 p-2.5 text-sm ring ring-default">
+                <p class="mb-1 text-xs text-dimmed">{{ n.author_name ?? '—' }} · {{ formatDateTime(n.created_at) }}</p>
+                <p class="whitespace-pre-line">{{ n.text }}</p>
+              </li>
+              <li v-if="!notes.length" class="text-sm text-dimmed">Nenhuma.</li>
+            </ul>
+          </SPanel>
+
           <SPanel title="Parcelas em atraso">
             <ul class="flex flex-col divide-y divide-muted text-sm tabular">
               <li v-for="i in installments" :key="i.id" class="flex justify-between gap-2 py-1.5">
@@ -231,6 +266,7 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
               <li v-if="!installments.length" class="py-1.5 text-dimmed">Nenhuma.</li>
             </ul>
           </SPanel>
+          </div>
         </div>
       </div>
     </template>
