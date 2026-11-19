@@ -6,10 +6,11 @@ import pghistory
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import DecimalField, F, OuterRef, ProtectedError, Q, Subquery, Sum, Value
+from django.db.models import DateField, DecimalField, F, OuterRef, ProtectedError, Q, Subquery, Sum, Value
 from django.utils import timezone
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncMonth
 
+from apps.companies.models import MonthlyTax
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, SubGroup, Transaction, TransactionSeries, TransactionStatus, TransactionType
 from apps.finance.services import create_contact_service, create_series_service, create_transaction_service
@@ -259,11 +260,19 @@ def generate_receivables_service(
 CENT = Decimal('0.01')
 
 
+def tax_rate_for(c: Commission) -> Decimal:
+    """Tax of the sale's month (annotated by _commissions_for), else the company's."""
+    if not hasattr(c, 'month_tax'):
+        c.month_tax = MonthlyTax.objects.filter(  # type:ignore
+            company_id=c.sale.company_id, month=c.sale.date.replace(day=1)).values_list('rate', flat=True).first()
+    return c.month_tax if c.month_tax is not None else c.sale.company.tax_rate  # type:ignore
+
+
 def commission_amount(c: Commission) -> Decimal:
     if c.payment_id is not None and c.paid_amount is not None:  # type:ignore
         return c.paid_amount  # frozen when paid
     if c.kind in PERCENT_KINDS:
-        after_tax = c.sale.amount * (1 - c.sale.company.tax_rate / 100)
+        after_tax = c.sale.amount * (1 - tax_rate_for(c) / 100)
         return (after_tax * c.percent / 100).quantize(CENT)  # type:ignore
     return c.fixed_amount or ZERO
 
@@ -274,7 +283,10 @@ def _commissions_for(user: User):
     ).order_by('date').values('date')[:1]
     return Commission.objects.filter(sale__company__in=list_companies_service(user=user)).select_related(
         'sale__company', 'sale__contact', 'salesperson', 'payment'
-    ).annotate(first_payment=Subquery(first_payment))
+    ).annotate(first_payment=Subquery(first_payment), sale_month=TruncMonth('sale__date', output_field=DateField())).annotate(
+        month_tax=Subquery(MonthlyTax.objects.filter(
+            company_id=OuterRef('sale__company_id'), month=OuterRef('sale_month')).values('rate')[:1]),
+    )
 
 
 def _commission_values(kind: str, percent, fixed_amount):
@@ -514,3 +526,23 @@ def public_statement_service(*, token: str, password: str) -> dict:
         StatementShare.objects.filter(pk=share.pk).update(failed_attempts=F('failed_attempts') + 1)
         raise ValidationError('Senha incorreta')
     return salary_statement_service(user=share.created_by, salesperson_id=share.salesperson_id, month=share.month)  # type:ignore
+
+
+# Tax by month: changes the unpaid seller/advisor commissions of that month's sales
+
+def list_month_taxes_service(*, user: User, month: dt.date) -> list[dict]:
+    month = month.replace(day=1)
+    rates = dict(MonthlyTax.objects.filter(month=month).values_list('company_id', 'rate'))
+    return [{'company_id': c.pk, 'company_name': c.name, 'default_rate': c.tax_rate, 'rate': rates.get(c.pk)}
+            for c in list_companies_service(user=user).order_by('name')]
+
+
+def set_month_tax_service(*, user: User, company_id: int, month: dt.date, rate: Decimal | None) -> None:
+    """rate None = back to the company's default."""
+    company = list_companies_service(user=user).get(pk=company_id)
+    month = month.replace(day=1)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        if rate is None:
+            MonthlyTax.objects.filter(company=company, month=month).delete()
+        else:
+            MonthlyTax.objects.update_or_create(company=company, month=month, defaults={'rate': rate})

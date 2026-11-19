@@ -32,6 +32,9 @@ from api.schemas.sales_dto import (
     SalesReportOut,
     SalesReportParams,
     SalesConfigIO,
+    MonthTaxOut,
+    MonthTaxParams,
+    SetMonthTax,
 )
 from api.schemas.transactions_dto import TransactionOut
 from apps.finance.exporter import XLSX_CONTENT_TYPE
@@ -231,6 +234,19 @@ def delete_adjustment_endpoint(request, adjustment_id: int):
 def pay_salary_endpoint(request, data: PaySalary):
     check_permission(request.user, 'transactions', CREATE)  # creates the outflow
     return services.pay_salary_service(user=request.user, **data.dict())
+
+
+@router.get('/commission/tax', response=list[MonthTaxOut])
+@require_permission('sales', VIEW)
+def list_month_taxes_endpoint(request, params: Query[MonthTaxParams]):
+    return services.list_month_taxes_service(user=request.user, month=params.month)
+
+
+@router.put('/commission/tax', response={204: None})
+@require_permission('sales', CHANGE)
+def set_month_tax_endpoint(request, data: SetMonthTax):
+    services.set_month_tax_service(user=request.user, **data.dict())
+    return 204, None
 
 
 @router.get('/commission/config', response=SalesConfigIO)

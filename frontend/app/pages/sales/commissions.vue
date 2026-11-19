@@ -134,6 +134,34 @@ async function confirmPay() {
   }
 }
 
+// Tax of a sales month per company (empty = the company's default); changes the unpaid commissions
+const tax = reactive({ open: false, month: '', rows: [] as components['schemas']['MonthTaxOut'][] })
+async function loadTax() {
+  try {
+    tax.rows = await unwrap(api.GET('/api/commission/tax', { params: { query: { month: `${tax.month}-01` } } }))
+  } catch (e) {
+    notifyError(e)
+  }
+}
+function openTax() {
+  const [y, m] = filters.month.split('-').map(Number)
+  const d = new Date(y!, m! - 2, 1)  // sales month of the commissions on screen
+  tax.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  tax.open = true
+}
+watch(() => tax.open && tax.month, (v) => { if (v) loadTax() })
+async function setTax(companyId: number, rate: number | null | undefined) {
+  try {
+    await unwrap(api.PUT('/api/commission/tax', {
+      body: { company_id: companyId, month: `${tax.month}-01`, rate: rate == null ? null : rate.toFixed(2) },
+    }))
+    await loadTax()
+    load()
+  } catch (e) {
+    notifyError(e)
+  }
+}
+
 function exportXlsx() {
   download(`/api/commission/export?${toSearchParams(query.value)}`, 'comissoes.xlsx').catch(notifyError)
 }
@@ -145,6 +173,8 @@ function exportXlsx() {
       <UButton label="Demonstrativo" icon="i-lucide-receipt-text" color="neutral" variant="outline"
                :to="{ path: '/sales/statement', query: { month: filters.month } }" />
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
+      <UButton v-if="auth.can('sales', 'change')" label="Imposto do mês" icon="i-lucide-percent" color="neutral" variant="outline"
+               @click="openTax" />
       <USelect :model-value="due" :disabled="!auth.can('sales', 'change')" class="w-64" aria-label="Vencimento das comissões"
                :items="[{ label: 'Vence após o 1º pagamento', value: 'payment' }, { label: 'Vence após a venda', value: 'sale' }]"
                @update:model-value="(v: any) => setDue(v)" />
@@ -215,6 +245,26 @@ function exportXlsx() {
         <div class="flex w-full justify-end gap-2">
           <UButton label="Cancelar" color="neutral" variant="ghost" @click="pay.open = false" />
           <UButton label="Pagar" :loading="pay.saving" :disabled="!pay.subgroup_id || !pay.date" @click="confirmPay" />
+        </div>
+      </template>
+    </UModal>
+    <UModal v-model:open="tax.open" title="Imposto do mês">
+      <template #body>
+        <div class="flex flex-col gap-4">
+          <UFormField label="Mês das vendas">
+            <USelect v-model="tax.month" :items="monthItems" class="w-32" />
+          </UFormField>
+          <ul class="flex flex-col divide-y divide-muted">
+            <li v-for="r in tax.rows" :key="r.company_id" class="flex items-center justify-between gap-3 py-2 text-sm">
+              <span class="flex-1 truncate">{{ r.company_name }}</span>
+              <UInputNumber :model-value="r.rate != null ? Number(r.rate) : undefined" :min="0" :max="100" :step="0.01"
+                            :increment="false" :decrement="false" :placeholder="`${Number(r.default_rate).toLocaleString('pt-BR')}%`"
+                            locale="pt-BR" class="w-24"
+                            :aria-label="`Imposto ${r.company_name}`"
+                            @update:model-value="(v: any) => setTax(r.company_id, v == null || Number.isNaN(v) ? null : v)" />
+              <span class="-ms-2 text-muted">%</span>
+            </li>
+          </ul>
         </div>
       </template>
     </UModal>

@@ -187,7 +187,7 @@ class CommissionOut(Schema):
     contact_name: str | None = Field(None, alias='sale.contact.name')
     company_id: int = Field(alias='sale.company_id')
     company_name: str = Field(alias='sale.company.name')
-    tax_rate: Decimal = Field(alias='sale.company.tax_rate')
+    tax_rate: Decimal  # of the sale's month
     salesperson_id: int
     salesperson_name: str = Field(alias='salesperson.name')
     kind: CommissionKind
@@ -203,6 +203,11 @@ class CommissionOut(Schema):
     def resolve_amount(obj) -> Decimal:
         from apps.sales.services import commission_amount
         return commission_amount(obj)
+
+    @staticmethod
+    def resolve_tax_rate(obj) -> Decimal:
+        from apps.sales.services import tax_rate_for
+        return tax_rate_for(obj)
 
 
 class CreateAdjustment(Schema):
@@ -272,3 +277,20 @@ class StatementPassword(Schema):
 
 class SalesConfigIO(Schema):
     commission_due: CommissionDue
+
+
+class MonthTaxOut(Schema):
+    company_id: int
+    company_name: str
+    default_rate: Decimal
+    rate: Decimal | None  # None = default
+
+
+class MonthTaxParams(Schema):
+    month: dt.date
+
+
+class SetMonthTax(Schema):
+    company_id: int
+    month: dt.date
+    rate: Decimal | None = Field(None, ge=0, le=100, max_digits=5, decimal_places=2)

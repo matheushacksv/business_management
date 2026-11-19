@@ -1105,6 +1105,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/commission/tax": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Month Taxes Endpoint */
+        get: operations["api_endpoints_sales_list_month_taxes_endpoint"];
+        /** Set Month Tax Endpoint */
+        put: operations["api_endpoints_sales_set_month_tax_endpoint"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/commission/config": {
         parameters: {
             query?: never;
@@ -3304,6 +3322,37 @@ export interface components {
             subgroup_id: number;
             /** Amount */
             amount?: number | string | null;
+        };
+        /** MonthTaxParams */
+        MonthTaxParams: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+        };
+        /** MonthTaxOut */
+        MonthTaxOut: {
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Default Rate */
+            default_rate: string;
+            /** Rate */
+            rate: string | null;
+        };
+        /** SetMonthTax */
+        SetMonthTax: {
+            /** Company Id */
+            company_id: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Rate */
+            rate?: number | string | null;
         };
         /**
          * CommissionDue
@@ -6351,6 +6400,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TransactionOut"];
                 };
+            };
+        };
+    };
+    api_endpoints_sales_list_month_taxes_endpoint: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthTaxOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_set_month_tax_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMonthTax"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

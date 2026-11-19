@@ -5899,6 +5899,76 @@
     ]
    }
   },
+  "/api/commission/tax": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_month_taxes_endpoint",
+    "summary": "List Month Taxes Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "format": "date",
+       "title": "Month",
+       "type": "string"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MonthTaxOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "put": {
+    "operationId": "api_endpoints_sales_set_month_tax_endpoint",
+    "summary": "Set Month Tax Endpoint",
+    "parameters": [],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SetMonthTax"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/commission/config": {
    "get": {
     "operationId": "api_endpoints_sales_get_sales_config_endpoint",
@@ -13332,6 +13402,90 @@
      "subgroup_id"
     ],
     "title": "PaySalary",
+    "type": "object"
+   },
+   "MonthTaxParams": {
+    "properties": {
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     }
+    },
+    "required": [
+     "month"
+    ],
+    "title": "MonthTaxParams",
+    "type": "object"
+   },
+   "MonthTaxOut": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "default_rate": {
+      "title": "Default Rate",
+      "type": "string"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     }
+    },
+    "required": [
+     "company_id",
+     "company_name",
+     "default_rate",
+     "rate"
+    ],
+    "title": "MonthTaxOut",
+    "type": "object"
+   },
+   "SetMonthTax": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "month": {
+      "format": "date",
+      "title": "Month",
+      "type": "string"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     }
+    },
+    "required": [
+     "company_id",
+     "month"
+    ],
+    "title": "SetMonthTax",
     "type": "object"
    },
    "CommissionDue": {

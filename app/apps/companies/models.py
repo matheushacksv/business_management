@@ -18,3 +18,15 @@ class Company(models.Model):
 
     def __str__(self):
         return f'{self.name} - {self.cnpj}'
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class MonthlyTax(models.Model):
+    """Tax % of one month's sales; months without one use Company.tax_rate."""
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='monthly_taxes')
+    month = models.DateField()  # 1st day
+    rate = models.DecimalField(max_digits=5, decimal_places=2)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['company', 'month'], name='unique_monthly_tax')]

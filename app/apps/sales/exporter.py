@@ -5,7 +5,7 @@ from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
-from apps.sales.services import commission_amount
+from apps.sales.services import commission_amount, tax_rate_for
 
 HEADERS = ['Profissional', 'Tipo', 'Cliente', 'Empresa', 'Data da venda', 'Valor da venda', 'Imposto %',
            'Comissão %', 'Valor fixo', 'Comissão', 'Status', 'Pago em']
@@ -21,7 +21,7 @@ def commissions_xlsx(queryset) -> bytes:
     for c in queryset:
         ws.append([
             c.salesperson.name, c.get_kind_display(), c.sale.contact.name if c.sale.contact else '',
-            c.sale.company.name, c.sale.date, c.sale.amount, c.sale.company.tax_rate, c.percent, c.fixed_amount,
+            c.sale.company.name, c.sale.date, c.sale.amount, tax_rate_for(c), c.percent, c.fixed_amount,
             commission_amount(c), 'Paga' if c.payment_id else 'A pagar', c.payment.date if c.payment else None,
         ])
     for row in ws.iter_rows(min_row=2):

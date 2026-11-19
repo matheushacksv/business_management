@@ -206,3 +206,25 @@ class AdjustmentTests(Base):
         self.assertEqual(self.api('delete', f'/adjustment/{bonus["id"]}').status_code, 400)  # paid: locked
         Transaction.objects.filter(type=TransactionType.OUTFLOW).delete()  # reopens the bonus
         self.assertEqual(self.api('delete', f'/adjustment/{bonus["id"]}').status_code, 204)
+
+
+class MonthlyTaxTests(Base):
+    def test_month_tax_changes_unpaid_commissions_of_that_month(self):
+        c = self.add(self.matheus, 'seller', percent='10')  # 10% of 20.000 - 10% tax = 1.800
+        self.assertEqual(Decimal(c['amount']), Decimal('1800.00'))
+        r = self.api('put', '/commission/tax', {'company_id': self.company.pk, 'month': '2026-10-01', 'rate': '15'})
+        self.assertEqual(r.status_code, 204, r.content)
+        row = self.api('get', '/commission').json()[0]
+        self.assertEqual((Decimal(row['amount']), Decimal(row['tax_rate'])), (Decimal('1700.00'), Decimal('15')))
+        taxes = self.api('get', '/commission/tax?month=2026-10-01').json()
+        self.assertEqual([(t['company_id'], Decimal(t['rate'])) for t in taxes], [(self.company.pk, Decimal('15'))])
+        # another month keeps the company's default; clearing goes back to it
+        self.assertIsNone(self.api('get', '/commission/tax?month=2026-11-01').json()[0]['rate'])
+        self.api('put', '/commission/tax', {'company_id': self.company.pk, 'month': '2026-10-01', 'rate': None})
+        self.assertEqual(Decimal(self.api('get', '/commission').json()[0]['amount']), Decimal('1800.00'))
+
+    def test_paid_commission_keeps_its_amount(self):
+        c = self.add(self.matheus, 'seller', percent='10')
+        self.api('post', '/commission/pay', {'ids': [c['id']], 'date': '2026-11-10', 'subgroup_id': self.subgroup.pk})
+        self.api('put', '/commission/tax', {'company_id': self.company.pk, 'month': '2026-10-01', 'rate': '20'})
+        self.assertEqual(Decimal(self.api('get', '/commission').json()[0]['amount']), Decimal('1800.00'))
