@@ -72,7 +72,7 @@ async function submit() {
       : await unwrap(api.POST('/api/collection-case', {
           body: { ...body, company_id: state.company_id!, contact_id: state.contact_id! },
         }))
-    notifySuccess(c ? 'Caso atualizado' : 'Caso de cobrança aberto')
+    notifySuccess(c ? 'Ação atualizada' : 'Ação aberta')
     emit('saved', saved.id!)
   } catch (e) {
     notifyError(e)

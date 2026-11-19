@@ -69,14 +69,14 @@ async function saved() {
 async function remove() {
   if (!item.value) return
   const ok = await confirm({
-    title: 'Excluir caso de cobrança?',
+    title: 'Excluir ação?',
     description: 'As parcelas vinculadas continuam lançadas e voltam para a DRE e o fluxo de caixa.',
     confirmLabel: 'Excluir', color: 'error', icon: 'i-lucide-trash-2',
   })
   if (!ok) return
   try {
     await unwrap(api.DELETE('/api/collection-case/{case_id}', { params: { path: { case_id: item.value.id! } } }))
-    notifySuccess('Caso excluído')
+    notifySuccess('Ação excluída')
     open.value = false
     emit('changed')
   } catch (e) {
@@ -91,7 +91,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="item?.contact_name ?? 'Caso de cobrança'"
+  <USlideover v-model:open="open" :title="item?.contact_name ?? 'Ação'"
               :description="item ? `${LABELS.caseStage[item.stage]} · ${item.company_name}` : undefined"
               :ui="{ content: 'max-w-2xl' }">
     <template #body>
@@ -105,7 +105,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
         </div>
 
         <UAlert v-if="incomplete && !editing" color="warning" variant="subtle" icon="i-lucide-triangle-alert"
-                title="Caso incompleto" />
+                title="Ação incompleta" />
 
         <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full" />
 

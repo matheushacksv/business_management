@@ -207,7 +207,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 <template>
   <AppPage :title="contact?.name ?? 'Cliente/fornecedor'">
     <template #actions>
-      <UButton v-if="auth.can('legal', 'create')" label="Enviar para cobrança" icon="i-lucide-scale" color="neutral" variant="outline"
+      <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" color="neutral" variant="outline"
                :disabled="!contact" @click="collectionOpen = true" />
       <UButton v-if="canMerge" label="Mesclar duplicado" icon="i-lucide-merge" color="neutral" variant="outline"
                :disabled="!contact" @click="mergeOpen = true" />

@@ -46,7 +46,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
   ])
 
   const legal = section('Jurídico', [
-    can('legal') && { label: 'Cobranças', icon: 'i-lucide-scale', to: '/legal' },
+    can('legal') && { label: 'Ações', icon: 'i-lucide-scale', to: '/legal' },
   ])
 
   const tools = keep<NavigationMenuItem>([

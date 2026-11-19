@@ -135,7 +135,7 @@ function onCreated(id: number) {
 </script>
 
 <template>
-  <AppPage title="Jurídico · Cobranças">
+  <AppPage title="Jurídico · Ações">
     <template #actions>
       <UButton v-if="auth.can('legal', 'create')" label="Nova ação" icon="i-lucide-plus" class="rounded-full" @click="createOpen = true" />
     </template>
@@ -188,10 +188,10 @@ function onCreated(id: number) {
 
     <template v-else>
       <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
-        <UTable :data="items" :columns="tableColumns" :loading="loading" sticky empty="Nenhum caso de cobrança"
+        <UTable :data="items" :columns="tableColumns" :loading="loading" sticky empty="Nenhuma ação"
                 class="max-h-[calc(100dvh-16rem)]" @select="(_: Event, row: any) => openCase(row.original.id)" />
       </div>
-      <p class="text-sm text-muted">{{ items.length }} caso(s)</p>
+      <p class="text-sm text-muted">{{ items.length }} ação(ões)</p>
       <AppBulkBar :count="selection.ids.value.length" @clear="selection.clear">
         <USelect v-model="bulkStage" :items="stages" placeholder="Mover para…" size="sm" class="w-48"
                  @update:model-value="(v: any) => v && moveSelected(v)" />
