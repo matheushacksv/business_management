@@ -93,3 +93,8 @@ class PipedriveWebhookTests(TestCase):
     def test_admin_only(self):
         member = User.objects.create_user(email='f@test.com', password='Str@ngPassw8rd2026', role=Role.FINANCE)
         self.assertEqual(self.client.get('/api/integrations/events', headers=self.auth(member)).status_code, 403)
+
+    def test_trailing_slash_url(self):
+        r = self.client.post('/api/webhooks/pipedrive/deal/', data=DEAL, content_type='application/json',
+                             headers={'Authorization': self.basic})
+        self.assertEqual((r.status_code, r.json()['status']), (200, 'processed'), r.content)

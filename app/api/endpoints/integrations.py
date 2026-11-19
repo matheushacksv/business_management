@@ -15,6 +15,9 @@ router = Router(tags=['Integrations'])
 # Webhook: no session; HTTP Basic credentials set on the Pipedrive automation
 
 @router.post('/webhooks/pipedrive/deal', auth=None, response={200: WebhookResult, 400: dict, 401: dict})
+# Pipedrive only accepts endpoint URLs ending in '/': same view on both paths
+@router.post('/webhooks/pipedrive/deal/', auth=None, response={200: WebhookResult, 400: dict, 401: dict},
+             include_in_schema=False, operation_id='pipedrive_deal_webhook_slash')
 def pipedrive_deal_webhook(request):
     if not services.authenticate(request.headers.get('Authorization')):
         return 401, {'detail': 'Invalid credentials'}

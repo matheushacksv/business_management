@@ -13,7 +13,7 @@ lookups.ensure('subgroups').catch(notifyError)
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
-const webhookUrl = computed(() => `${location.origin}/api/webhooks/pipedrive/deal`)
+const webhookUrl = computed(() => `${location.origin}/api/webhooks/pipedrive/deal/`)
 const copy = (text: string) => navigator.clipboard.writeText(text).then(() => notifySuccess('Copiado'))
 
 // Settings
