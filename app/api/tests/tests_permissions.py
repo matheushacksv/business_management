@@ -62,6 +62,8 @@ class PermissionMatrixTest(TestCase):
             ('sales', 'create'): ('post', '/api/sale', {'company_id': c, 'date': '2026-01-01', 'amount': '10'}),
             ('sales', 'change'): ('patch', '/api/sale/999999', {'notes': 'x'}),
             ('sales', 'delete'): ('delete', '/api/sale/999999', None),
+            ('dunning', 'view'): ('get', '/api/dunning/stage', None),
+            ('dunning', 'change'): ('patch', '/api/dunning/card/999999', {}),
             ('users', 'view'): ('get', '/api/user', None),
             ('users', 'change'): ('patch', f'/api/user/{self.admin.pk}', {'name': 'Root'}),
         }
@@ -84,15 +86,15 @@ class PermissionMatrixTest(TestCase):
     def test_expected_matrix(self):
         expected = {
             Role.ADMIN: {'users': 'vcud', 'companies': 'vcud', 'subgroups': 'vcud', 'contacts': 'vcud',
-                         'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'vcud', 'sales': 'vcud', 'legal': 'vcud'},
+                         'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'vcud', 'sales': 'vcud', 'legal': 'vcud', 'dunning': 'vcud'},
             Role.FINANCE: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': 'vcud',
-                           'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'v', 'sales': 'vcud', 'legal': 'vcud'},
+                           'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'v', 'sales': 'vcud', 'legal': 'vcud', 'dunning': 'vcud'},
             Role.ACCOUNTANT: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': 'v',
-                              'accounts': 'v', 'transactions': 'v', 'reports': 'v', 'sales': 'v', 'legal': ''},
+                              'accounts': 'v', 'transactions': 'v', 'reports': 'v', 'sales': 'v', 'legal': '', 'dunning': ''},
             Role.MANAGER: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': '',
-                           'accounts': '', 'transactions': '', 'reports': 'v', 'sales': 'v', 'legal': 'v'},
+                           'accounts': '', 'transactions': '', 'reports': 'v', 'sales': 'v', 'legal': 'v', 'dunning': 'v'},
             Role.LEGAL: {'users': '', 'companies': 'v', 'subgroups': '', 'contacts': 'v',
-                         'accounts': '', 'transactions': '', 'reports': '', 'sales': 'v', 'legal': 'vcud'},
+                         'accounts': '', 'transactions': '', 'reports': '', 'sales': 'v', 'legal': 'vcud', 'dunning': ''},
         }
         letters = {'view': 'v', 'create': 'c', 'change': 'u', 'delete': 'd'}
         for role, modules in expected.items():

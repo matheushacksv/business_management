@@ -6635,6 +6635,844 @@
      }
     ]
    }
+  },
+  "/api/dunning/card": {
+   "get": {
+    "operationId": "api_endpoints_dunning_list_cards_endpoint",
+    "summary": "List Cards Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "assignee_id",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Assignee Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CardOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/card/{card_id}": {
+   "get": {
+    "operationId": "api_endpoints_dunning_get_card_endpoint",
+    "summary": "Get Card Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CardOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_dunning_update_card_endpoint",
+    "summary": "Update Card Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CardOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchCard"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/card/{card_id}/installments": {
+   "get": {
+    "operationId": "api_endpoints_dunning_card_installments_endpoint",
+    "summary": "Card Installments Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/InstallmentOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/card/{card_id}/activities": {
+   "get": {
+    "operationId": "api_endpoints_dunning_list_activities_endpoint",
+    "summary": "List Activities Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ActivityOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_dunning_create_activity_endpoint",
+    "summary": "Create Activity Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ActivityOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ActivityIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/activity/{activity_id}": {
+   "patch": {
+    "operationId": "api_endpoints_dunning_update_activity_endpoint",
+    "summary": "Update Activity Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "activity_id",
+      "schema": {
+       "title": "Activity Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ActivityOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchActivity"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_dunning_delete_activity_endpoint",
+    "summary": "Delete Activity Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "activity_id",
+      "schema": {
+       "title": "Activity Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/agenda": {
+   "get": {
+    "operationId": "api_endpoints_dunning_agenda_endpoint",
+    "summary": "Agenda Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "assignee_id",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Assignee Id"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AgendaOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/assignees": {
+   "get": {
+    "operationId": "api_endpoints_dunning_assignees_endpoint",
+    "summary": "Assignees Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AssigneeOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/productivity": {
+   "get": {
+    "operationId": "api_endpoints_dunning_productivity_endpoint",
+    "summary": "Productivity Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "start",
+      "schema": {
+       "format": "date",
+       "title": "Start",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "end",
+      "schema": {
+       "format": "date",
+       "title": "End",
+       "type": "string"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProductivityOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/stage": {
+   "get": {
+    "operationId": "api_endpoints_dunning_list_stages_endpoint",
+    "summary": "List Stages Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/StageOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_dunning_create_stage_endpoint",
+    "summary": "Create Stage Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StageOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/stage/{stage_id}": {
+   "patch": {
+    "operationId": "api_endpoints_dunning_update_stage_endpoint",
+    "summary": "Update Stage Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "stage_id",
+      "schema": {
+       "title": "Stage Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StageOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_dunning_delete_stage_endpoint",
+    "summary": "Delete Stage Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "stage_id",
+      "schema": {
+       "title": "Stage Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/cadence": {
+   "get": {
+    "operationId": "api_endpoints_dunning_list_steps_endpoint",
+    "summary": "List Steps Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/StepOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_dunning_create_step_endpoint",
+    "summary": "Create Step Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StepOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StepIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/cadence/{step_id}": {
+   "patch": {
+    "operationId": "api_endpoints_dunning_update_step_endpoint",
+    "summary": "Update Step Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "step_id",
+      "schema": {
+       "title": "Step Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StepOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StepIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_dunning_delete_step_endpoint",
+    "summary": "Delete Step Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "step_id",
+      "schema": {
+       "title": "Step Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/config": {
+   "get": {
+    "operationId": "api_endpoints_dunning_get_config_endpoint",
+    "summary": "Get Config Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConfigIO"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "put": {
+    "operationId": "api_endpoints_dunning_update_config_endpoint",
+    "summary": "Update Config Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConfigIO"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ConfigIO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
   }
  },
  "components": {
@@ -12131,18 +12969,34 @@
    },
    "StageOut": {
     "properties": {
-     "value": {
-      "title": "Value",
+     "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
       "type": "string"
      },
-     "label": {
-      "title": "Label",
-      "type": "string"
+     "position": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "kind": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/StageKind"
+       }
+      ],
+      "default": "open"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
      }
     },
     "required": [
-     "value",
-     "label"
+     "name",
+     "id"
     ],
     "title": "StageOut",
     "type": "object"
@@ -12638,6 +13492,817 @@
      "text"
     ],
     "title": "CreateComment",
+    "type": "object"
+   },
+   "CardFilters": {
+    "properties": {
+     "assignee_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Id"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "search": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Search"
+     }
+    },
+    "title": "CardFilters",
+    "type": "object"
+   },
+   "CardOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "contact_id": {
+      "title": "Contact Id",
+      "type": "integer"
+     },
+     "contact_name": {
+      "title": "Contact Name",
+      "type": "string"
+     },
+     "contact_phone": {
+      "title": "Contact Phone",
+      "type": "string"
+     },
+     "contact_email": {
+      "title": "Contact Email",
+      "type": "string"
+     },
+     "stage_id": {
+      "title": "Stage Id",
+      "type": "integer"
+     },
+     "assignee_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Id"
+     },
+     "assignee_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Name"
+     },
+     "overdue_since": {
+      "format": "date",
+      "title": "Overdue Since",
+      "type": "string"
+     },
+     "closed_at": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Closed At"
+     },
+     "legal_case_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Case Id"
+     },
+     "overdue_amount": {
+      "title": "Overdue Amount",
+      "type": "string"
+     },
+     "overdue_count": {
+      "title": "Overdue Count",
+      "type": "integer"
+     },
+     "next_activity": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next Activity"
+     },
+     "late_activities": {
+      "title": "Late Activities",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "company_id",
+     "company_name",
+     "contact_id",
+     "contact_name",
+     "contact_phone",
+     "contact_email",
+     "stage_id",
+     "assignee_id",
+     "overdue_since",
+     "closed_at",
+     "legal_case_id",
+     "overdue_amount",
+     "overdue_count",
+     "next_activity",
+     "late_activities"
+    ],
+    "title": "CardOut",
+    "type": "object"
+   },
+   "PatchCard": {
+    "properties": {
+     "stage_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stage Id"
+     },
+     "assignee_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Id"
+     }
+    },
+    "title": "PatchCard",
+    "type": "object"
+   },
+   "InstallmentOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
+     "sale_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sale Id"
+     }
+    },
+    "required": [
+     "id",
+     "date",
+     "amount",
+     "reference",
+     "sale_id"
+    ],
+    "title": "InstallmentOut",
+    "type": "object"
+   },
+   "ActivityKind": {
+    "enum": [
+     "message",
+     "call",
+     "task"
+    ],
+    "title": "ActivityKind",
+    "type": "string"
+   },
+   "ActivityOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "card_id": {
+      "title": "Card Id",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/ActivityKind"
+     },
+     "title": {
+      "title": "Title",
+      "type": "string"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "due_date": {
+      "format": "date",
+      "title": "Due Date",
+      "type": "string"
+     },
+     "done_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done At"
+     },
+     "done_by_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done By Name"
+     },
+     "answered": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Answered"
+     },
+     "notes": {
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "card_id",
+     "kind",
+     "title",
+     "message",
+     "due_date",
+     "done_at",
+     "answered",
+     "notes"
+    ],
+    "title": "ActivityOut",
+    "type": "object"
+   },
+   "ActivityIn": {
+    "properties": {
+     "kind": {
+      "$ref": "#/components/schemas/ActivityKind"
+     },
+     "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+     },
+     "message": {
+      "default": "",
+      "title": "Message",
+      "type": "string"
+     },
+     "due_date": {
+      "format": "date",
+      "title": "Due Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "title",
+     "due_date"
+    ],
+    "title": "ActivityIn",
+    "type": "object"
+   },
+   "PatchActivity": {
+    "properties": {
+     "done": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done"
+     },
+     "answered": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Answered"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "due_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Due Date"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "message": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Message"
+     }
+    },
+    "title": "PatchActivity",
+    "type": "object"
+   },
+   "AgendaOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "card_id": {
+      "title": "Card Id",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/ActivityKind"
+     },
+     "title": {
+      "title": "Title",
+      "type": "string"
+     },
+     "message": {
+      "title": "Message",
+      "type": "string"
+     },
+     "due_date": {
+      "format": "date",
+      "title": "Due Date",
+      "type": "string"
+     },
+     "done_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done At"
+     },
+     "done_by_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Done By Name"
+     },
+     "answered": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Answered"
+     },
+     "notes": {
+      "title": "Notes",
+      "type": "string"
+     },
+     "contact_name": {
+      "title": "Contact Name",
+      "type": "string"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "assignee_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assignee Name"
+     }
+    },
+    "required": [
+     "id",
+     "card_id",
+     "kind",
+     "title",
+     "message",
+     "due_date",
+     "done_at",
+     "answered",
+     "notes",
+     "contact_name",
+     "company_name"
+    ],
+    "title": "AgendaOut",
+    "type": "object"
+   },
+   "AssigneeOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "email": {
+      "title": "Email",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "email"
+    ],
+    "title": "AssigneeOut",
+    "type": "object"
+   },
+   "ProductivityParams": {
+    "properties": {
+     "start": {
+      "format": "date",
+      "title": "Start",
+      "type": "string"
+     },
+     "end": {
+      "format": "date",
+      "title": "End",
+      "type": "string"
+     }
+    },
+    "required": [
+     "start",
+     "end"
+    ],
+    "title": "ProductivityParams",
+    "type": "object"
+   },
+   "PersonProductivity": {
+    "properties": {
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "done": {
+      "title": "Done",
+      "type": "integer"
+     },
+     "messages": {
+      "title": "Messages",
+      "type": "integer"
+     },
+     "calls": {
+      "title": "Calls",
+      "type": "integer"
+     },
+     "no_answer": {
+      "title": "No Answer",
+      "type": "integer"
+     },
+     "pending": {
+      "title": "Pending",
+      "type": "integer"
+     },
+     "late": {
+      "title": "Late",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "user_id",
+     "name",
+     "done",
+     "messages",
+     "calls",
+     "no_answer",
+     "pending",
+     "late"
+    ],
+    "title": "PersonProductivity",
+    "type": "object"
+   },
+   "ProductivityOut": {
+    "properties": {
+     "open_cards": {
+      "title": "Open Cards",
+      "type": "integer"
+     },
+     "overdue_amount": {
+      "title": "Overdue Amount",
+      "type": "string"
+     },
+     "resolved": {
+      "title": "Resolved",
+      "type": "integer"
+     },
+     "to_legal": {
+      "title": "To Legal",
+      "type": "integer"
+     },
+     "people": {
+      "items": {
+       "$ref": "#/components/schemas/PersonProductivity"
+      },
+      "title": "People",
+      "type": "array"
+     }
+    },
+    "required": [
+     "open_cards",
+     "overdue_amount",
+     "resolved",
+     "to_legal",
+     "people"
+    ],
+    "title": "ProductivityOut",
+    "type": "object"
+   },
+   "StageKind": {
+    "enum": [
+     "open",
+     "resolved",
+     "legal"
+    ],
+    "title": "StageKind",
+    "type": "string"
+   },
+   "StageIn": {
+    "properties": {
+     "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "position": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "kind": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/StageKind"
+       }
+      ],
+      "default": "open"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "StageIn",
+    "type": "object"
+   },
+   "StepOut": {
+    "properties": {
+     "day": {
+      "maximum": 365,
+      "minimum": 1,
+      "title": "Day",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/ActivityKind"
+     },
+     "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+     },
+     "template": {
+      "default": "",
+      "title": "Template",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "day",
+     "kind",
+     "title",
+     "id"
+    ],
+    "title": "StepOut",
+    "type": "object"
+   },
+   "StepIn": {
+    "properties": {
+     "day": {
+      "maximum": 365,
+      "minimum": 1,
+      "title": "Day",
+      "type": "integer"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/ActivityKind"
+     },
+     "title": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+     },
+     "template": {
+      "default": "",
+      "title": "Template",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "day",
+     "kind",
+     "title"
+    ],
+    "title": "StepIn",
+    "type": "object"
+   },
+   "ConfigIO": {
+    "properties": {
+     "start_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Start Date"
+     }
+    },
+    "required": [
+     "start_date"
+    ],
+    "title": "ConfigIO",
     "type": "object"
    }
   },

@@ -23,6 +23,13 @@ const items = computed<NavigationMenuItem[][]>(() => {
     ...section('Financeiro', [
       can('transactions') && { label: 'Lançamentos', icon: 'i-lucide-arrow-left-right', to: '/transactions' },
       can('transactions') && { label: 'Notas pendentes', icon: 'i-lucide-receipt-text', to: '/invoices' },
+      parent({ label: 'Cobrança', icon: 'i-lucide-phone-call' }, ['/dunning'], [
+        can('dunning') && { label: 'Funil', to: '/dunning', exact: true },
+        can('dunning') && { label: 'Agenda', to: '/dunning/agenda' },
+        can('dunning') && { label: 'Produtividade', to: '/dunning/productivity' },
+        can('dunning', 'change') && { label: 'Etapas', to: '/dunning/stages' },
+        can('dunning', 'change') && { label: 'Cadência', to: '/dunning/cadence' },
+      ]),
       parent({ label: 'Relatórios', icon: 'i-lucide-chart-column' }, ['/reports', '/sales/report'], [
         can('reports') && { label: 'DRE', to: '/reports/dre' },
         can('reports') && { label: 'Fluxo de caixa', to: '/reports/cash-flow' },

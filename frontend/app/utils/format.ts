@@ -68,6 +68,28 @@ export const LABELS = {
   } as Record<string, string>,
 }
 
+export const DUNNING_LABELS = {
+  activityKind: { message: 'Mensagem', call: 'Ligação', task: 'Tarefa' } as Record<string, string>,
+  activityIcon: { message: 'i-lucide-message-circle', call: 'i-lucide-phone', task: 'i-lucide-square-check' } as Record<string, string>,
+  stageKind: { open: 'Em andamento', resolved: 'Resolvido', legal: 'Jurídico' } as Record<string, string>,
+}
+
+/** Days between a due date and today */
+export function daysLate(date: string): number {
+  return Math.round((Date.parse(today()) - Date.parse(date)) / 86_400_000)
+}
+
+/** Fills the cadence message placeholders with the card values */
+export function fillTemplate(text: string, card: {
+  contact_name: string; company_name: string; overdue_amount: string | number; overdue_count: number; overdue_since: string
+}): string {
+  const values: Record<string, string> = {
+    cliente: card.contact_name, empresa: card.company_name, valor: formatMoney(card.overdue_amount),
+    parcelas: String(card.overdue_count), vencimento: formatDate(card.overdue_since), dias: String(daysLate(card.overdue_since)),
+  }
+  return text.replace(/\{(\w+)\}/g, (m, key: string) => values[key] ?? m)
+}
+
 /** Sellers and advisors earn a % of the sale after tax; the other kinds a fixed value (same rule as the backend). */
 export const PERCENT_COMMISSION_KINDS = ['seller', 'advisor']
 

@@ -1,0 +1,129 @@
+import datetime as dt
+from decimal import Decimal
+from unittest.mock import patch
+
+from django.test import TestCase
+from ninja_jwt.tokens import AccessToken
+
+from apps.companies.models import Company
+from apps.dunning import services
+from apps.dunning.models import Activity, Card, Config, Stage, StageKind
+from apps.finance import services as finance
+from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
+from apps.legal.models import CollectionCase
+from apps.users.models import Role, User
+
+TODAY = dt.date(2026, 11, 20)
+
+
+def auth_for(user):
+    return {'Authorization': f'Bearer {AccessToken.for_user(user)}'}  # type:ignore
+
+
+@patch('django.utils.timezone.localdate', lambda *a: TODAY)
+class DunningTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
+        self.company = Company.objects.create(name='A', cnpj='81585365000127')
+        self.subgroup = finance.create_subgroup_service(name='Assessorias', group=Group.OPERATING_REVENUE)
+        self.client_ = Contact.objects.create(name='Cliente X', phone='51999990000')
+        Config.objects.update(start_date=None)
+
+    def api(self, method, path, body=None, user=None):
+        return getattr(self.client, method)(f'/api{path}', data=body, content_type='application/json',
+                                            headers=auth_for(user or self.admin))
+
+    def installment(self, date, amount='1000', status=TransactionStatus.PLANNED):
+        return Transaction.objects.create(company=self.company, subgroup=self.subgroup, contact=self.client_, date=date,
+                                          amount=Decimal(amount), type=TransactionType.INFLOW, status=status)
+
+    def cards(self):
+        r = self.api('get', '/dunning/card')
+        self.assertEqual(r.status_code, 200, r.content)
+        return r.json()
+
+    def test_card_opens_on_first_day_late_once_with_cadence(self):
+        self.installment(TODAY)  # due today: not late yet
+        self.assertEqual(self.cards(), [])
+        self.installment(dt.date(2026, 11, 19))
+        self.installment(dt.date(2026, 11, 10), '500')
+        cards = self.cards()
+        self.assertEqual(len(cards), 1)  # one card per customer, several installments
+        card = cards[0]
+        self.assertEqual((Decimal(card['overdue_amount']), card['overdue_count']), (Decimal('1500'), 2))
+        self.assertEqual(card['stage_id'], Stage.objects.filter(kind=StageKind.OPEN).first().pk)
+        # backlog (10/11) starts the cadence today: day 1 = today, day 3 = today + 2
+        dues = sorted(Activity.objects.values_list('due_date', flat=True))
+        self.assertEqual(dues, [TODAY, TODAY + dt.timedelta(days=2), TODAY + dt.timedelta(days=3), TODAY + dt.timedelta(days=4)])
+        self.cards()
+        self.assertEqual(Card.objects.count(), 1)
+
+    def test_paid_off_resolves_and_new_delay_opens_new_card(self):
+        tx = self.installment(dt.date(2026, 11, 19))
+        self.cards()
+        tx.status = TransactionStatus.REALIZED
+        tx.save()
+        card = self.cards()[0]
+        self.assertEqual((card['closed_at'], Stage.objects.get(pk=card['stage_id']).kind), ('2026-11-20', StageKind.RESOLVED))
+        self.installment(dt.date(2026, 11, 15))
+        self.cards()
+        self.assertEqual(Card.objects.count(), 2)
+
+    def test_resolve_by_hand_needs_nothing_overdue(self):
+        self.installment(dt.date(2026, 11, 19))
+        card = self.cards()[0]
+        resolved = Stage.objects.get(kind=StageKind.RESOLVED)
+        self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'stage_id': resolved.pk}).status_code, 400)
+
+    def test_legal_stage_opens_case_and_closes_card(self):
+        self.installment(dt.date(2026, 11, 19))
+        future = self.installment(dt.date(2026, 12, 19))
+        card = self.cards()[0]
+        r = self.api('patch', f'/dunning/card/{card["id"]}', {'stage_id': Stage.objects.get(kind=StageKind.LEGAL).pk})
+        self.assertEqual(r.status_code, 200, r.content)
+        case = CollectionCase.objects.get()
+        self.assertEqual((r.json()['legal_case_id'], r.json()['closed_at']), (case.pk, '2026-11-20'))
+        future.refresh_from_db()
+        self.assertEqual(future.collection_case_id, case.pk)
+        self.cards()
+        self.assertEqual(Card.objects.count(), 1)  # with the legal team now: no new card
+
+    def test_activities_and_productivity(self):
+        self.installment(dt.date(2026, 11, 19))
+        card = self.cards()[0]
+        self.api('patch', f'/dunning/card/{card["id"]}', {'assignee_id': self.admin.pk})
+        acts = self.api('get', f'/dunning/card/{card["id"]}/activities').json()
+        first = acts[0]
+        r = self.api('patch', f'/dunning/activity/{first["id"]}', {'done': True, 'answered': False, 'notes': 'não atendeu'})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(r.json()['done_by_name'], 'admin@test.com')
+        self.assertEqual(self.api('get', '/dunning/agenda').json(), [])  # day 1 done, the rest is in the future
+        p = self.api('get', '/dunning/productivity?start=2026-11-01&end=2026-11-30').json()
+        me = p['people'][0]
+        self.assertEqual((me['done'], me['messages'], me['no_answer'], me['pending']), (1, 1, 1, 3))
+        self.assertEqual((p['open_cards'], Decimal(p['overdue_amount'])), (1, Decimal('1000')))
+
+    def test_assignee_must_be_able_to_collect(self):
+        self.installment(dt.date(2026, 11, 19))
+        card = self.cards()[0]
+        manager = User.objects.create_user(email='m@test.com', password='Str@ngPassw8rd2026', role=Role.MANAGER)
+        self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'assignee_id': manager.pk}).status_code, 400)
+
+    def test_stages_keep_open_and_resolved(self):
+        resolved = Stage.objects.get(kind=StageKind.RESOLVED)
+        self.assertEqual(self.api('delete', f'/dunning/stage/{resolved.pk}').status_code, 400)
+        self.assertTrue(Stage.objects.filter(pk=resolved.pk).exists())
+
+    def test_other_company_hidden(self):
+        self.installment(dt.date(2026, 11, 19))
+        member = User.objects.create_user(email='f@test.com', password='Str@ngPassw8rd2026', role=Role.FINANCE)
+        self.assertEqual(self.api('get', '/dunning/card', user=member).json(), [])
+        services.sync_cards_service(today=TODAY)
+
+    def test_start_date_ignores_older_backlog(self):
+        self.assertEqual(self.api('put', '/dunning/config', {'start_date': '2026-11-15'}).status_code, 200)
+        self.installment(dt.date(2026, 11, 10))
+        self.assertEqual(self.cards(), [])
+        self.installment(dt.date(2026, 11, 16), '700')
+        card = self.cards()[0]
+        self.assertEqual((Decimal(card['overdue_amount']), card['overdue_since']), (Decimal('700'), '2026-11-16'))

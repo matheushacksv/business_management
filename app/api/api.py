@@ -8,6 +8,7 @@ from api.endpoints.attachments import router as attachment_router
 from api.endpoints.auth import router as auth_router
 from api.endpoints.companies import router as company_router
 from api.endpoints.contacts import router as contact_router
+from api.endpoints.dunning import router as dunning_router
 from api.endpoints.history import router as history_router
 from api.endpoints.imports import router as import_router
 from api.endpoints.invoices import router as invoice_router
@@ -48,3 +49,4 @@ api.add_router('/', sales_router)
 api.add_router('/', import_router)
 api.add_router('/', history_router)
 api.add_router('/', legal_router)
+api.add_router('/', dunning_router)

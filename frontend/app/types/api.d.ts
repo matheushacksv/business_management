@@ -1275,6 +1275,235 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dunning/card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cards Endpoint */
+        get: operations["api_endpoints_dunning_list_cards_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/card/{card_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Card Endpoint */
+        get: operations["api_endpoints_dunning_get_card_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Card Endpoint */
+        patch: operations["api_endpoints_dunning_update_card_endpoint"];
+        trace?: never;
+    };
+    "/api/dunning/card/{card_id}/installments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Card Installments Endpoint */
+        get: operations["api_endpoints_dunning_card_installments_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/card/{card_id}/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Activities Endpoint */
+        get: operations["api_endpoints_dunning_list_activities_endpoint"];
+        put?: never;
+        /** Create Activity Endpoint */
+        post: operations["api_endpoints_dunning_create_activity_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/activity/{activity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Activity Endpoint */
+        delete: operations["api_endpoints_dunning_delete_activity_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Activity Endpoint */
+        patch: operations["api_endpoints_dunning_update_activity_endpoint"];
+        trace?: never;
+    };
+    "/api/dunning/agenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agenda Endpoint */
+        get: operations["api_endpoints_dunning_agenda_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/assignees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assignees Endpoint */
+        get: operations["api_endpoints_dunning_assignees_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/productivity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Productivity Endpoint */
+        get: operations["api_endpoints_dunning_productivity_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Stages Endpoint */
+        get: operations["api_endpoints_dunning_list_stages_endpoint"];
+        put?: never;
+        /** Create Stage Endpoint */
+        post: operations["api_endpoints_dunning_create_stage_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/stage/{stage_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Stage Endpoint */
+        delete: operations["api_endpoints_dunning_delete_stage_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Stage Endpoint */
+        patch: operations["api_endpoints_dunning_update_stage_endpoint"];
+        trace?: never;
+    };
+    "/api/dunning/cadence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Steps Endpoint */
+        get: operations["api_endpoints_dunning_list_steps_endpoint"];
+        put?: never;
+        /** Create Step Endpoint */
+        post: operations["api_endpoints_dunning_create_step_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/cadence/{step_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Step Endpoint */
+        delete: operations["api_endpoints_dunning_delete_step_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Step Endpoint */
+        patch: operations["api_endpoints_dunning_update_step_endpoint"];
+        trace?: never;
+    };
+    "/api/dunning/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Config Endpoint */
+        get: operations["api_endpoints_dunning_get_config_endpoint"];
+        /** Update Config Endpoint */
+        put: operations["api_endpoints_dunning_update_config_endpoint"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3033,10 +3262,17 @@ export interface components {
         };
         /** StageOut */
         StageOut: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
+            /** Name */
+            name: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** @default open */
+            kind: components["schemas"]["StageKind"];
+            /** Id */
+            id: number;
         };
         /** CaseFilters */
         CaseFilters: {
@@ -3175,6 +3411,284 @@ export interface components {
         CreateComment: {
             /** Text */
             text: string;
+        };
+        /** CardFilters */
+        CardFilters: {
+            /** Assignee Id */
+            assignee_id?: number | null;
+            /** Company Id */
+            company_id?: number[] | null;
+            /** Search */
+            search?: string | null;
+        };
+        /** CardOut */
+        CardOut: {
+            /** Id */
+            id: number;
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Contact Id */
+            contact_id: number;
+            /** Contact Name */
+            contact_name: string;
+            /** Contact Phone */
+            contact_phone: string;
+            /** Contact Email */
+            contact_email: string;
+            /** Stage Id */
+            stage_id: number;
+            /** Assignee Id */
+            assignee_id: number | null;
+            /** Assignee Name */
+            assignee_name?: string | null;
+            /**
+             * Overdue Since
+             * Format: date
+             */
+            overdue_since: string;
+            /** Closed At */
+            closed_at: string | null;
+            /** Legal Case Id */
+            legal_case_id: number | null;
+            /** Overdue Amount */
+            overdue_amount: string;
+            /** Overdue Count */
+            overdue_count: number;
+            /** Next Activity */
+            next_activity: string | null;
+            /** Late Activities */
+            late_activities: number;
+        };
+        /** PatchCard */
+        PatchCard: {
+            /** Stage Id */
+            stage_id?: number | null;
+            /** Assignee Id */
+            assignee_id?: number | null;
+        };
+        /** InstallmentOut */
+        InstallmentOut: {
+            /** Id */
+            id: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount */
+            amount: string;
+            /** Reference */
+            reference: string;
+            /** Sale Id */
+            sale_id: number | null;
+        };
+        /**
+         * ActivityKind
+         * @enum {string}
+         */
+        ActivityKind: "message" | "call" | "task";
+        /** ActivityOut */
+        ActivityOut: {
+            /** Id */
+            id: number;
+            /** Card Id */
+            card_id: number;
+            kind: components["schemas"]["ActivityKind"];
+            /** Title */
+            title: string;
+            /** Message */
+            message: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Done At */
+            done_at: string | null;
+            /** Done By Name */
+            done_by_name?: string | null;
+            /** Answered */
+            answered: boolean | null;
+            /** Notes */
+            notes: string;
+        };
+        /** ActivityIn */
+        ActivityIn: {
+            kind: components["schemas"]["ActivityKind"];
+            /** Title */
+            title: string;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+        };
+        /** PatchActivity */
+        PatchActivity: {
+            /** Done */
+            done?: boolean | null;
+            /** Answered */
+            answered?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Message */
+            message?: string | null;
+        };
+        /** AgendaOut */
+        AgendaOut: {
+            /** Id */
+            id: number;
+            /** Card Id */
+            card_id: number;
+            kind: components["schemas"]["ActivityKind"];
+            /** Title */
+            title: string;
+            /** Message */
+            message: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Done At */
+            done_at: string | null;
+            /** Done By Name */
+            done_by_name?: string | null;
+            /** Answered */
+            answered: boolean | null;
+            /** Notes */
+            notes: string;
+            /** Contact Name */
+            contact_name: string;
+            /** Company Name */
+            company_name: string;
+            /** Assignee Name */
+            assignee_name?: string | null;
+        };
+        /** AssigneeOut */
+        AssigneeOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string | null;
+            /** Email */
+            email: string;
+        };
+        /** ProductivityParams */
+        ProductivityParams: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+        };
+        /** PersonProductivity */
+        PersonProductivity: {
+            /** User Id */
+            user_id: number | null;
+            /** Name */
+            name: string;
+            /** Done */
+            done: number;
+            /** Messages */
+            messages: number;
+            /** Calls */
+            calls: number;
+            /** No Answer */
+            no_answer: number;
+            /** Pending */
+            pending: number;
+            /** Late */
+            late: number;
+        };
+        /** ProductivityOut */
+        ProductivityOut: {
+            /** Open Cards */
+            open_cards: number;
+            /** Overdue Amount */
+            overdue_amount: string;
+            /** Resolved */
+            resolved: number;
+            /** To Legal */
+            to_legal: number;
+            /** People */
+            people: components["schemas"]["PersonProductivity"][];
+        };
+        /**
+         * StageKind
+         * @enum {string}
+         */
+        StageKind: "open" | "resolved" | "legal";
+        /** StageIn */
+        StageIn: {
+            /** Name */
+            name: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** @default open */
+            kind: components["schemas"]["StageKind"];
+        };
+        /** StepOut */
+        StepOut: {
+            /** Day */
+            day: number;
+            kind: components["schemas"]["ActivityKind"];
+            /** Title */
+            title: string;
+            /**
+             * Template
+             * @default
+             */
+            template: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Id */
+            id: number;
+        };
+        /** StepIn */
+        StepIn: {
+            /** Day */
+            day: number;
+            kind: components["schemas"]["ActivityKind"];
+            /** Title */
+            title: string;
+            /**
+             * Template
+             * @default
+             */
+            template: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /** ConfigIO */
+        ConfigIO: {
+            /** Start Date */
+            start_date: string | null;
         };
     };
     responses: never;
@@ -5874,6 +6388,483 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_list_cards_endpoint: {
+        parameters: {
+            query?: {
+                assignee_id?: number | null;
+                company_id?: number[] | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_get_card_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_update_card_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchCard"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_card_installments_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_list_activities_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_create_activity_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_delete_activity_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_dunning_update_activity_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchActivity"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_agenda_endpoint: {
+        parameters: {
+            query?: {
+                assignee_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_assignees_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssigneeOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_productivity_endpoint: {
+        parameters: {
+            query: {
+                start: string;
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductivityOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_list_stages_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_create_stage_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_delete_stage_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stage_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_dunning_update_stage_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stage_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_list_steps_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_create_step_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_delete_step_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                step_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_dunning_update_step_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                step_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_get_config_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigIO"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_update_config_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigIO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigIO"];
                 };
             };
         };
