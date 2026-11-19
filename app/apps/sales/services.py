@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.db.models.functions import Coalesce
 
 from apps.companies.services import list_companies_service
-from apps.finance.models import Contact, SubGroup, Transaction, TransactionStatus, TransactionType
+from apps.finance.models import Contact, SubGroup, Transaction, TransactionSeries, TransactionStatus, TransactionType
 from apps.finance.services import create_contact_service, create_series_service, create_transaction_service
 from apps.sales.models import PERCENT_KINDS, Adjustment, Commission, Product, SalaryPayment, Sale, Salesperson, SaleStatus, StatementShare
 from apps.users.models import User
@@ -194,12 +194,14 @@ def update_sale_service(*, user: User, sale_id: int, **fields) -> Sale:
 
 
 def delete_sale_service(*, user: User, sale_id: int) -> None:
+    """Takes its receivables (paid ones too: the UI warns) and commissions along. Outflows that paid
+    commissions stay: that money left the account."""
     sale = _sales_for(user).get(pk=sale_id)
-    try:
-        with transaction.atomic(), pghistory.context(user=user.pk):
-            sale.delete()
-    except ProtectedError:
-        raise ValidationError('Sale has receivables; delete or cancel them first')
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        series_ids = set(sale.receivables.exclude(series=None).values_list('series_id', flat=True))
+        sale.receivables.all().delete()
+        TransactionSeries.objects.filter(pk__in=series_ids, transactions=None).delete()
+        sale.delete()
 
 
 def generate_receivables_service(

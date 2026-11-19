@@ -8,7 +8,7 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import selectors as finance_selectors
 from apps.finance import services as finance
-from apps.finance.models import Group, Transaction, TransactionStatus
+from apps.finance.models import Group, Transaction, TransactionSeries, TransactionStatus
 from apps.sales import services
 from apps.sales.models import Product, Sale, SaleEvent, Salesperson
 from apps.users.models import Role, User
@@ -276,11 +276,16 @@ class ReceivablesTests(SalesBase):
 
         self.assertEqual([D(t['amount']) for t in response.json()], [D('500'), D('500')])
 
-    def test_sale_with_receivables_cannot_be_deleted(self):
+    def test_delete_sale_takes_receivables_along(self):
         sale = self.sale()
-        self.generate(sale)
+        self.generate(sale, installments=3)
+        Transaction.objects.filter(sale=sale).update(status='realized')  # paid ones go too
 
-        self.assertEqual(self.req('delete', f'/api/sale/{sale.pk}').status_code, 400)
+        self.assertEqual(self.req('delete', f'/api/sale/{sale.pk}').status_code, 204)
+
+        self.assertFalse(Sale.objects.filter(pk=sale.pk).exists())
+        self.assertFalse(Transaction.objects.exists())
+        self.assertFalse(TransactionSeries.objects.exists())
 
     def test_permissions(self):
         sale = self.sale()

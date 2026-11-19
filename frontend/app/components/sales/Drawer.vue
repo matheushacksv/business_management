@@ -9,6 +9,7 @@ const emit = defineEmits<{ changed: [] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const auth = useAuth()
+const confirm = useConfirm()
 const lookups = useLookups()
 lookups.ensure('subgroups', 'accounts').catch(notifyError)
 
@@ -74,6 +75,27 @@ async function generate() {
   }
 }
 
+async function remove() {
+  const paid = receivables.value.filter(t => t.status === 'realized').length
+  const ok = await confirm({
+    title: 'Excluir venda?',
+    description: [
+      receivables.value.length && `${receivables.value.length} parcela(s) excluída(s) junto${paid ? `, ${paid} já recebida(s)` : ''}.`,
+      'Comissões da venda também são excluídas.',
+    ].filter(Boolean).join(' '),
+    confirmLabel: 'Excluir', color: 'error', icon: 'i-lucide-trash-2',
+  })
+  if (!ok) return
+  try {
+    await unwrap(api.DELETE('/api/sale/{sale_id}', { params: { path: { sale_id: sale.value!.id! } } }))
+    notifySuccess('Venda excluída')
+    open.value = false
+    emit('changed')
+  } catch (e) {
+    notifyError(e)
+  }
+}
+
 async function saved() {
   editing.value = false
   await load()
@@ -118,7 +140,10 @@ async function saved() {
               <div><dt class="text-xs text-dimmed">Parcelas</dt><dd>{{ sale.installments_count ?? '—' }}</dd></div>
               <div v-if="sale.notes" class="col-span-2"><dt class="text-xs text-dimmed">Observações</dt><dd class="whitespace-pre-line">{{ sale.notes }}</dd></div>
             </dl>
-            <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
+            <div class="flex gap-2">
+              <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
+              <UButton v-if="auth.can('sales', 'delete')" label="Excluir" icon="i-lucide-trash-2" color="error" variant="ghost" @click="remove" />
+            </div>
           </template>
         </template>
 
