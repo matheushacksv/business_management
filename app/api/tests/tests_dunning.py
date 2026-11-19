@@ -127,3 +127,16 @@ class DunningTests(TestCase):
         self.installment(dt.date(2026, 11, 16), '700')
         card = self.cards()[0]
         self.assertEqual((Decimal(card['overdue_amount']), card['overdue_since']), (Decimal('700'), '2026-11-16'))
+
+    def test_send_by_hand_takes_old_installments(self):
+        Config.objects.update(start_date=dt.date(2026, 11, 15))
+        self.assertEqual(self.api('post', f'/dunning/send/{self.client_.pk}').status_code, 400)  # nothing late
+        self.installment(dt.date(2026, 10, 1), '400')  # before the start date: no automatic card
+        self.assertEqual(self.cards(), [])
+        r = self.api('post', f'/dunning/send/{self.client_.pk}')
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual((Decimal(r.json()[0]['overdue_amount']), r.json()[0]['overdue_since']), (Decimal('400'), '2026-10-01'))
+        self.assertEqual(len(self.cards()), 1)  # sync keeps it open (old installment still late)
+        self.assertEqual(self.api('post', f'/dunning/send/{self.client_.pk}').json()[0]['id'], r.json()[0]['id'])
+        Transaction.objects.update(status=TransactionStatus.REALIZED)
+        self.assertIsNotNone(self.cards()[0]['closed_at'])

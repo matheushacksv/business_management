@@ -33,6 +33,12 @@ def list_cards_endpoint(request, filters: Query[CardFilters]):
     return services.list_cards_service(user=request.user, **filters.dict())
 
 
+@router.post('/dunning/send/{contact_id}', response=list[CardOut])
+@require_permission('dunning', CHANGE)
+def send_to_dunning_endpoint(request, contact_id: int):
+    return services.send_to_dunning_service(user=request.user, contact_id=contact_id)
+
+
 @router.get('/dunning/card/{card_id}', response=CardOut)
 @require_permission('dunning', VIEW)
 def get_card_endpoint(request, card_id: int):

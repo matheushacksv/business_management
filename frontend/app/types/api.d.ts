@@ -1292,6 +1292,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dunning/send/{contact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send To Dunning Endpoint */
+        post: operations["api_endpoints_dunning_send_to_dunning_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dunning/card/{card_id}": {
         parameters: {
             query?: never;
@@ -6401,6 +6418,28 @@ export interface operations {
             };
             header?: never;
             path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_send_to_dunning_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;

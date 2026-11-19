@@ -6719,6 +6719,47 @@
     ]
    }
   },
+  "/api/dunning/send/{contact_id}": {
+   "post": {
+    "operationId": "api_endpoints_dunning_send_to_dunning_endpoint",
+    "summary": "Send To Dunning Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CardOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/dunning/card/{card_id}": {
    "get": {
     "operationId": "api_endpoints_dunning_get_card_endpoint",

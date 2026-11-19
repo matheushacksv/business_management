@@ -151,22 +151,22 @@ function onCreated(id: number) {
       </div>
     </template>
 
-    <div v-if="view === 'kanban'" class="flex gap-3 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
+    <div v-if="view === 'kanban'" class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
       <section v-for="col in columnsByStage" :key="col.value"
-               class="flex w-72 shrink-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
+               class="flex min-w-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
                :class="{ 'ring-primary bg-primary/5': over === col.value }"
                @dragover.prevent="over = col.value" @dragleave="over = over === col.value ? null : over"
                @drop.prevent="onDrop(col.value)">
-        <header class="flex items-center justify-between gap-2 border-b border-default px-3 py-2">
+        <header class="flex items-center justify-between gap-2 border-b border-default px-2.5 py-2">
           <div class="min-w-0">
             <p class="truncate text-sm font-medium text-highlighted">{{ col.label }}</p>
             <p class="text-xs text-dimmed tabular">{{ formatMoney(col.total) }}</p>
           </div>
           <UBadge :label="String(col.cards.length)" color="neutral" variant="subtle" size="sm" />
         </header>
-        <div class="flex max-h-[calc(100dvh-15rem)] min-h-24 flex-col gap-2 overflow-y-auto p-2">
+        <div class="flex max-h-[calc(100dvh-15rem)] min-h-24 flex-col gap-1.5 overflow-y-auto p-1.5">
           <article v-for="card in col.cards" :key="card.id!" :draggable="canChange"
-                   class="cursor-pointer rounded-lg bg-default p-3 text-sm ring ring-default hover:ring-primary/60"
+                   class="cursor-pointer rounded-lg bg-default p-2.5 text-sm ring ring-default hover:ring-primary/60"
                    :class="{ 'opacity-40': dragging === card.id }"
                    @dragstart="dragging = card.id!" @dragend="dragging = null" @click="openCase(card.id!)">
             <div class="flex items-start justify-between gap-2">
@@ -176,7 +176,7 @@ function onCreated(id: number) {
               </UTooltip>
             </div>
             <p v-if="card.client_company" class="text-xs text-dimmed truncate">{{ card.client_company }}</p>
-            <div class="mt-2 flex items-end justify-between text-xs">
+            <div class="mt-2 flex flex-wrap items-end justify-between gap-x-2 text-xs">
               <span class="text-dimmed">{{ formatDate(card.updated_at!.slice(0, 10)) }}</span>
               <span class="tabular text-error">{{ formatMoney(card.open_amount) }}</span>
             </div>

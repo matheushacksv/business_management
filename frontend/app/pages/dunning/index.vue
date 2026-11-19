@@ -64,6 +64,9 @@ function openCard(id: number) {
   selected.value = id
   modalOpen.value = true
 }
+// /dunning?card=<id> (from the customer page) opens that card
+const route = useRoute()
+onMounted(() => { if (route.query.card) openCard(Number(route.query.card)) })
 const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(p => p[0]!.toUpperCase()).join('')
 </script>
 
@@ -83,22 +86,22 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
       </div>
     </template>
 
-    <div class="flex gap-3 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
+    <div class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
       <section v-for="col in columns" :key="col.id"
-               class="flex w-72 shrink-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
+               class="flex min-w-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
                :class="{ 'ring-primary bg-primary/5': over === col.id }"
                @dragover.prevent="over = col.id" @dragleave="over = over === col.id ? null : over"
                @drop.prevent="onDrop(col.id)">
-        <header class="flex items-center justify-between gap-2 border-b border-default px-3 py-2">
+        <header class="flex items-center justify-between gap-2 border-b border-default px-2.5 py-2">
           <div class="min-w-0">
             <p class="truncate text-sm font-medium text-highlighted">{{ col.name }}</p>
             <p class="text-xs text-dimmed tabular">{{ formatMoney(col.total) }}</p>
           </div>
           <UBadge :label="String(col.cards.length)" color="neutral" variant="subtle" size="sm" />
         </header>
-        <div class="flex max-h-[calc(100dvh-15rem)] min-h-24 flex-col gap-2 overflow-y-auto p-2">
+        <div class="flex max-h-[calc(100dvh-15rem)] min-h-24 flex-col gap-1.5 overflow-y-auto p-1.5">
           <article v-for="card in col.cards" :key="card.id" :draggable="canChange && !card.closed_at"
-                   class="cursor-pointer rounded-lg bg-default p-3 text-sm ring ring-default hover:ring-primary/60"
+                   class="cursor-pointer rounded-lg bg-default p-2.5 text-sm ring ring-default hover:ring-primary/60"
                    :class="{ 'opacity-40': dragging === card.id, 'opacity-60': card.closed_at }"
                    @dragstart="dragging = card.id" @dragend="dragging = null" @click="openCard(card.id)">
             <div class="flex items-start justify-between gap-2">
@@ -110,7 +113,7 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
               </UTooltip>
             </div>
             <p class="truncate text-xs text-dimmed">{{ card.company_name }} · {{ card.overdue_count }} parcela(s)</p>
-            <div class="mt-2 flex items-end justify-between text-xs">
+            <div class="mt-2 flex flex-wrap items-end justify-between gap-x-2 text-xs">
               <span v-if="card.closed_at" class="text-dimmed">{{ formatDate(card.closed_at) }}</span>
               <span v-else-if="card.next_activity" class="flex items-center gap-1 tabular"
                     :class="card.late_activities ? 'text-error' : card.next_activity === today() ? 'text-warning' : 'text-dimmed'">

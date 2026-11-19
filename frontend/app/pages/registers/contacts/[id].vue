@@ -201,12 +201,27 @@ async function merge() {
 
 const m = computed(() => summary.value?.money)
 const isSupplier = computed(() => !!m.value && [m.value.paid, m.value.to_pay, m.value.overdue_payable].some(v => Number(v) > 0))
+// Funnel of the finance team: opens (or finds) the card and goes there
+const sending = ref(false)
+async function sendToDunning() {
+  sending.value = true
+  try {
+    const cards = await unwrap(api.POST('/api/dunning/send/{contact_id}', { params: { path: { contact_id: id.value } } }))
+    await navigateTo({ path: '/dunning', query: { card: cards[0]!.id } })
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    sending.value = false
+  }
+}
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 </script>
 
 <template>
   <AppPage :title="contact?.name ?? 'Cliente/fornecedor'">
     <template #actions>
+      <UButton v-if="auth.can('dunning', 'change')" label="Enviar para cobrança" icon="i-lucide-phone-call" color="neutral" variant="outline"
+               :disabled="!contact" :loading="sending" @click="sendToDunning" />
       <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" color="neutral" variant="outline"
                :disabled="!contact" @click="collectionOpen = true" />
       <UButton v-if="canMerge" label="Mesclar duplicado" icon="i-lucide-merge" color="neutral" variant="outline"

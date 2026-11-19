@@ -19,19 +19,35 @@ MONEY = DecimalField(max_digits=16, decimal_places=2)
 ZERO = Decimal('0')
 
 
-def _overdue(today: dt.date):
-    """Installments the customer should have paid already and that are not with the legal team
-    (due from the configured start date on)."""
-    qs = Transaction.objects.filter(
+def _late(today: dt.date):
+    """Installments the customer should have paid already and that are not with the legal team."""
+    return Transaction.objects.filter(
         type=TransactionType.INFLOW, status=TransactionStatus.PLANNED, date__lt=today,
         collection_case__isnull=True, contact__isnull=False,
     )
+
+
+def _overdue(today: dt.date):
+    """What opens cards automatically: late installments due from the configured start date on."""
     start = Config.get().start_date
-    return qs.filter(date__gte=start) if start else qs
+    return _late(today).filter(date__gte=start) if start else _late(today)
 
 
 def _overdue_of(card: Card, today: dt.date):
-    return _overdue(today).filter(company_id=card.company_id, contact_id=card.contact_id)  # type:ignore
+    # from the card's own start: a card sent by hand may hold installments older than the start date
+    return _late(today).filter(company_id=card.company_id, contact_id=card.contact_id, date__gte=card.overdue_since)  # type:ignore
+
+
+def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date, stage: Stage, steps) -> Card:
+    with transaction.atomic():
+        card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since)
+        # day 1 = first day late; an old backlog starts its cadence today instead of all late at once
+        day_one = max(since + dt.timedelta(days=1), today)
+        Activity.objects.bulk_create(Activity(
+            card=card, kind=s.kind, title=s.title, message=s.template,
+            due_date=day_one + dt.timedelta(days=s.day - 1),
+        ) for s in steps)
+    return card
 
 
 # Sync: open cards on the 1st day late, resolve the ones with nothing overdue
@@ -52,28 +68,42 @@ def sync_cards_service(*, today: dt.date | None = None) -> None:
             if (company_id, contact_id) in open_cards:
                 continue
             try:
-                with transaction.atomic():
-                    card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=first, overdue_since=since)
-                    # day 1 = first day late; an old backlog starts its cadence today instead of all late at once
-                    day_one = max(since + dt.timedelta(days=1), today)
-                    Activity.objects.bulk_create(Activity(
-                        card=card, kind=s.kind, title=s.title, message=s.template,
-                        due_date=day_one + dt.timedelta(days=s.day - 1),
-                    ) for s in steps)
+                _open_card(company_id, contact_id, since, today, first, steps)
             except IntegrityError:  # another request opened it meanwhile
                 continue
 
     if resolved:
-        paid_off = [c for key, c in open_cards.items() if key not in overdue]
+        paid_off = [c for key, c in open_cards.items() if key not in overdue and not _overdue_of(c, today).exists()]
         for card in paid_off:
             card.stage, card.closed_at, card.updated_at = resolved, today, timezone.now()
         Card.objects.bulk_update(paid_off, ['stage', 'closed_at', 'updated_at'])
 
 
+def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:
+    """From the customer page: one card per company where they have late installments,
+    whatever the start date. Already open cards are returned as they are."""
+    today = timezone.localdate()
+    companies = list_companies_service(user=user)
+    late = (_late(today).filter(contact_id=contact_id, company__in=companies)
+            .values('company_id').annotate(since=Min('date')))
+    if not late:
+        raise ValidationError('This customer has no overdue installments')
+    first = Stage.objects.filter(kind=StageKind.OPEN).first()
+    steps = list(CadenceStep.objects.filter(active=True))
+    ids = []
+    with pghistory.context(user=user.pk):
+        for r in late:
+            card = Card.objects.filter(company_id=r['company_id'], contact_id=contact_id, closed_at__isnull=True).first() \
+                or _open_card(r['company_id'], contact_id, r['since'], today, first, steps)  # type:ignore
+            ids.append(card.pk)
+    return list(_cards_for(user, today).filter(pk__in=ids))
+
+
 # Cards
 
 def _cards_for(user: User, today: dt.date):
-    overdue = _overdue(today).filter(company_id=OuterRef('company_id'), contact_id=OuterRef('contact_id'))
+    overdue = _late(today).filter(company_id=OuterRef('company_id'), contact_id=OuterRef('contact_id'),
+                                  date__gte=OuterRef('overdue_since'))
     pending = Activity.objects.filter(card=OuterRef('pk'), done_at__isnull=True)
     return (Card.objects.filter(company__in=list_companies_service(user=user))
             .select_related('company', 'contact', 'stage', 'assignee')
