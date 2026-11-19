@@ -33,7 +33,6 @@ async function saveSubgroup(subgroupId: number | undefined) {
 
 // Credentials: shown once; generating again invalidates the previous ones
 const creds = reactive({ open: false, username: '', password: '' })
-const basicHeader = computed(() => `Basic ${btoa(`${creds.username}:${creds.password}`)}`)
 async function generate() {
   if (config.value?.username && !await confirm({
     title: 'Gerar novas credenciais?', confirmLabel: 'Gerar', color: 'warning',
@@ -157,7 +156,7 @@ const columns: TableColumn<Event>[] = [
     <UModal v-model:open="creds.open" title="Credenciais do webhook">
       <template #body>
         <div class="flex flex-col gap-3">
-          <UFormField v-for="[label, value] in [['Usuário', creds.username], ['Senha', creds.password], ['Header Authorization', basicHeader]]"
+          <UFormField v-for="[label, value] in [['Nome de usuário autent. HTTP', creds.username], ['Senha autent. HTTP', creds.password]]"
                       :key="label" :label="label">
             <UInput :model-value="value" readonly class="w-full font-mono">
               <template #trailing>
