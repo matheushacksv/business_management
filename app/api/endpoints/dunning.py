@@ -51,9 +51,17 @@ def get_card_endpoint(request, card_id: int):
 @require_permission('dunning', CHANGE)
 def update_card_endpoint(request, card_id: int, data: PatchCard):
     fields = data.dict(exclude_unset=True)
-    if fields.get('stage_id', ...) is None:
-        fields.pop('stage_id', None)
+    for key in ('stage_id', 'outcome'):
+        if fields.get(key, ...) is None:
+            fields.pop(key, None)
     return services.update_card_service(user=request.user, card_id=card_id, **fields)
+
+
+@router.delete('/dunning/card/{card_id}', response={204: None})
+@require_permission('dunning', DELETE)
+def dismiss_card_endpoint(request, card_id: int):
+    services.dismiss_card_service(user=request.user, card_id=card_id)
+    return 204, None
 
 
 @router.get('/dunning/card/{card_id}/installments', response=list[InstallmentOut])

@@ -4,12 +4,12 @@ from decimal import Decimal
 import pghistory
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import BooleanField, Case, Count, DecimalField, F, When, Min, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import BooleanField, Case, Count, DecimalField, F, When, Max, Min, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.companies.services import list_companies_service
-from apps.dunning.models import Activity, CadenceStep, Card, CardNote, Config, Severity, Stage, StageKind
+from apps.dunning.models import Activity, CadenceStep, Card, CardNote, Config, Outcome, Severity, Stage
 from apps.finance.models import Transaction, TransactionStatus, TransactionType
 from apps.legal.services import create_case_service
 from apps.users.models import User
@@ -70,23 +70,29 @@ def sync_cards_service(*, today: dt.date | None = None) -> None:
     overdue = {(r['company_id'], r['contact_id']): r['since']
                for r in _overdue(today).values('company_id', 'contact_id').annotate(since=Min('date'))}
     open_cards = {(c.company_id, c.contact_id): c for c in Card.objects.filter(closed_at__isnull=True)}  # type:ignore
-    first = Stage.objects.filter(kind=StageKind.OPEN).first()
-    resolved = Stage.objects.filter(kind=StageKind.RESOLVED).first()
+    # dismissed customers come back only with an installment that fell due after they were dismissed
+    dismissed = {(r['company_id'], r['contact_id']): r['on'] for r in Card.objects.filter(outcome=Outcome.DISMISSED)
+                 .order_by().values('company_id', 'contact_id').annotate(on=Max('closed_at'))}
+    first = Stage.objects.first()
     if first:
         for (company_id, contact_id), since in overdue.items():
             if (company_id, contact_id) in open_cards:
                 continue
+            if (company_id, contact_id) in dismissed:
+                since = _overdue(today).filter(company_id=company_id, contact_id=contact_id,
+                                               date__gte=dismissed[company_id, contact_id]).aggregate(m=Min('date'))['m']
+                if since is None:
+                    continue
             try:
                 with transaction.atomic():
                     _open_card(company_id, contact_id, since, today, first)
             except IntegrityError:  # another request opened it meanwhile
                 continue
 
-    if resolved:
-        paid_off = [c for key, c in open_cards.items() if key not in overdue and not _overdue_of(c, today).exists()]
-        for card in paid_off:
-            card.stage, card.closed_at, card.updated_at = resolved, today, timezone.now()
-        Card.objects.bulk_update(paid_off, ['stage', 'closed_at', 'updated_at'])
+    paid_off = [c for key, c in open_cards.items() if key not in overdue and not _overdue_of(c, today).exists()]
+    for card in paid_off:
+        card.outcome, card.closed_at, card.updated_at = Outcome.RESOLVED, today, timezone.now()
+    Card.objects.bulk_update(paid_off, ['outcome', 'closed_at', 'updated_at'])
 
     _run_cadence(today)
 
@@ -100,7 +106,7 @@ def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:
             .values('company_id').annotate(since=Min('date')))
     if not late:
         raise ValidationError('This customer has no overdue installments')
-    first = Stage.objects.filter(kind=StageKind.OPEN).first()
+    first = Stage.objects.first()
     ids = []
     with pghistory.context(user=user.pk):
         for r in late:
@@ -118,7 +124,7 @@ def _cards_for(user: User, today: dt.date):
     overdue = _late(today).filter(company_id=OuterRef('company_id'), contact_id=OuterRef('contact_id'),
                                   date__gte=OuterRef('overdue_since'))
     pending = Activity.objects.filter(card=OuterRef('pk'), done_at__isnull=True)
-    return (Card.objects.filter(company__in=list_companies_service(user=user))
+    return (Card.objects.filter(company__in=list_companies_service(user=user)).exclude(outcome=Outcome.DISMISSED)
             .select_related('company', 'contact', 'stage', 'assignee')
             .annotate(
                 overdue_amount=Coalesce(Subquery(overdue.values('contact_id').annotate(s=Sum('amount')).values('s')),
@@ -133,11 +139,12 @@ def _cards_for(user: User, today: dt.date):
             ))
 
 
-def list_cards_service(*, user: User, assignee_id=None, company_id=None, search: str | None = None, closed_days: int = 30):
-    """Open cards plus the ones closed in the last `closed_days` (resolved / legal columns)."""
+def list_cards_service(*, user: User, outcome: str = Outcome.OPEN, assignee_id=None, company_id=None, search: str | None = None):
+    """Open cards (the board) or the closed ones of an outcome, latest first."""
     sync_cards_service()
-    today = timezone.localdate()
-    qs = _cards_for(user, today).filter(Q(closed_at__isnull=True) | Q(closed_at__gte=today - dt.timedelta(days=closed_days)))
+    qs = _cards_for(user, timezone.localdate()).filter(outcome=outcome)
+    if outcome != Outcome.OPEN:
+        qs = qs.order_by('-closed_at', '-id')
     if assignee_id:
         qs = qs.filter(assignee_id=assignee_id)
     if company_id:
@@ -168,28 +175,41 @@ def update_card_service(*, user: User, card_id: int, **fields) -> Card:
             raise ValidationError('This user cannot be responsible for collections')
     with transaction.atomic(), pghistory.context(user=user.pk):
         if 'stage_id' in fields:
-            _move(user, card, Stage.objects.get(pk=fields.pop('stage_id')))
+            if card.closed_at:
+                raise ValidationError('This card is closed')
+            card.stage = Stage.objects.get(pk=fields.pop('stage_id'))
+        if 'outcome' in fields:
+            _close(user, card, fields.pop('outcome'))
         for field, value in fields.items():
             setattr(card, field, value)
         card.save()
     return get_card_service(user=user, card_id=card_id)
 
 
-def _move(user: User, card: Card, stage: Stage) -> None:
+def _close(user: User, card: Card, outcome: str) -> None:
     if card.closed_at:
         raise ValidationError('This card is closed')
     today = timezone.localdate()
-    if stage.kind == StageKind.RESOLVED:
+    if outcome == Outcome.RESOLVED:
         if _overdue_of(card, today).exists():
             raise ValidationError('There are still overdue installments')
-        card.closed_at = today
-    elif stage.kind == StageKind.LEGAL:
+    elif outcome == Outcome.LEGAL:
         check_permission(user, 'legal', CREATE)
         # links all the open installments of the customer to the case (they leave the funnel)
-        case = create_case_service(user=user, company_id=card.company_id, contact_id=card.contact_id,  # type:ignore
-                                   summary=f'Encaminhado pelo funil de cobrança (em atraso desde {card.overdue_since:%d/%m/%Y}).')
-        card.legal_case, card.closed_at = case, today
-    card.stage = stage
+        card.legal_case = create_case_service(
+            user=user, company_id=card.company_id, contact_id=card.contact_id,  # type:ignore
+            summary=f'Encaminhado pelo funil de cobrança (em atraso desde {card.overdue_since:%d/%m/%Y}).')
+    else:
+        raise ValidationError('Invalid outcome')
+    card.outcome, card.closed_at = outcome, today
+
+
+def dismiss_card_service(*, user: User, card_id: int) -> None:
+    """"Delete": leaves the funnel; the customer is back only when a newer installment falls due late."""
+    card = get_card_service(user=user, card_id=card_id)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        card.outcome, card.closed_at = Outcome.DISMISSED, timezone.localdate()
+        card.save()
 
 
 # Activities
@@ -269,8 +289,8 @@ def productivity_service(*, user: User, start: dt.date, end: dt.date) -> dict:
     return {
         'open_cards': cards.filter(closed_at__isnull=True).count(),
         'overdue_amount': _overdue(today).filter(company__in=companies).aggregate(s=Coalesce(Sum('amount'), Value(ZERO), output_field=MONEY))['s'],
-        'resolved': closed.filter(stage__kind=StageKind.RESOLVED).count(),
-        'to_legal': closed.filter(stage__kind=StageKind.LEGAL).count(),
+        'resolved': closed.filter(outcome=Outcome.RESOLVED).count(),
+        'to_legal': closed.filter(outcome=Outcome.LEGAL).count(),
         'people': sorted(rows.values(), key=lambda x: x['name']),
     }
 
@@ -283,23 +303,19 @@ def save_stage_service(*, user: User, stage_id: int | None = None, **fields) -> 
         setattr(stage, field, value)
     with transaction.atomic(), pghistory.context(user=user.pk):
         stage.save()
-        _check_stages()
     return stage
 
 
 def delete_stage_service(*, user: User, stage_id: int) -> None:
     stage = Stage.objects.get(pk=stage_id)
-    if stage.cards.exists():
+    if stage.cards.filter(closed_at__isnull=True).exists():
         raise ValidationError('This stage has cards')
+    other = Stage.objects.exclude(pk=stage_id).first()
+    if other is None:
+        raise ValidationError('The funnel needs at least one stage')
     with transaction.atomic(), pghistory.context(user=user.pk):
+        stage.cards.update(stage=other)  # closed cards keep a stage
         stage.delete()
-        _check_stages()
-
-
-def _check_stages() -> None:
-    kinds = set(Stage.objects.values_list('kind', flat=True))
-    if not {StageKind.OPEN, StageKind.RESOLVED} <= kinds:
-        raise ValidationError('The funnel needs at least one open stage and one resolved stage')
 
 
 def save_step_service(*, user: User, step_id: int | None = None, **fields) -> CadenceStep:

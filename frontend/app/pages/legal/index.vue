@@ -36,11 +36,14 @@ let timer: ReturnType<typeof setTimeout> | undefined
 watch(filters, () => { clearTimeout(timer); timer = setTimeout(load, 300) }, { deep: true })
 onMounted(load)
 
+// Like won/lost on Pipedrive: concluded actions leave the board, the filter brings them back
+const status = ref<'open' | 'done'>('open')
+const visible = computed(() => items.value.filter(c => (c.stage === 'done') === (status.value === 'done')))
 const sum = (list: Case[]) => list.reduce((s, c) => s + Number(c.open_amount), 0)
-const totalOpen = computed(() => sum(items.value))
+const totalOpen = computed(() => sum(visible.value))
 const stages = Object.entries(LABELS.caseStage).map(([value, label]) => ({ value, label }))
-const columnsByStage = computed(() => stages.map(s => {
-  const cards = items.value.filter(c => c.stage === s.value)
+const columnsByStage = computed(() => stages.filter(s => s.value !== 'done').map(s => {
+  const cards = visible.value.filter(c => c.stage === s.value)
   return { ...s, cards, total: sum(cards) }
 }))
 const isIncomplete = (c: Case) => !c.client_company || !c.contact_info || !c.delivered || !c.summary
@@ -104,7 +107,7 @@ const listColumns: TableColumn<Case>[] = [
 ]
 
 // List view: pick several cases and move them to one stage
-const selection = useSelection<Case>(() => items.value)
+const selection = useSelection<Case>(() => visible.value)
 const tableColumns = computed(() => canChange.value ? [selection.column, ...listColumns] : listColumns)
 const bulkStage = ref<string>()
 watch(view, () => selection.clear())
@@ -142,6 +145,8 @@ function onCreated(id: number) {
     <template #toolbar>
       <UInput v-model="filters.search" icon="i-lucide-search" placeholder="Cliente, empresa, resumo…" class="w-64" />
       <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple placeholder="Empresas" class="w-44" />
+      <USelect v-model="status" :items="[{ label: 'Em andamento', value: 'open' }, { label: 'Concluídas', value: 'done' }]" class="w-40"
+               aria-label="Situação" />
       <div class="ms-auto flex items-center gap-3">
         <span class="text-sm text-muted">Total devido <strong class="text-error tabular">{{ formatMoney(totalOpen) }}</strong></span>
         <UFieldGroup>
@@ -151,7 +156,7 @@ function onCreated(id: number) {
       </div>
     </template>
 
-    <div v-if="view === 'kanban'" class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
+    <div v-if="view === 'kanban' && status === 'open'" class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
       <section v-for="col in columnsByStage" :key="col.value"
                class="flex min-w-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
                :class="{ 'ring-primary bg-primary/5': over === col.value }"
@@ -168,7 +173,8 @@ function onCreated(id: number) {
           <article v-for="card in col.cards" :key="card.id!" :draggable="canChange"
                    class="cursor-pointer rounded-lg bg-default p-2.5 text-sm ring ring-default hover:ring-primary/60"
                    :class="{ 'opacity-40': dragging === card.id }"
-                   @dragstart="dragging = card.id!" @dragend="dragging = null" @click="openCase(card.id!)">
+                   @dragstart="(e: DragEvent) => { e.dataTransfer?.setData('text/plain', String(card.id)); dragging = card.id! }"
+                   @dragend="dragging = null" @click="openCase(card.id!)">
             <div class="flex items-start justify-between gap-2">
               <p class="font-medium text-highlighted line-clamp-2">{{ card.contact_name }}</p>
               <UTooltip v-if="isIncomplete(card)" text="Campos obrigatórios pendentes">
@@ -189,10 +195,10 @@ function onCreated(id: number) {
 
     <template v-else>
       <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
-        <UTable :data="items" :columns="tableColumns" :loading="loading" sticky empty="Nenhuma ação"
+        <UTable :data="visible" :columns="tableColumns" :loading="loading" sticky empty="Nenhuma ação"
                 class="max-h-[calc(100dvh-16rem)]" @select="(_: Event, row: any) => openCase(row.original.id)" />
       </div>
-      <p class="text-sm text-muted">{{ items.length }} ação(ões)</p>
+      <p class="text-sm text-muted">{{ visible.length }} ação(ões)</p>
       <AppBulkBar :count="selection.ids.value.length" @clear="selection.clear">
         <USelect v-model="bulkStage" :items="stages" placeholder="Mover para…" size="sm" class="w-48"
                  @update:model-value="(v: any) => v && moveSelected(v)" />

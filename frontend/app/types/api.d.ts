@@ -1373,7 +1373,8 @@ export interface paths {
         get: operations["api_endpoints_dunning_get_card_endpoint"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Dismiss Card Endpoint */
+        delete: operations["api_endpoints_dunning_dismiss_card_endpoint"];
         options?: never;
         head?: never;
         /** Update Card Endpoint */
@@ -3517,8 +3518,6 @@ export interface components {
              * @default 0
              */
             position: number;
-            /** @default open */
-            kind: components["schemas"]["StageKind"];
             /** @default attention */
             severity: components["schemas"]["Severity"];
             /** Id */
@@ -3670,6 +3669,8 @@ export interface components {
         };
         /** CardFilters */
         CardFilters: {
+            /** @default open */
+            outcome: "open" | "resolved" | "legal" | "dismissed";
             /** Assignee Id */
             assignee_id?: number | null;
             /** Company Id */
@@ -3677,6 +3678,12 @@ export interface components {
             /** Search */
             search?: string | null;
         };
+        /**
+         * Outcome
+         * @description Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.
+         * @enum {string}
+         */
+        Outcome: "open" | "resolved" | "legal" | "dismissed";
         /** CardOut */
         CardOut: {
             /** Id */
@@ -3706,6 +3713,7 @@ export interface components {
             overdue_since: string;
             /** Closed At */
             closed_at: string | null;
+            outcome: components["schemas"]["Outcome"];
             /** Legal Case Id */
             legal_case_id: number | null;
             /** Overdue Amount */
@@ -3727,6 +3735,8 @@ export interface components {
             stage_id?: number | null;
             /** Assignee Id */
             assignee_id?: number | null;
+            /** Outcome */
+            outcome?: ("resolved" | "legal") | null;
         };
         /** InstallmentOut */
         InstallmentOut: {
@@ -3915,11 +3925,6 @@ export interface components {
          * @enum {string}
          */
         Severity: "attention" | "critical";
-        /**
-         * StageKind
-         * @enum {string}
-         */
-        StageKind: "open" | "resolved" | "legal";
         /** StageIn */
         StageIn: {
             /** Name */
@@ -3929,8 +3934,6 @@ export interface components {
              * @default 0
              */
             position: number;
-            /** @default open */
-            kind: components["schemas"]["StageKind"];
             /** @default attention */
             severity: components["schemas"]["Severity"];
         };
@@ -6871,6 +6874,7 @@ export interface operations {
     api_endpoints_dunning_list_cards_endpoint: {
         parameters: {
             query?: {
+                outcome?: "open" | "resolved" | "legal" | "dismissed";
                 assignee_id?: number | null;
                 company_id?: number[] | null;
                 search?: string | null;
@@ -6933,6 +6937,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CardOut"];
                 };
+            };
+        };
+    };
+    api_endpoints_dunning_dismiss_card_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

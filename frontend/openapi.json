@@ -6999,6 +6999,27 @@
     "parameters": [
      {
       "in": "query",
+      "name": "outcome",
+      "schema": {
+       "allOf": [
+        {
+         "description": "Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.",
+         "enum": [
+          "open",
+          "resolved",
+          "legal",
+          "dismissed"
+         ],
+         "title": "Outcome",
+         "type": "string"
+        }
+       ],
+       "default": "open"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
       "name": "assignee_id",
       "schema": {
        "anyOf": [
@@ -7191,6 +7212,34 @@
      },
      "required": true
     },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_dunning_dismiss_card_endpoint",
+    "summary": "Dismiss Card Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
     "security": [
      {
       "CookieJWTAuth": []
@@ -13953,14 +14002,6 @@
       "title": "Position",
       "type": "integer"
      },
-     "kind": {
-      "allOf": [
-       {
-        "$ref": "#/components/schemas/StageKind"
-       }
-      ],
-      "default": "open"
-     },
      "severity": {
       "allOf": [
        {
@@ -14510,6 +14551,22 @@
    },
    "CardFilters": {
     "properties": {
+     "outcome": {
+      "allOf": [
+       {
+        "description": "Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.",
+        "enum": [
+         "open",
+         "resolved",
+         "legal",
+         "dismissed"
+        ],
+        "title": "Outcome",
+        "type": "string"
+       }
+      ],
+      "default": "open"
+     },
      "assignee_id": {
       "anyOf": [
        {
@@ -14549,6 +14606,17 @@
     },
     "title": "CardFilters",
     "type": "object"
+   },
+   "Outcome": {
+    "description": "Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.",
+    "enum": [
+     "open",
+     "resolved",
+     "legal",
+     "dismissed"
+    ],
+    "title": "Outcome",
+    "type": "string"
    },
    "CardOut": {
     "properties": {
@@ -14623,6 +14691,9 @@
       ],
       "title": "Closed At"
      },
+     "outcome": {
+      "$ref": "#/components/schemas/Outcome"
+     },
      "legal_case_id": {
       "anyOf": [
        {
@@ -14687,6 +14758,7 @@
      "assignee_id",
      "overdue_since",
      "closed_at",
+     "outcome",
      "legal_case_id",
      "overdue_amount",
      "overdue_count",
@@ -14720,6 +14792,21 @@
        }
       ],
       "title": "Assignee Id"
+     },
+     "outcome": {
+      "anyOf": [
+       {
+        "enum": [
+         "resolved",
+         "legal"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Outcome"
      }
     },
     "title": "PatchCard",
@@ -15258,15 +15345,6 @@
     "title": "Severity",
     "type": "string"
    },
-   "StageKind": {
-    "enum": [
-     "open",
-     "resolved",
-     "legal"
-    ],
-    "title": "StageKind",
-    "type": "string"
-   },
    "StageIn": {
     "properties": {
      "name": {
@@ -15280,14 +15358,6 @@
       "minimum": 0,
       "title": "Position",
       "type": "integer"
-     },
-     "kind": {
-      "allOf": [
-       {
-        "$ref": "#/components/schemas/StageKind"
-       }
-      ],
-      "default": "open"
      },
      "severity": {
       "allOf": [

@@ -7,7 +7,7 @@ from ninja_jwt.tokens import AccessToken
 
 from apps.companies.models import Company
 from apps.dunning import services
-from apps.dunning.models import Activity, Card, Config, Stage, StageKind
+from apps.dunning.models import Activity, Card, Config, Outcome, Stage
 from apps.finance import services as finance
 from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
 from apps.legal.models import CollectionCase
@@ -37,8 +37,8 @@ class DunningTests(TestCase):
         return Transaction.objects.create(company=self.company, subgroup=self.subgroup, contact=self.client_, date=date,
                                           amount=Decimal(amount), type=TransactionType.INFLOW, status=status)
 
-    def cards(self):
-        r = self.api('get', '/dunning/card')
+    def cards(self, outcome='open'):
+        r = self.api('get', f'/dunning/card?outcome={outcome}')
         self.assertEqual(r.status_code, 200, r.content)
         return r.json()
 
@@ -51,7 +51,7 @@ class DunningTests(TestCase):
         self.assertEqual(len(cards), 1)  # one card per customer, several installments
         card = cards[0]
         self.assertEqual((Decimal(card['overdue_amount']), card['overdue_count']), (Decimal('1500'), 2))
-        self.assertEqual(card['stage_id'], Stage.objects.filter(kind=StageKind.OPEN).first().pk)
+        self.assertEqual(card['stage_id'], Stage.objects.first().pk)
         self.assertEqual(card['oldest_overdue'], '2026-11-10')
         # backlog (10/11) starts the cadence today; each step is created when its day comes
         dues = lambda: sorted(Activity.objects.values_list('due_date', flat=True))  # noqa: E731
@@ -77,8 +77,9 @@ class DunningTests(TestCase):
         self.cards()
         tx.status = TransactionStatus.REALIZED
         tx.save()
-        card = self.cards()[0]
-        self.assertEqual((card['closed_at'], Stage.objects.get(pk=card['stage_id']).kind), ('2026-11-20', StageKind.RESOLVED))
+        self.assertEqual(self.cards(), [])  # leaves the board
+        card = self.cards('resolved')[0]
+        self.assertEqual((card['closed_at'], card['outcome']), ('2026-11-20', 'resolved'))
         self.installment(dt.date(2026, 11, 15))
         self.cards()
         self.assertEqual(Card.objects.count(), 2)
@@ -86,20 +87,20 @@ class DunningTests(TestCase):
     def test_resolve_by_hand_needs_nothing_overdue(self):
         self.installment(dt.date(2026, 11, 19))
         card = self.cards()[0]
-        resolved = Stage.objects.get(kind=StageKind.RESOLVED)
-        self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'stage_id': resolved.pk}).status_code, 400)
+        self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'resolved'}).status_code, 400)
 
     def test_legal_stage_opens_case_and_closes_card(self):
         self.installment(dt.date(2026, 11, 19))
         future = self.installment(dt.date(2026, 12, 19))
         card = self.cards()[0]
-        r = self.api('patch', f'/dunning/card/{card["id"]}', {'stage_id': Stage.objects.get(kind=StageKind.LEGAL).pk})
+        r = self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'legal'})
         self.assertEqual(r.status_code, 200, r.content)
         case = CollectionCase.objects.get()
         self.assertEqual((r.json()['legal_case_id'], r.json()['closed_at']), (case.pk, '2026-11-20'))
         future.refresh_from_db()
         self.assertEqual(future.collection_case_id, case.pk)
-        self.cards()
+        self.assertEqual(self.cards(), [])
+        self.assertEqual([c['id'] for c in self.cards('legal')], [card['id']])
         self.assertEqual(Card.objects.count(), 1)  # with the legal team now: no new card
 
     def test_activities_and_productivity(self):
@@ -123,10 +124,29 @@ class DunningTests(TestCase):
         manager = User.objects.create_user(email='m@test.com', password='Str@ngPassw8rd2026', role=Role.MANAGER)
         self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'assignee_id': manager.pk}).status_code, 400)
 
-    def test_stages_keep_open_and_resolved(self):
-        resolved = Stage.objects.get(kind=StageKind.RESOLVED)
-        self.assertEqual(self.api('delete', f'/dunning/stage/{resolved.pk}').status_code, 400)
-        self.assertTrue(Stage.objects.filter(pk=resolved.pk).exists())
+    def test_stages(self):
+        self.assertEqual(Stage.objects.count(), 5)  # resolved / legal are outcomes, not stages
+        tx = self.installment(dt.date(2026, 11, 19))
+        stage = Stage.objects.get(pk=self.cards()[0]['stage_id'])
+        self.assertEqual(self.api('delete', f'/dunning/stage/{stage.pk}').status_code, 400)  # has an open card
+        tx.status = TransactionStatus.REALIZED
+        tx.save()
+        self.cards()
+        self.assertEqual(self.api('delete', f'/dunning/stage/{stage.pk}').status_code, 204)  # closed cards move
+        for s in Stage.objects.all()[1:]:
+            s.delete()
+        self.assertEqual(self.api('delete', f'/dunning/stage/{Stage.objects.get().pk}').status_code, 400)  # the last one
+
+    def test_dismiss_until_a_newer_installment_is_late(self):
+        self.installment(dt.date(2026, 11, 10))
+        card = self.cards()[0]
+        self.assertEqual(self.api('delete', f'/dunning/card/{card["id"]}').status_code, 204)
+        self.assertEqual(self.cards(), [])
+        self.assertEqual(Card.objects.get().outcome, Outcome.DISMISSED)
+        self.installment(dt.date(2026, 11, 25))
+        services.sync_cards_service(today=dt.date(2026, 11, 26))  # a newer one fell due: back, only with it
+        reopened = Card.objects.get(closed_at__isnull=True)
+        self.assertEqual(reopened.overdue_since, dt.date(2026, 11, 25))
 
     def test_other_company_hidden(self):
         self.installment(dt.date(2026, 11, 19))
@@ -153,7 +173,7 @@ class DunningTests(TestCase):
         self.assertEqual(len(self.cards()), 1)  # sync keeps it open (old installment still late)
         self.assertEqual(self.api('post', f'/dunning/send/{self.client_.pk}').json()[0]['id'], r.json()[0]['id'])
         Transaction.objects.update(status=TransactionStatus.REALIZED)
-        self.assertIsNotNone(self.cards()[0]['closed_at'])
+        self.assertIsNotNone(self.cards('resolved')[0]['closed_at'])
 
     def test_situation_traffic_light(self):
         from apps.dunning.services import situations_service

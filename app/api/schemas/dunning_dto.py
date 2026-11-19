@@ -1,16 +1,17 @@
 import datetime as dt
 from decimal import Decimal
 
+from typing import Literal
+
 from ninja import Schema
 from pydantic import Field
 
-from apps.dunning.models import ActivityKind, Severity, StageKind
+from apps.dunning.models import ActivityKind, Outcome, Severity
 
 
 class StageIn(Schema):
     name: str = Field(min_length=1, max_length=60)
     position: int = Field(0, ge=0)
-    kind: StageKind = StageKind.OPEN
     severity: Severity = Severity.ATTENTION
 
 
@@ -31,6 +32,7 @@ class StepOut(StepIn):
 
 
 class CardFilters(Schema):
+    outcome: Outcome = Outcome.OPEN
     assignee_id: int | None = None
     company_id: list[int] | None = None
     search: str | None = None
@@ -49,6 +51,7 @@ class CardOut(Schema):
     assignee_name: str | None = None
     overdue_since: dt.date
     closed_at: dt.date | None
+    outcome: Outcome
     legal_case_id: int | None
     overdue_amount: Decimal
     overdue_count: int
@@ -65,6 +68,7 @@ class CardOut(Schema):
 class PatchCard(Schema):
     stage_id: int | None = None
     assignee_id: int | None = None
+    outcome: Literal[Outcome.RESOLVED, Outcome.LEGAL] | None = None
 
 
 class InstallmentOut(Schema):

@@ -53,7 +53,7 @@ async function addNote() {
 }
 
 const stageItems = computed(() => props.stages.map(s => ({ label: s.name, value: s.id })))
-async function patchCard(body: { stage_id?: number; assignee_id?: number | null }) {
+async function patchCard(body: { stage_id?: number; assignee_id?: number | null; outcome?: 'resolved' | 'legal' }) {
   try {
     card.value = await unwrap(api.PATCH('/api/dunning/card/{card_id}', { params: { path: { card_id: props.cardId! } }, body }))
     emit('changed')
@@ -63,13 +63,29 @@ async function patchCard(body: { stage_id?: number; assignee_id?: number | null 
     load()
   }
 }
-async function changeStage(stageId: number) {
-  const stage = props.stages.find(s => s.id === stageId)
-  if (stage?.kind === 'legal' && !await confirm({
+const changeStage = (stageId: number) => patchCard({ stage_id: stageId })
+
+// Outcomes take the card off the board (like won/lost on Pipedrive)
+async function toLegal() {
+  if (!await confirm({
     title: 'Encaminhar ao jurídico?', confirmLabel: 'Encaminhar',
     description: 'Abre uma ação no Jurídico com as parcelas em aberto deste cliente e encerra o card.',
   })) return
-  patchCard({ stage_id: stageId })
+  patchCard({ outcome: 'legal' })
+}
+async function dismiss() {
+  if (!await confirm({
+    title: 'Excluir card?', confirmLabel: 'Excluir', color: 'error', icon: 'i-lucide-trash-2',
+    description: 'O cliente só volta ao funil quando vencer uma parcela nova.',
+  })) return
+  try {
+    await unwrap(api.DELETE('/api/dunning/card/{card_id}', { params: { path: { card_id: props.cardId! } } }))
+    notifySuccess('Card excluído')
+    open.value = false
+    emit('changed')
+  } catch (e) {
+    notifyError(e)
+  }
 }
 
 // Messages: placeholders filled with the card values; copy or open WhatsApp
@@ -158,6 +174,18 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
             <span v-if="card.contact_email"><UIcon name="i-lucide-mail" class="align-middle" /> {{ card.contact_email }}</span>
             <NuxtLink :to="`/registers/contacts/${card.contact_id}`" class="hover:text-primary">Ficha do cliente</NuxtLink>
             <NuxtLink v-if="card.legal_case_id" to="/legal" class="text-warning hover:text-primary">Ação no jurídico</NuxtLink>
+            <div class="ms-auto flex flex-wrap items-center gap-2">
+              <UBadge v-if="!isOpen" :label="`${DUNNING_LABELS.outcome[card.outcome]} · ${formatDate(card.closed_at)}`"
+                      :color="card.outcome === 'resolved' ? 'success' : 'warning'" variant="subtle" />
+              <template v-else-if="canChange">
+                <UButton label="Resolvido" icon="i-lucide-circle-check" size="sm" color="success" variant="soft"
+                         @click="patchCard({ outcome: 'resolved' })" />
+                <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" size="sm"
+                         color="warning" variant="soft" @click="toLegal" />
+              </template>
+              <UButton v-if="isOpen && auth.can('dunning', 'delete')" icon="i-lucide-trash-2" size="sm" color="error"
+                       variant="ghost" aria-label="Excluir card" @click="dismiss" />
+            </div>
           </div>
         </div>
 

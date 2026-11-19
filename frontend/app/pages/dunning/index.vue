@@ -11,7 +11,8 @@ lookups.ensure('companies').catch(notifyError)
 const { stages, assignees } = useDunning()
 const canChange = computed(() => auth.can('dunning', 'change'))
 
-const filters = reactive({ search: '', company_id: [] as number[], assignee_id: undefined as number | undefined })
+// Board = open cards; resolved / legal leave it (like won/lost on Pipedrive) and come back with the filter
+const filters = reactive({ outcome: 'open' as 'open' | 'resolved' | 'legal', search: '', company_id: [] as number[], assignee_id: undefined as number | undefined })
 const items = ref<Card[]>([])
 const loading = ref(false)
 async function load() {
@@ -30,6 +31,7 @@ let timer: ReturnType<typeof setTimeout> | undefined
 watch(filters, () => { clearTimeout(timer); timer = setTimeout(load, 300) }, { deep: true })
 onMounted(load)
 
+const OUTCOMES = [{ label: 'Em aberto', value: 'open' }, { label: 'Resolvidos', value: 'resolved' }, { label: 'Jurídico', value: 'legal' }]
 const sum = (list: Card[]) => list.reduce((s, c) => s + Number(c.overdue_amount), 0)
 const openCards = computed(() => items.value.filter(c => !c.closed_at))
 const columns = computed(() => stages.value.map(s => {
@@ -38,16 +40,14 @@ const columns = computed(() => stages.value.map(s => {
 }))
 const lateActivities = computed(() => openCards.value.reduce((s, c) => s + c.late_activities, 0))
 
-// Drag and drop between open stages (native HTML5); resolved / legal go through the card (confirmation)
+// Drag and drop between stages (native HTML5); resolved / legal are buttons on the card
 const dragging = ref<number | null>(null)
 const over = ref<number | null>(null)
 async function onDrop(stageId: number) {
   over.value = null
   const card = items.value.find(c => c.id === dragging.value)
   dragging.value = null
-  const stage = stages.value.find(s => s.id === stageId)
-  if (!card || card.closed_at || card.stage_id === stageId || !stage) return
-  if (stage.kind !== 'open') return openCard(card.id)
+  if (!card || card.closed_at || card.stage_id === stageId) return
   const previous = card.stage_id
   card.stage_id = stageId
   try {
@@ -73,20 +73,35 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
 <template>
   <AppPage title="Cobrança">
     <template #toolbar>
+      <USelect v-model="filters.outcome" :items="OUTCOMES" class="w-36" aria-label="Situação" />
       <UInput v-model="filters.search" icon="i-lucide-search" placeholder="Cliente…" class="w-56" />
       <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple
                    placeholder="Empresas" class="w-44" />
       <USelectMenu v-model="filters.assignee_id" :items="assignees" value-key="value" placeholder="Responsável" class="w-48" />
       <UButton v-if="filters.assignee_id" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Limpar responsável"
                @click="filters.assignee_id = undefined" />
-      <div class="ms-auto flex items-center gap-4 text-sm text-muted">
+      <div v-if="filters.outcome === 'open'" class="ms-auto flex items-center gap-4 text-sm text-muted">
         <span>Em atraso <strong class="tabular text-error">{{ formatMoney(sum(openCards)) }}</strong></span>
         <span>Cards <strong class="tabular text-highlighted">{{ openCards.length }}</strong></span>
         <span>Atividades atrasadas <strong class="tabular" :class="lateActivities ? 'text-error' : 'text-highlighted'">{{ lateActivities }}</strong></span>
       </div>
     </template>
 
-    <div class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
+    <div v-if="filters.outcome !== 'open'" class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
+      <ul class="divide-y divide-muted">
+        <li v-for="card in items" :key="card.id" class="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm hover:bg-elevated/50"
+            @click="openCard(card.id)">
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-highlighted">{{ card.contact_name }}</p>
+            <p class="truncate text-xs text-dimmed">{{ card.company_name }}<template v-if="card.assignee_name"> · {{ card.assignee_name }}</template></p>
+          </div>
+          <span class="text-xs text-muted tabular">{{ formatDate(card.closed_at) }}</span>
+        </li>
+        <li v-if="!items.length" class="px-4 py-6 text-center text-sm text-dimmed">Nenhum card</li>
+      </ul>
+    </div>
+
+    <div v-else class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
       <section v-for="col in columns" :key="col.id"
                class="flex min-w-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
                :class="{ 'ring-primary bg-primary/5': over === col.id }"
@@ -104,7 +119,8 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
                    class="cursor-pointer rounded-lg border-l-3 bg-default p-2.5 text-sm ring ring-default hover:ring-primary/60"
                    :class="[card.closed_at ? 'border-l-transparent opacity-60' : card.critical ? 'border-l-error' : 'border-l-warning',
                             { 'opacity-40': dragging === card.id }]"
-                   @dragstart="dragging = card.id" @dragend="dragging = null" @click="openCard(card.id)">
+                   @dragstart="(e: DragEvent) => { e.dataTransfer?.setData('text/plain', String(card.id)); dragging = card.id }"
+                   @dragend="dragging = null" @click="openCard(card.id)">
             <div class="flex items-start justify-between gap-2">
               <p class="font-medium text-highlighted line-clamp-2">{{ card.contact_name }}</p>
               <UTooltip v-if="card.assignee_name" :text="card.assignee_name">

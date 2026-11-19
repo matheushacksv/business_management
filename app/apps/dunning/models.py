@@ -16,20 +16,22 @@ class Severity(models.TextChoices):
     CRITICAL = 'critical', 'Crítico'
 
 
-class StageKind(models.TextChoices):
-    OPEN = 'open', 'Em andamento'
-    RESOLVED = 'resolved', 'Resolvido'  # closes the card; only when nothing is overdue
-    LEGAL = 'legal', 'Jurídico'  # closes the card and opens a legal case
+class Outcome(models.TextChoices):
+    """Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back."""
+
+    OPEN = 'open', 'Em aberto'
+    RESOLVED = 'resolved', 'Resolvido'  # only when nothing is overdue (or paid off: automatic)
+    LEGAL = 'legal', 'Jurídico'  # opens a legal case
+    DISMISSED = 'dismissed', 'Excluído'  # hidden; the customer comes back only with a newer late installment
 
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class Stage(models.Model):
-    """Configurable funnel column. New cards enter the first 'open' one."""
+    """Configurable funnel column. New cards enter the first one."""
 
     name = models.CharField(max_length=60)
     position = models.PositiveSmallIntegerField(default=0)
-    kind = models.CharField(max_length=10, choices=StageKind.choices, default=StageKind.OPEN)
-    severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.ATTENTION)  # open stages
+    severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.ATTENTION)
 
     class Meta:
         ordering = ['position', 'id']
@@ -67,7 +69,8 @@ class Card(models.Model):
     assignee = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     overdue_since = models.DateField()  # oldest overdue due date when the card opened
     cadence_start = models.DateField(null=True, blank=True)  # cadence day 1; each step is created when its day comes
-    closed_at = models.DateField(null=True, blank=True)  # resolved or sent to legal
+    outcome = models.CharField(max_length=10, choices=Outcome.choices, default=Outcome.OPEN)
+    closed_at = models.DateField(null=True, blank=True)  # when the outcome was set
     legal_case = models.ForeignKey('legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

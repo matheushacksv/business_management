@@ -71,7 +71,7 @@ export const LABELS = {
 export const DUNNING_LABELS = {
   activityKind: { message: 'Mensagem', call: 'Ligação', task: 'Tarefa' } as Record<string, string>,
   activityIcon: { message: 'i-lucide-message-circle', call: 'i-lucide-phone', task: 'i-lucide-square-check' } as Record<string, string>,
-  stageKind: { open: 'Em andamento', resolved: 'Resolvido', legal: 'Jurídico' } as Record<string, string>,
+  outcome: { open: 'Em aberto', resolved: 'Resolvido', legal: 'Jurídico', dismissed: 'Excluído' } as Record<string, string>,
 }
 
 /** Days between a due date and today */

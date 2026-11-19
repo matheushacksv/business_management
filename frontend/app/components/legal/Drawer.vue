@@ -81,6 +81,19 @@ async function toggleUnrecoverable() {
   }
 }
 
+// Concluding takes the action off the board (filter "Concluídas" brings it back)
+async function setDone(done: boolean) {
+  if (done && !await confirm({ title: 'Concluir ação?', confirmLabel: 'Concluir' })) return
+  try {
+    item.value = await unwrap(api.PATCH('/api/collection-case/{case_id}', {
+      params: { path: { case_id: props.caseId! } }, body: { stage: done ? 'done' : 'in_progress' },
+    }))
+    emit('changed')
+  } catch (e) {
+    notifyError(e)
+  }
+}
+
 async function remove() {
   if (!item.value) return
   const ok = await confirm({
@@ -153,6 +166,9 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </dl>
             <div class="flex gap-2">
               <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
+              <UButton v-if="canChange" :label="item.stage === 'done' ? 'Reabrir' : 'Concluir'"
+                       :icon="item.stage === 'done' ? 'i-lucide-rotate-ccw' : 'i-lucide-circle-check'" color="success" variant="soft"
+                       @click="setDone(item.stage !== 'done')" />
               <UButton v-if="auth.can('legal', 'delete')" label="Excluir" icon="i-lucide-trash-2" color="error" variant="ghost" @click="remove" />
             </div>
           </template>
