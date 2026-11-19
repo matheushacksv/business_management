@@ -16,7 +16,8 @@ def normalize_cnpj(cnpj: str) -> str:
 
 
 def create_company_service(
-    user: User, name: str, cnpj: str, initial_balance: Decimal, tax_rate: Decimal = Decimal('10')
+    user: User, name: str, cnpj: str, initial_balance: Decimal, tax_rate: Decimal = Decimal('10'),
+    pipedrive_label: str = '',
 ) -> Company:
     check_permission(user, 'companies', CREATE)
     cnpj = normalize_cnpj(cnpj)
@@ -24,7 +25,8 @@ def create_company_service(
     try:
         with transaction.atomic():
             return Company.objects.create(
-                name=name.strip(), cnpj=cnpj, initial_balance=initial_balance, tax_rate=tax_rate
+                name=name.strip(), cnpj=cnpj, initial_balance=initial_balance, tax_rate=tax_rate,
+                pipedrive_label=pipedrive_label.strip(),
             )
     except IntegrityError:
         raise ValidationError('Company with this CNPJ already exists')
@@ -47,6 +49,8 @@ def update_company_service(user: User, company_id: int, **fields) -> Company:
         fields['name'] = fields['name'].strip()
     if 'cnpj' in fields:
         fields['cnpj'] = normalize_cnpj(fields['cnpj'])
+    if 'pipedrive_label' in fields:
+        fields['pipedrive_label'] = (fields['pipedrive_label'] or '').strip()
 
     for field, value in fields.items():
         setattr(company, field, value)

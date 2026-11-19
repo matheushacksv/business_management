@@ -98,3 +98,10 @@ class PipedriveWebhookTests(TestCase):
         r = self.client.post('/api/webhooks/pipedrive/deal/', data=DEAL, content_type='application/json',
                              headers={'Authorization': self.basic})
         self.assertEqual((r.status_code, r.json()['status']), (200, 'processed'), r.content)
+
+    def test_company_by_pipedrive_label(self):
+        Company.objects.filter(pk=self.company.pk).update(pipedrive_label='CNPJ OHenriquecedor')
+        Company.objects.create(name='B', cnpj='66891934000179', pipedrive_label='CNPJ Grupo Enriquecedor')
+        r = self.post({**DEAL, 'company_document': 'cnpj ohenriquecedor'}).json()
+        self.assertEqual(r['status'], 'processed', r)
+        self.assertEqual(Sale.objects.get().company_id, self.company.pk)

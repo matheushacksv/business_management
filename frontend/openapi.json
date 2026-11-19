@@ -8108,6 +8108,18 @@
       "default": "10",
       "title": "Tax Rate",
       "type": "string"
+     },
+     "pipedrive_label": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pipedrive Label"
      }
     },
     "required": [
@@ -8151,6 +8163,12 @@
       ],
       "default": "10",
       "title": "Tax Rate"
+     },
+     "pipedrive_label": {
+      "default": "",
+      "maxLength": 120,
+      "title": "Pipedrive Label",
+      "type": "string"
      }
     },
     "required": [
@@ -8214,6 +8232,18 @@
        }
       ],
       "title": "Tax Rate"
+     },
+     "pipedrive_label": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pipedrive Label"
      }
     },
     "title": "CompanyUpdateDTO",

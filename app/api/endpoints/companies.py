@@ -20,7 +20,7 @@ def list_company_endpoint(request):
 def create_company_endpoint(request, data: CompanyCreateDTO):
     return 201, services.create_company_service(
         user=request.user, name=data.name, 
-        cnpj=data.cnpj, initial_balance=data.initial_balance, tax_rate=data.tax_rate
+        cnpj=data.cnpj, initial_balance=data.initial_balance, tax_rate=data.tax_rate, pipedrive_label=data.pipedrive_label
     )
 
 

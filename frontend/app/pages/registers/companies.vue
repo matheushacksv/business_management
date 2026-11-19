@@ -20,6 +20,7 @@ const fields = [
   { key: 'cnpj', label: 'CNPJ', required: true },
   { key: 'initial_balance', label: 'Saldo inicial', type: 'money' as const },
   { key: 'tax_rate', label: 'Imposto (%)', type: 'number' as const, step: 0.01, default: 10 },
+  { key: 'pipedrive_label', label: 'Nome no Pipedrive', placeholder: 'CNPJ OHenriquecedor', span: 2 as const },
 ]
 </script>
 

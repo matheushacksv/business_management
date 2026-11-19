@@ -132,9 +132,11 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
     user = config.user
     if user is None or not user.is_active:
         raise ValidationError('Integração sem usuário ativo: gere as credenciais novamente')
-    company = Company.objects.filter(cnpj=normalize_cnpj(data.company_document)).first()
+    # the deal's company field: the option text set on the company ("Nome no Pipedrive"), or a CNPJ
+    company = Company.objects.filter(pipedrive_label__iexact=data.company_document).first() \
+        or Company.objects.filter(cnpj=normalize_cnpj(data.company_document)).first()
     if company is None:
-        raise ValidationError(f'Nenhuma empresa com o CNPJ {data.company_document}')
+        raise ValidationError(f'Nenhuma empresa com "{data.company_document}" como nome no Pipedrive ou CNPJ')
     if data.proposal_value <= 0:
         raise ValidationError('Valor da proposta vazio')
 

@@ -8,6 +8,7 @@ from django.db import models
 class Company(models.Model):
     name = models.CharField(max_length=120)
     cnpj = models.CharField(max_length=14, unique=True)
+    pipedrive_label = models.CharField(max_length=120, blank=True)  # option text of the deal's company field
     initial_balance = models.DecimalField(
         max_digits=14, decimal_places=2, default=Decimal('0')
     )

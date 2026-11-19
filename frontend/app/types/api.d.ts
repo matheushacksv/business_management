@@ -1756,6 +1756,8 @@ export interface components {
              * @default 10
              */
             tax_rate: string;
+            /** Pipedrive Label */
+            pipedrive_label?: string | null;
         };
         /** CompanyCreateDTO */
         CompanyCreateDTO: {
@@ -1770,6 +1772,11 @@ export interface components {
              * @default 10
              */
             tax_rate: number | string;
+            /**
+             * Pipedrive Label
+             * @default
+             */
+            pipedrive_label: string;
         };
         /** CompanyUpdateDTO */
         CompanyUpdateDTO: {
@@ -1781,6 +1788,8 @@ export interface components {
             initial_balance?: number | string | null;
             /** Tax Rate */
             tax_rate?: number | string | null;
+            /** Pipedrive Label */
+            pipedrive_label?: string | null;
         };
         /** SubgroupOut */
         SubgroupOut: {
