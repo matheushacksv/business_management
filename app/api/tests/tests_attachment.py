@@ -91,6 +91,20 @@ class AttachmentEndpointTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(self.contact.attachments.count(), 1)
 
+    def test_upload_to_legal_action(self):
+        from apps.legal.models import CollectionCase
+        case = CollectionCase.objects.create(company=self.company, contact=self.contact)
+        legal = User.objects.create_user(email='jur@test.com', password='Str@ngPassw8rd2026', role=Role.LEGAL)
+        legal.companies.add(self.company)
+
+        response = self.upload(legal, target='collection_case', target_id=case.pk)
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(case.attachments.count(), 1)
+        self.assertEqual(self.upload(self.manager, target='collection_case', target_id=case.pk).status_code, 403)
+        listed = self.client.get(f'/api/attachment?target=collection_case&target_id={case.pk}', headers=auth_for(legal))
+        self.assertEqual([a['name'] for a in listed.json()], ['nota.pdf'])
+
     def test_upload_without_change_permission_returns_403(self):
         for user in (self.accountant, self.manager):
             with self.subTest(role=user.role):

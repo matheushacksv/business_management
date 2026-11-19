@@ -2,7 +2,7 @@
 import type { components } from '~/types/api'
 
 type Attachment = components['schemas']['AttachmentOut']
-const props = defineProps<{ target: 'transaction' | 'contact' | 'invoice' | 'sale'; targetId: number; editable?: boolean }>()
+const props = defineProps<{ target: 'transaction' | 'contact' | 'invoice' | 'sale' | 'collection_case'; targetId: number; editable?: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 
 const { api, unwrap, raw, download, notifyError, notifySuccess } = useApi()

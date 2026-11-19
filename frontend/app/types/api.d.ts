@@ -5525,7 +5525,7 @@ export interface operations {
     api_endpoints_attachments_list_attachments_endpoint: {
         parameters: {
             query: {
-                target: "transaction" | "contact" | "invoice" | "sale";
+                target: "transaction" | "contact" | "invoice" | "sale" | "collection_case";
                 target_id: number;
             };
             header?: never;
@@ -5559,7 +5559,7 @@ export interface operations {
                      * Target
                      * @enum {string}
                      */
-                    target: "transaction" | "contact" | "invoice" | "sale";
+                    target: "transaction" | "contact" | "invoice" | "sale" | "collection_case";
                     /** Target Id */
                     target_id: number;
                     /**

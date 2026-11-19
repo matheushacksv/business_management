@@ -1,4 +1,5 @@
 import pghistory
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 
@@ -41,6 +42,8 @@ class CollectionCase(models.Model):
     created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    attachments = GenericRelation('attachments.Attachment')  # petitions, agreements, evidence
 
     class Meta:
         ordering = ['-updated_at', '-id']

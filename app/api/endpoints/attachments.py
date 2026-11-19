@@ -10,7 +10,7 @@ from apps.attachments import services
 router = Router(tags=['Attachments'])
 
 # Permissions follow the parent record (checked in the services)
-TargetName = Literal['transaction', 'contact', 'invoice', 'sale']
+TargetName = Literal['transaction', 'contact', 'invoice', 'sale', 'collection_case']
 
 
 @router.post('/attachment', response={201: AttachmentOut})

@@ -3991,7 +3991,8 @@
            "transaction",
            "contact",
            "invoice",
-           "sale"
+           "sale",
+           "collection_case"
           ],
           "title": "Target",
           "type": "string"
@@ -4034,7 +4035,8 @@
         "transaction",
         "contact",
         "invoice",
-        "sale"
+        "sale",
+        "collection_case"
        ],
        "title": "Target",
        "type": "string"

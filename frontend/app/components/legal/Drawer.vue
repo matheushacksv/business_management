@@ -22,6 +22,7 @@ const editing = ref(false)
 const tabs = [
   { label: 'Resumo', value: 'summary', icon: 'i-lucide-file-text' },
   { label: 'Parcelas', value: 'installments', icon: 'i-lucide-calendar-range' },
+  { label: 'Documentos', value: 'documents', icon: 'i-lucide-paperclip' },
 ]
 
 async function load() {
@@ -173,6 +174,8 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </div>
           </template>
         </template>
+
+        <AppAttachments v-else-if="tab === 'documents'" target="collection_case" :target-id="item.id!" :editable="canChange" />
 
         <template v-else>
           <ul v-if="installments.length" class="divide-y divide-muted rounded-xl ring ring-default">

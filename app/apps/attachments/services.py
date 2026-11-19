@@ -10,6 +10,8 @@ from django.db import models
 from apps.attachments.models import Attachment
 from apps.finance.models import Contact, Invoice, Transaction
 from apps.finance.services import get_contact_service, get_invoice_service, get_transaction_service
+from apps.legal.models import CollectionCase
+from apps.legal.services import get_case_service
 from apps.sales.models import Sale
 from apps.sales.services import get_sale_service
 from apps.users.models import User
@@ -38,6 +40,7 @@ TARGETS: dict[str, Target] = {
     'invoice': Target(Invoice, 'transactions',
                       lambda user, pk: get_invoice_service(user=user, invoice_id=pk)),
     'sale': Target(Sale, 'sales', lambda user, pk: get_sale_service(user=user, sale_id=pk)),  # contract
+    'collection_case': Target(CollectionCase, 'legal', lambda user, pk: get_case_service(user=user, case_id=pk)),
 }
 _BY_MODEL = {t.model: t for t in TARGETS.values()}
 
