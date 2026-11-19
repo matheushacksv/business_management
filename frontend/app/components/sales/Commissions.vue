@@ -126,7 +126,8 @@ async function applySplit() {
                         aria-label="Valor" @update:model-value="v => setValue(c, v)" />
         </template>
         <span v-else-if="isPercent(c.kind)" class="text-xs text-muted tabular">{{ Number(c.percent).toLocaleString('pt-BR') }}%</span>
-        <UBadge :label="c.payment_id ? 'Paga' : 'A pagar'" :color="c.payment_id ? 'success' : 'warning'" variant="subtle" size="sm" />
+        <UBadge :label="c.payment_id ? 'Paga' : c.first_payment ? 'A pagar' : 'Aguardando cliente'"
+                :color="c.payment_id ? 'success' : c.first_payment ? 'warning' : 'neutral'" variant="subtle" size="sm" />
         <span class="w-28 text-right tabular">{{ formatMoney(c.amount) }}</span>
         <UButton v-if="canChange && !c.payment_id" icon="i-lucide-trash-2" color="neutral" variant="ghost" size="xs"
                  aria-label="Remover" @click="remove(c)" />

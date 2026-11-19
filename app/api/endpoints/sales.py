@@ -31,10 +31,12 @@ from api.schemas.sales_dto import (
     SalespersonPatch,
     SalesReportOut,
     SalesReportParams,
+    SalesConfigIO,
 )
 from api.schemas.transactions_dto import TransactionOut
 from apps.finance.exporter import XLSX_CONTENT_TYPE
 from apps.sales import selectors, services
+from apps.sales.models import SalesConfig
 from apps.sales.exporter import commissions_xlsx
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, check_permission, require_permission
 
@@ -229,6 +231,21 @@ def delete_adjustment_endpoint(request, adjustment_id: int):
 def pay_salary_endpoint(request, data: PaySalary):
     check_permission(request.user, 'transactions', CREATE)  # creates the outflow
     return services.pay_salary_service(user=request.user, **data.dict())
+
+
+@router.get('/commission/config', response=SalesConfigIO)
+@require_permission('sales', VIEW)
+def get_sales_config_endpoint(request):
+    return SalesConfig.get()
+
+
+@router.put('/commission/config', response=SalesConfigIO)
+@require_permission('sales', CHANGE)
+def update_sales_config_endpoint(request, data: SalesConfigIO):
+    config = SalesConfig.get()
+    config.commission_due = data.commission_due
+    config.save()
+    return config
 
 
 @router.patch('/commission/{commission_id}', response=CommissionOut)

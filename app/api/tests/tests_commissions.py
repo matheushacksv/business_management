@@ -7,7 +7,7 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import services as finance
 from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
-from apps.sales.models import Commission, Sale, Salesperson, SaleStatus, StatementShare
+from apps.sales.models import Commission, CommissionDue, Sale, SalesConfig, Salesperson, SaleStatus, StatementShare
 from apps.users.models import Role, User
 
 
@@ -24,6 +24,12 @@ class Base(TestCase):
         self.amanda = Salesperson.objects.create(name='Amanda')
         self.wagner = Salesperson.objects.create(name='Wagner')
         self.sale = Sale.objects.create(company=self.company, date=date(2026, 10, 15), amount=Decimal('20000'))
+        self.revenue = finance.create_subgroup_service(name='Venda', group=Group.OPERATING_REVENUE)
+        self.receive(self.sale, date(2026, 10, 20))  # down payment: releases the commissions
+
+    def receive(self, sale, day, status=TransactionStatus.REALIZED):
+        return Transaction.objects.create(company=self.company, subgroup=self.revenue, date=day, amount=Decimal('1000'),
+                                          type=TransactionType.INFLOW, status=status, sale=sale)
 
     def api(self, method, path, body=None, user=None):
         return getattr(self.client, method)(f'/api{path}', data=body, content_type='application/json',
@@ -53,6 +59,31 @@ class CommissionTests(Base):
         Sale.objects.create(company=self.company, date=date(2026, 11, 2), amount=Decimal('100'))
         self.assertEqual(len(self.api('get', '/commission?month=2026-11-01').json()), 1)
         self.assertEqual(len(self.api('get', '/commission?month=2026-10-01').json()), 0)
+
+    def test_released_only_after_the_customer_pays(self):
+        sale = Sale.objects.create(company=self.company, date=date(2026, 10, 1), amount=Decimal('1000'))
+        r = self.api('post', f'/sale/{sale.pk}/commissions', {'salesperson_id': self.amanda.pk, 'kind': 'seller', 'percent': '10'})
+        planned = self.receive(sale, date(2026, 10, 25), status=TransactionStatus.PLANNED)
+        self.assertEqual([c['salesperson_name'] for c in self.api('get', '/commission').json()], [])
+        pay = {'ids': [r.json()['id']], 'date': '2026-11-10', 'subgroup_id': self.subgroup.pk}
+        self.assertEqual(self.api('post', '/commission/pay', pay).status_code, 400)
+        # first payment on the 25th, the rest on the 10th: whichever installment was paid first counts
+        Transaction.objects.filter(pk=planned.pk).update(status=TransactionStatus.REALIZED)
+        self.receive(sale, date(2026, 11, 10))
+        listed = self.api('get', '/commission?month=2026-11-01').json()
+        self.assertEqual([(c['salesperson_name'], c['first_payment']) for c in listed if c['sale_id'] == sale.pk],
+                         [('Amanda', '2026-10-25')])
+        self.assertEqual(self.api('post', '/commission/pay', pay).status_code, 200)
+
+    def test_due_month_follows_the_config(self):
+        self.add(self.matheus, 'seller', percent='10')
+        Transaction.objects.filter(sale=self.sale).update(date=date(2026, 12, 5))  # paid two months after the sale
+        self.assertEqual(len(self.api('get', '/commission?month=2027-01-01').json()), 1)  # default: after the payment
+        self.assertEqual(len(self.api('get', '/commission?month=2026-11-01').json()), 0)
+        self.assertEqual(self.api('put', '/commission/config', {'commission_due': 'sale'}).status_code, 200)
+        self.assertEqual(SalesConfig.get().commission_due, CommissionDue.SALE)
+        self.assertEqual(len(self.api('get', '/commission?month=2026-11-01').json()), 1)
+        self.assertEqual(len(self.api('get', '/commission?month=2027-01-01').json()), 0)
 
     def test_canceled_sale_drops_unpaid(self):
         self.add(self.matheus, 'seller', percent='10')

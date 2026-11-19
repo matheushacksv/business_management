@@ -5,7 +5,7 @@ from typing import Literal
 from ninja import ModelSchema, Schema
 from pydantic import Field, model_validator
 
-from apps.sales.models import CommissionKind, Product, Sale, Salesperson, SaleStatus
+from apps.sales.models import CommissionDue, CommissionKind, Product, Sale, Salesperson, SaleStatus
 
 
 class NamedCreate(Schema):
@@ -197,6 +197,7 @@ class CommissionOut(Schema):
     amount: Decimal
     payment_id: int | None
     paid_on: dt.date | None = Field(None, alias='payment.date')
+    first_payment: dt.date | None = None  # customer's first payment: releases the commission
 
     @staticmethod
     def resolve_amount(obj) -> Decimal:
@@ -267,3 +268,7 @@ class StatementShareOut(Schema):
 
 class StatementPassword(Schema):
     password: str = Field(min_length=1, max_length=64)
+
+
+class SalesConfigIO(Schema):
+    commission_due: CommissionDue

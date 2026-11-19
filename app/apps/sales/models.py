@@ -100,7 +100,8 @@ PERCENT_KINDS = {CommissionKind.SELLER, CommissionKind.ADVISOR}  # % of the sale
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class Commission(models.Model):
-    """Who earns what on a sale. Due the month after the sale, whether the customer paid or not."""
+    """Who earns what on a sale. Released once the customer pays something (down payment or first
+    installment); due the month after that payment or after the sale (SalesConfig)."""
 
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='commissions')
     salesperson = models.ForeignKey(Salesperson, on_delete=models.PROTECT, related_name='commissions')
@@ -118,6 +119,21 @@ class Commission(models.Model):
 
     class Meta:
         ordering = ['sale__date', 'id']
+
+
+class CommissionDue(models.TextChoices):
+    PAYMENT = 'payment', 'Mês seguinte ao 1º pagamento'
+    SALE = 'sale', 'Mês seguinte à venda'
+
+
+class SalesConfig(models.Model):
+    """Single row."""
+
+    commission_due = models.CharField(max_length=10, choices=CommissionDue.choices, default=CommissionDue.PAYMENT)
+
+    @classmethod
+    def get(cls) -> 'SalesConfig':
+        return cls.objects.get_or_create(pk=1)[0]
 
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())

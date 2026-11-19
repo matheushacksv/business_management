@@ -5675,6 +5675,68 @@
     ]
    }
   },
+  "/api/commission/config": {
+   "get": {
+    "operationId": "api_endpoints_sales_get_sales_config_endpoint",
+    "summary": "Get Sales Config Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SalesConfigIO"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "put": {
+    "operationId": "api_endpoints_sales_update_sales_config_endpoint",
+    "summary": "Update Sales Config Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SalesConfigIO"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SalesConfigIO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/commission/{commission_id}": {
    "patch": {
     "operationId": "api_endpoints_sales_update_commission_endpoint",
@@ -12390,6 +12452,18 @@
        }
       ],
       "title": "Paid On"
+     },
+     "first_payment": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Payment"
      }
     },
     "required": [
@@ -12881,6 +12955,26 @@
      "subgroup_id"
     ],
     "title": "PaySalary",
+    "type": "object"
+   },
+   "CommissionDue": {
+    "enum": [
+     "payment",
+     "sale"
+    ],
+    "title": "CommissionDue",
+    "type": "string"
+   },
+   "SalesConfigIO": {
+    "properties": {
+     "commission_due": {
+      "$ref": "#/components/schemas/CommissionDue"
+     }
+    },
+    "required": [
+     "commission_due"
+    ],
+    "title": "SalesConfigIO",
     "type": "object"
    },
    "PatchCommission": {

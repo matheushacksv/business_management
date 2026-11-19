@@ -6,14 +6,14 @@ import pghistory
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import DecimalField, F, ProtectedError, Q, Sum, Value
+from django.db.models import DecimalField, F, OuterRef, ProtectedError, Q, Subquery, Sum, Value
 from django.utils import timezone
 from django.db.models.functions import Coalesce
 
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, SubGroup, Transaction, TransactionSeries, TransactionStatus, TransactionType
 from apps.finance.services import create_contact_service, create_series_service, create_transaction_service
-from apps.sales.models import PERCENT_KINDS, Adjustment, Commission, Product, SalaryPayment, Sale, Salesperson, SaleStatus, StatementShare
+from apps.sales.models import PERCENT_KINDS, Adjustment, Commission, CommissionDue, Product, SalaryPayment, Sale, Salesperson, SaleStatus, SalesConfig, StatementShare
 from apps.users.models import User
 
 ZERO = Decimal('0')
@@ -251,8 +251,10 @@ def generate_receivables_service(
 
 
 # Commissions
-# Due the month after the sale, on the full sale amount (customer paid or not). Sellers and advisors
-# get a % of the sale after the company's tax; the other kinds a fixed value.
+# On the full sale amount, released once the customer pays something: the oldest received installment
+# (computed live, so edited dates or a first payment off the usual due day just work). Due the month
+# after that payment or after the sale (SalesConfig). Sellers and advisors get a % of the sale after the
+# company's tax; the other kinds a fixed value.
 
 CENT = Decimal('0.01')
 
@@ -267,9 +269,12 @@ def commission_amount(c: Commission) -> Decimal:
 
 
 def _commissions_for(user: User):
+    first_payment = Transaction.objects.filter(
+        sale=OuterRef('sale_id'), type=TransactionType.INFLOW, status=TransactionStatus.REALIZED,
+    ).order_by('date').values('date')[:1]
     return Commission.objects.filter(sale__company__in=list_companies_service(user=user)).select_related(
         'sale__company', 'sale__contact', 'salesperson', 'payment'
-    )
+    ).annotate(first_payment=Subquery(first_payment))
 
 
 def _commission_values(kind: str, percent, fixed_amount):
@@ -329,7 +334,7 @@ def delete_commission_service(*, user: User, commission_id: int) -> None:
 
 
 def sales_month_for(due_month: dt.date) -> tuple[dt.date, dt.date]:
-    """Commissions due in November come from the sales of October."""
+    """Commissions due in November come from October (sales or first payments)."""
     last = due_month.replace(day=1) - dt.timedelta(days=1)
     return last.replace(day=1), last
 
@@ -337,8 +342,12 @@ def sales_month_for(due_month: dt.date) -> tuple[dt.date, dt.date]:
 def list_commissions_service(*, user: User, month: dt.date | None = None, salesperson_id=None, company_id=None, status=None):
     # Canceled sale: its unpaid commissions disappear; paid ones stay on record
     qs = _commissions_for(user).exclude(sale__status=SaleStatus.CANCELED, payment__isnull=True)
+    qs = qs.filter(Q(first_payment__isnull=False) | Q(payment__isnull=False))  # released (or paid before the rule)
     if month:
-        qs = qs.filter(sale__date__range=sales_month_for(month))
+        if SalesConfig.get().commission_due == CommissionDue.PAYMENT:
+            qs = qs.annotate(due_base=Coalesce('first_payment', 'sale__date')).filter(due_base__range=sales_month_for(month))
+        else:
+            qs = qs.filter(sale__date__range=sales_month_for(month))
     if salesperson_id:
         qs = qs.filter(salesperson_id__in=salesperson_id)
     if company_id:
@@ -363,6 +372,8 @@ def pay_commissions_service(*, user: User, ids: list[int], date: dt.date, subgro
             raise ValidationError('Some commissions are already paid')
         if any(c.sale.status == SaleStatus.CANCELED for c in items):
             raise ValidationError('Commissions of canceled sales cannot be paid')
+        if any(c.first_payment is None for c in items):  # type:ignore
+            raise ValidationError('Comissão liberada só após o cliente pagar a entrada ou a 1ª parcela')
         groups: dict[tuple[int, int], list[Commission]] = {}
         for c in items:
             groups.setdefault((c.salesperson_id, c.sale.company_id), []).append(c)  # type:ignore

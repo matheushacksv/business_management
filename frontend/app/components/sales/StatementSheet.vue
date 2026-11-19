@@ -29,7 +29,7 @@ const rule = (c: Commission) => c.percent != null
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <SStat label="Fixo" :value="formatMoney(salary)" :loading="loading" icon="i-lucide-wallet" />
       <SStat label="Ajustes" :value="formatMoney(adjustmentsTotal)" :loading="loading" icon="i-lucide-plus-minus" />
-      <SStat :label="`Comissões · vendas de ${monthLabel(data.sales_month)}`" :value="formatMoney(commissionsTotal)"
+      <SStat :label="`Comissões · ref. ${monthLabel(data.sales_month)}`" :value="formatMoney(commissionsTotal)"
              :loading="loading" icon="i-lucide-hand-coins" />
       <SStat label="Total a receber" :value="formatMoney(total)" tone="primary" :loading="loading" icon="i-lucide-sigma" />
     </div>
@@ -95,7 +95,7 @@ const rule = (c: Commission) => c.percent != null
     <Teleport to="body">
       <div class="s-print hidden print:block">
         <h1>Demonstrativo · {{ data.salesperson.name }}</h1>
-        <p>Pagamento {{ monthLabel(data.month) }} · vendas de {{ monthLabel(data.sales_month) }}</p>
+        <p>Pagamento {{ monthLabel(data.month) }} · ref. {{ monthLabel(data.sales_month) }}</p>
         <table>
           <tbody>
             <tr><td><b>Fixo</b></td><td><b>{{ formatMoney(salary) }}</b></td></tr>

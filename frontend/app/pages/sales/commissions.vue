@@ -44,6 +44,18 @@ async function load() {
 }
 watch(query, load, { immediate: true })
 
+// Due month: after the customer's first payment (default) or after the sale
+const due = ref<'payment' | 'sale'>('payment')
+unwrap(api.GET('/api/commission/config')).then(c => (due.value = c.commission_due)).catch(notifyError)
+async function setDue(value: 'payment' | 'sale') {
+  try {
+    due.value = (await unwrap(api.PUT('/api/commission/config', { body: { commission_due: value } }))).commission_due
+    load()
+  } catch (e) {
+    notifyError(e)
+  }
+}
+
 const sum = (list: Commission[]) => list.reduce((s, c) => s + Number(c.amount), 0)
 const pending = computed(() => items.value.filter(c => !c.payment_id))
 const paid = computed(() => items.value.filter(c => c.payment_id))
@@ -76,7 +88,10 @@ const columns = computed<TableColumn<Commission>[]>(() => [
   ]) },
   { accessorKey: 'contact_name', header: 'Cliente', cell: ({ row }) => h('div', [
     h('p', { class: 'truncate max-w-64 text-highlighted' }, row.original.contact_name ?? `Venda #${row.original.sale_id}`),
-    h('p', { class: 'text-xs text-dimmed' }, `${formatDate(row.original.sale_date)} · ${row.original.company_name}`),
+    h('p', { class: 'text-xs text-dimmed' }, [
+      `${formatDate(row.original.sale_date)} · ${row.original.company_name}`,
+      row.original.first_payment && ` · 1º pgto ${formatDate(row.original.first_payment)}`,
+    ].filter(Boolean).join('')),
   ]) },
   { accessorKey: 'sale_amount', header: () => h('span', { class: 'block text-right' }, 'Venda'),
     cell: ({ row }) => h('p', { class: 'text-right tabular' }, formatMoney(row.original.sale_amount)) },
@@ -130,6 +145,9 @@ function exportXlsx() {
       <UButton label="Demonstrativo" icon="i-lucide-receipt-text" color="neutral" variant="outline"
                :to="{ path: '/sales/statement', query: { month: filters.month } }" />
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
+      <USelect :model-value="due" :disabled="!auth.can('sales', 'change')" class="w-64" aria-label="Vencimento das comissões"
+               :items="[{ label: 'Vence após o 1º pagamento', value: 'payment' }, { label: 'Vence após a venda', value: 'sale' }]"
+               @update:model-value="(v: any) => setDue(v)" />
     </template>
     <template #toolbar>
       <USelect v-model="filters.month" :items="monthItems" class="w-32" aria-label="Mês de pagamento" />
@@ -144,7 +162,7 @@ function exportXlsx() {
     </template>
 
     <div class="grid gap-3 sm:grid-cols-3">
-      <SStat :label="salesMonth ? `Total · vendas de ${salesMonth}` : 'Total'" :value="formatMoney(sum(items))" :loading="loading" icon="i-lucide-hand-coins" />
+      <SStat :label="salesMonth ? `Total · ${due === 'payment' ? '1º pagamento em' : 'vendas de'} ${salesMonth}` : 'Total'" :value="formatMoney(sum(items))" :loading="loading" icon="i-lucide-hand-coins" />
       <SStat label="A pagar" :value="formatMoney(sum(pending))" tone="primary" :loading="loading" icon="i-lucide-clock" />
       <SStat label="Pago" :value="formatMoney(sum(paid))" tone="success" :loading="loading" icon="i-lucide-check-check" />
     </div>

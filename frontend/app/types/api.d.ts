@@ -1088,6 +1088,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/commission/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sales Config Endpoint */
+        get: operations["api_endpoints_sales_get_sales_config_endpoint"];
+        /** Update Sales Config Endpoint */
+        put: operations["api_endpoints_sales_update_sales_config_endpoint"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/commission/{commission_id}": {
         parameters: {
             query?: never;
@@ -3057,6 +3075,8 @@ export interface components {
             payment_id: number | null;
             /** Paid On */
             paid_on?: string | null;
+            /** First Payment */
+            first_payment?: string | null;
         };
         /** CreateCommission */
         CreateCommission: {
@@ -3230,6 +3250,15 @@ export interface components {
             subgroup_id: number;
             /** Amount */
             amount?: number | string | null;
+        };
+        /**
+         * CommissionDue
+         * @enum {string}
+         */
+        CommissionDue: "payment" | "sale";
+        /** SalesConfigIO */
+        SalesConfigIO: {
+            commission_due: components["schemas"]["CommissionDue"];
         };
         /** PatchCommission */
         PatchCommission: {
@@ -6214,6 +6243,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_get_sales_config_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesConfigIO"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_update_sales_config_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SalesConfigIO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesConfigIO"];
                 };
             };
         };
