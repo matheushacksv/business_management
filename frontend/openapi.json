@@ -14807,6 +14807,17 @@
        }
       ],
       "title": "Outcome"
+     },
+     "legal_case_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Legal Case Id"
      }
     },
     "title": "PatchCard",

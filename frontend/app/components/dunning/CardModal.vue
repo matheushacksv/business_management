@@ -53,7 +53,7 @@ async function addNote() {
 }
 
 const stageItems = computed(() => props.stages.map(s => ({ label: s.name, value: s.id })))
-async function patchCard(body: { stage_id?: number; assignee_id?: number | null; outcome?: 'resolved' | 'legal' }) {
+async function patchCard(body: { stage_id?: number; assignee_id?: number | null; outcome?: 'resolved' | 'legal'; legal_case_id?: number }) {
   try {
     card.value = await unwrap(api.PATCH('/api/dunning/card/{card_id}', { params: { path: { card_id: props.cardId! } }, body }))
     emit('changed')
@@ -65,13 +65,12 @@ async function patchCard(body: { stage_id?: number; assignee_id?: number | null;
 }
 const changeStage = (stageId: number) => patchCard({ stage_id: stageId })
 
-// Outcomes take the card off the board (like won/lost on Pipedrive)
-async function toLegal() {
-  if (!await confirm({
-    title: 'Encaminhar ao jurídico?', confirmLabel: 'Encaminhar',
-    description: 'Abre uma ação no Jurídico com as parcelas em aberto deste cliente e encerra o card.',
-  })) return
-  patchCard({ outcome: 'legal' })
+// Outcomes take the card off the board (like won/lost on Pipedrive). Legal: the action form
+// (every field required) opens the case first, then the card closes linked to it
+const legalOpen = ref(false)
+async function toLegal(caseId: number) {
+  legalOpen.value = false
+  await patchCard({ outcome: 'legal', legal_case_id: caseId })
 }
 async function dismiss() {
   if (!await confirm({
@@ -181,7 +180,7 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
                 <UButton label="Resolvido" icon="i-lucide-circle-check" size="sm" color="success" variant="soft"
                          @click="patchCard({ outcome: 'resolved' })" />
                 <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" size="sm"
-                         color="warning" variant="soft" @click="toLegal" />
+                         color="warning" variant="soft" @click="legalOpen = true" />
               </template>
               <UButton v-if="isOpen && auth.can('dunning', 'delete')" icon="i-lucide-trash-2" size="sm" color="error"
                        variant="ghost" aria-label="Excluir card" @click="dismiss" />
@@ -297,6 +296,14 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
           </div>
         </div>
       </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="legalOpen" title="Ação de cobrança por inadimplência" :ui="{ content: 'max-w-2xl' }">
+    <template #body>
+      <LegalForm v-if="card" :contact-id="card.contact_id" :contact-name="card.contact_name" :company-id="card.company_id"
+                 :summary="`Encaminhado pelo funil de cobrança (em atraso desde ${formatDate(card.overdue_since)}).`"
+                 @saved="toLegal" @cancel="legalOpen = false" />
     </template>
   </UModal>
 </template>

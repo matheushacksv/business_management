@@ -3737,6 +3737,8 @@ export interface components {
             assignee_id?: number | null;
             /** Outcome */
             outcome?: ("resolved" | "legal") | null;
+            /** Legal Case Id */
+            legal_case_id?: number | null;
         };
         /** InstallmentOut */
         InstallmentOut: {

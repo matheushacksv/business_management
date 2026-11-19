@@ -3,7 +3,8 @@ import type { components } from '~/types/api'
 
 // "Ação de cobrança por inadimplência": every field is required (client rule)
 type Case = components['schemas']['CaseOut']
-const props = defineProps<{ item?: Case | null; contactId?: number | null; contactName?: string | null }>()
+// companyId / summary: prefilled when coming from the dunning funnel
+const props = defineProps<{ item?: Case | null; contactId?: number | null; contactName?: string | null; companyId?: number; summary?: string }>()
 const emit = defineEmits<{ saved: [id: number]; cancel: [] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
@@ -12,14 +13,14 @@ lookups.ensure('companies').catch(notifyError)
 
 const c = props.item
 const state = reactive({
-  company_id: c?.company_id as number | undefined,
+  company_id: (c?.company_id ?? props.companyId) as number | undefined,
   contact_id: c?.contact_id ?? props.contactId ?? null,
   client_company: c?.client_company ?? '',
   contact_info: c?.contact_info ?? '',
   delivered: c?.delivered ?? '',
   proposal_amount: c?.proposal_amount != null ? Number(c.proposal_amount) : (undefined as number | undefined),
   paid_amount: c?.paid_amount != null ? Number(c.paid_amount) : (undefined as number | undefined),
-  summary: c?.summary ?? '',
+  summary: c?.summary ?? props.summary ?? '',
   drive_link: c?.drive_link ?? '',
   stage: c?.stage ?? 'new',
   agreement: c?.agreement ?? '',
@@ -112,7 +113,7 @@ async function submit() {
       <UInput v-model="state.drive_link" type="url" placeholder="Cole o link da pasta no Google Drive" icon="i-lucide-link" class="w-full" />
     </UFormField>
     <UFormField v-if="!c" label="Empresa do grupo" required>
-      <USelect v-model="state.company_id" :items="lookups.options.companies.value" class="w-full" />
+      <USelect v-model="state.company_id" :items="lookups.options.companies.value" :disabled="!!companyId" class="w-full" />
     </UFormField>
     <UFormField label="Etapa" :class="c ? 'sm:col-span-2' : ''">
       <USelect v-model="state.stage" :items="stageOptions" class="w-full" />

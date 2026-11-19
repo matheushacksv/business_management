@@ -11,9 +11,9 @@ from django.utils import timezone
 from apps.companies.services import list_companies_service
 from apps.dunning.models import Activity, CadenceStep, Card, CardNote, Config, Outcome, Severity, Stage
 from apps.finance.models import Transaction, TransactionStatus, TransactionType
-from apps.legal.services import create_case_service
+from apps.legal.models import CollectionCase
 from apps.users.models import User
-from apps.users.permissions import CHANGE, CREATE, check_permission, has_permission
+from apps.users.permissions import CHANGE, has_permission
 
 MONEY = DecimalField(max_digits=16, decimal_places=2)
 ZERO = Decimal('0')
@@ -179,14 +179,14 @@ def update_card_service(*, user: User, card_id: int, **fields) -> Card:
                 raise ValidationError('This card is closed')
             card.stage = Stage.objects.get(pk=fields.pop('stage_id'))
         if 'outcome' in fields:
-            _close(user, card, fields.pop('outcome'))
+            _close(user, card, fields.pop('outcome'), fields.pop('legal_case_id', None))
         for field, value in fields.items():
             setattr(card, field, value)
         card.save()
     return get_card_service(user=user, card_id=card_id)
 
 
-def _close(user: User, card: Card, outcome: str) -> None:
+def _close(user: User, card: Card, outcome: str, legal_case_id: int | None = None) -> None:
     if card.closed_at:
         raise ValidationError('This card is closed')
     today = timezone.localdate()
@@ -194,11 +194,12 @@ def _close(user: User, card: Card, outcome: str) -> None:
         if _overdue_of(card, today).exists():
             raise ValidationError('There are still overdue installments')
     elif outcome == Outcome.LEGAL:
-        check_permission(user, 'legal', CREATE)
-        # links all the open installments of the customer to the case (they leave the funnel)
-        card.legal_case = create_case_service(
-            user=user, company_id=card.company_id, contact_id=card.contact_id,  # type:ignore
-            summary=f'Encaminhado pelo funil de cobrança (em atraso desde {card.overdue_since:%d/%m/%Y}).')
+        # the case is opened first with the legal form (every field required); creating it already
+        # linked the customer's open installments (they leave the funnel)
+        card.legal_case = CollectionCase.objects.filter(
+            pk=legal_case_id, company_id=card.company_id, contact_id=card.contact_id).first()  # type:ignore
+        if card.legal_case is None:
+            raise ValidationError('Fill in the legal action form first')
     else:
         raise ValidationError('Invalid outcome')
     card.outcome, card.closed_at = outcome, today

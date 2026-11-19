@@ -69,6 +69,7 @@ class PatchCard(Schema):
     stage_id: int | None = None
     assignee_id: int | None = None
     outcome: Literal[Outcome.RESOLVED, Outcome.LEGAL] | None = None
+    legal_case_id: int | None = None  # outcome legal: the case opened with the legal form
 
 
 class InstallmentOut(Schema):

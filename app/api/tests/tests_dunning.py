@@ -93,9 +93,16 @@ class DunningTests(TestCase):
         self.installment(dt.date(2026, 11, 19))
         future = self.installment(dt.date(2026, 12, 19))
         card = self.cards()[0]
-        r = self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'legal'})
-        self.assertEqual(r.status_code, 200, r.content)
+        # the legal form comes first: every field is required to enter the legal funnel
+        self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'legal'}).status_code, 400)
+        r = self.api('post', '/collection-case', {
+            'company_id': self.company.pk, 'contact_id': self.client_.pk, 'client_company': 'X Ltda', 'contact_info': 'zap',
+            'delivered': 'mentoria', 'proposal_amount': '5000', 'paid_amount': '1000', 'summary': 'parou de pagar',
+            'drive_link': 'https://drive.google.com/x'})
+        self.assertEqual(r.status_code, 201, r.content)
         case = CollectionCase.objects.get()
+        r = self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'legal', 'legal_case_id': case.pk})
+        self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual((r.json()['legal_case_id'], r.json()['closed_at']), (case.pk, '2026-11-20'))
         future.refresh_from_db()
         self.assertEqual(future.collection_case_id, case.pk)
