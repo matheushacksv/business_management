@@ -18,9 +18,9 @@ const comments = ref<Comment[]>([])
 const installments = ref<Transaction[]>([])
 const tab = ref('summary')
 const editing = ref(false)
+// Progress (comments) lives in its own column, always visible
 const tabs = [
   { label: 'Resumo', value: 'summary', icon: 'i-lucide-file-text' },
-  { label: 'Andamento', value: 'comments', icon: 'i-lucide-messages-square' },
   { label: 'Parcelas', value: 'installments', icon: 'i-lucide-calendar-range' },
 ]
 
@@ -106,12 +106,13 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="item?.contact_name ?? 'Ação'"
-              :description="item ? `${LABELS.caseStage[item.stage]} · ${item.company_name}` : undefined"
-              :ui="{ content: 'max-w-2xl' }">
+  <UModal v-model:open="open" :title="item?.contact_name ?? 'Ação'"
+          :description="item ? `${LABELS.caseStage[item.stage]} · ${item.company_name}` : undefined"
+          :ui="{ content: 'sm:max-w-6xl' }">
     <template #body>
       <USkeleton v-if="!item" class="h-40 w-full" />
-      <div v-else class="space-y-5">
+      <div v-else class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+      <div class="min-w-0 space-y-5">
         <div class="s-panel grid grid-cols-2 gap-x-4 gap-y-3 p-4 text-xs">
           <div class="min-w-0"><p class="text-dimmed">Devido (em aberto)</p><p class="font-display text-lg text-error tabular truncate">{{ formatMoney(item.open_amount) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Recebido (parcelas)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
@@ -157,19 +158,6 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           </template>
         </template>
 
-        <template v-else-if="tab === 'comments'">
-          <form class="flex flex-col gap-2" @submit.prevent="addComment">
-            <UTextarea v-model="text" :rows="2" autoresize placeholder="Comentário ou observação do andamento…" class="w-full" />
-            <UButton type="submit" label="Comentar" icon="i-lucide-send" :loading="sending" :disabled="!text.trim()" class="self-end" />
-          </form>
-          <ul class="space-y-3">
-            <li v-for="c in comments" :key="c.id!" class="s-panel p-3 text-sm">
-              <p class="mb-1 text-xs text-dimmed">{{ c.author_name ?? 'Sistema' }} · {{ new Date(c.created_at!).toLocaleString('pt-BR') }}</p>
-              <p class="whitespace-pre-line">{{ c.text }}</p>
-            </li>
-          </ul>
-        </template>
-
         <template v-else>
           <ul v-if="installments.length" class="divide-y divide-muted rounded-xl ring ring-default">
             <li v-for="t in installments" :key="t.id!" class="flex items-center gap-3 px-3 py-2 text-sm">
@@ -182,6 +170,20 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           <p v-else class="text-sm text-dimmed">Nenhuma parcela vinculada.</p>
         </template>
       </div>
+
+      <SPanel title="Andamento" class="lg:sticky lg:top-0">
+        <form class="flex flex-col gap-2" @submit.prevent="addComment">
+          <UTextarea v-model="text" :rows="3" autoresize placeholder="Comentário ou observação do andamento…" class="w-full" />
+          <UButton type="submit" label="Comentar" icon="i-lucide-send" :loading="sending" :disabled="!text.trim()" class="self-end" />
+        </form>
+        <ul class="mt-4 max-h-[60dvh] space-y-3 overflow-y-auto">
+          <li v-for="c in comments" :key="c.id!" class="rounded-lg bg-elevated/50 p-3 text-sm ring ring-default">
+            <p class="mb-1 text-xs text-dimmed">{{ c.author_name ?? 'Sistema' }} · {{ new Date(c.created_at!).toLocaleString('pt-BR') }}</p>
+            <p class="whitespace-pre-line">{{ c.text }}</p>
+          </li>
+        </ul>
+      </SPanel>
+      </div>
     </template>
-  </USlideover>
+  </UModal>
 </template>
