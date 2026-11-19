@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.db.models.functions import Coalesce, ExtractMonth, TruncMonth
 
 from apps.companies.services import list_companies_service
-from apps.finance.models import NATURAL_TYPE, Contact, Group, SubGroup, TransactionStatus, TransactionType
+from apps.finance.models import NATURAL_TYPE, Contact, Group, SubGroup, Transaction, TransactionStatus, TransactionType
 from apps.finance.services import list_transactions_service, pending_invoices_service
 from apps.users.models import User
 
@@ -78,6 +78,26 @@ def _gross_sales(user: User, year: int, company_id=None) -> list[Decimal]:
     for row in qs.order_by().values(month=ExtractMonth('date')).annotate(total=Sum('amount')):
         months[row['month'] - 1] = row['total']
     return months
+
+
+def delinquency_selector(*, user: User, year: int, company_id=None) -> dict:
+    """Operating revenue receivables by due month: what was due (due date already passed) and what the
+    customer still has not paid. Installments with the legal team count as unpaid too."""
+    qs = Transaction.objects.filter(
+        company__in=list_companies_service(user=user), type=TransactionType.INFLOW,
+        subgroup__group=Group.OPERATING_REVENUE, date__year=year, date__lt=timezone.localdate(),
+    )
+    if company_id:
+        qs = qs.filter(company_id__in=company_id)
+    unpaid = Q(status=TransactionStatus.PLANNED)
+    months = [{'month': m, 'due': ZERO, 'overdue': ZERO, 'count': 0} for m in range(1, 13)]
+    for row in (qs.order_by().values(m=ExtractMonth('date'))
+                .annotate(due=Sum('amount'), overdue=_sum(status=TransactionStatus.PLANNED), count=Count('id', filter=unpaid))):
+        months[row['m'] - 1].update(due=row['due'], overdue=row['overdue'], count=row['count'])
+    total = {'month': None, **{k: sum((m[k] for m in months), ZERO if k != 'count' else 0) for k in ('due', 'overdue', 'count')}}
+    for m in [*months, total]:
+        m['rate'] = _percent(m['overdue'], m['due'])
+    return {'months': months, 'total': total}
 
 
 def dre_selector(*, user: User, year: int, **filters) -> dict:

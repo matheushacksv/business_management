@@ -10,15 +10,17 @@ const props = defineProps<{ year: number; filters: Record<string, unknown> }>()
 const { api, unwrap, notifyError } = useApi()
 const monthly = ref<Table | null>(null)
 const years = ref<Table | null>(null)
+const delinquency = ref<components['schemas']['DelinquencyOut'] | null>(null)
 const loading = ref(false)
 
 async function load() {
   loading.value = true
   try {
     const base = { year: props.year, ...props.filters }
-    ;[monthly.value, years.value] = await Promise.all([
+    ;[monthly.value, years.value, delinquency.value] = await Promise.all([
       unwrap(api.GET('/api/reports/dre/table', { params: { query: { ...base, view: 'monthly' } as any } })),
       unwrap(api.GET('/api/reports/dre/table', { params: { query: { ...base, view: 'years' } as any } })),
+      unwrap(api.GET('/api/reports/delinquency', { params: { query: { year: props.year, company_id: props.filters.company_id as any } } })),
     ])
   } catch (e) {
     notifyError(e)
@@ -159,6 +161,32 @@ function drill(row: Row, i: number) {
 
     <SPanel title="O ano mês a mês">
       <SChart type="bar" :labels="chart.labels" :series="chart.series" money :height="280" />
+    </SPanel>
+
+    <SPanel v-if="delinquency" title="Inadimplência" class="overflow-auto">
+      <table class="w-full text-sm tabular">
+        <thead>
+          <tr class="text-xs text-muted">
+            <th class="px-2 py-2 text-left font-medium min-w-32" />
+            <th v-for="(m, i) in [...MONTHS, 'Total']" :key="m" class="px-2 py-2 text-right font-medium"
+                :class="{ 'text-primary': column(i).current, 'border-l border-default': i === 12 }">{{ m }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in ([
+            ['Vencido', (d: any) => short(d.due)],
+            ['Em aberto', (d: any) => short(d.overdue)],
+            ['Parcelas', (d: any) => d.count || '—'],
+            ['Inadimplência', (d: any) => d.rate != null ? formatPercent(d.rate) : '—'],
+          ] as const)" :key="r[0]" class="border-t border-muted" :class="r[0] === 'Inadimplência' ? 'font-semibold' : ''">
+            <td class="px-2 py-2 whitespace-nowrap">{{ r[0] }}</td>
+            <td v-for="(d, i) in [...delinquency.months, delinquency.total]" :key="i" class="px-2 py-2 text-right whitespace-nowrap"
+                :class="[i === 12 ? 'border-l border-default' : '', r[0] !== 'Vencido' && Number(d.overdue) > 0 ? 'text-error' : '']">
+              {{ r[1](d) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </SPanel>
 
     <div class="s-panel overflow-auto">

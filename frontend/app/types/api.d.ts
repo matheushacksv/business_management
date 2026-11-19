@@ -593,6 +593,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/delinquency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delinquency Endpoint */
+        get: operations["api_endpoints_reports_delinquency_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/dre/table": {
         parameters: {
             query?: never;
@@ -2513,6 +2530,25 @@ export interface components {
             year: number;
             /** Lines */
             lines: components["schemas"]["DRELine"][];
+        };
+        /** DelinquencyMonth */
+        DelinquencyMonth: {
+            /** Month */
+            month: number | null;
+            /** Due */
+            due: string;
+            /** Overdue */
+            overdue: string;
+            /** Count */
+            count: number;
+            /** Rate */
+            rate: string | null;
+        };
+        /** DelinquencyOut */
+        DelinquencyOut: {
+            /** Months */
+            months: components["schemas"]["DelinquencyMonth"][];
+            total: components["schemas"]["DelinquencyMonth"];
         };
         /** DRETableParams */
         DRETableParams: {
@@ -5262,6 +5298,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DREOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_reports_delinquency_endpoint: {
+        parameters: {
+            query: {
+                year: number;
+                company_id?: number[] | null;
+                status?: components["schemas"]["TransactionStatus"][] | null;
+                type?: components["schemas"]["TransactionType"][] | null;
+                group?: components["schemas"]["Group"][] | null;
+                subgroup_id?: number[] | null;
+                account_id?: number[] | null;
+                contact_id?: number[] | null;
+                amount_min?: number | string | null;
+                amount_max?: number | string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelinquencyOut"];
                 };
             };
         };

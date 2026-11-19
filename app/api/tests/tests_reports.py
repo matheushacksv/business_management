@@ -110,3 +110,15 @@ class ReportEndpointTests(TestCase):
         for query in ('start=2026-01-01', 'start=2026-01-01&end=2026-01-31&granularity=week'):
             with self.subTest(query=query):
                 self.assertEqual(self.get(f'/api/reports/cash-flow?{query}').status_code, 422)
+
+    def test_delinquency_by_month(self):
+        # setUp: January due 1.300 (1.000 paid, 300 open) in A; B has none. Future due dates don't count.
+        r = self.get('/api/reports/delinquency?year=2026')
+        self.assertEqual(r.status_code, 200, r.content)
+        jan = r.json()['months'][0]
+        self.assertEqual((Decimal(jan['due']), Decimal(jan['overdue']), jan['count'], Decimal(jan['rate'])),
+                         (Decimal('1300'), Decimal('300'), 1, Decimal('0.2308')))
+        self.assertIsNone(r.json()['months'][11]['rate'])
+        self.assertEqual(Decimal(r.json()['total']['overdue']), Decimal('300'))
+        other = self.get(f'/api/reports/delinquency?year=2026&company_id={self.other.pk}').json()
+        self.assertEqual(Decimal(other['total']['due']), Decimal('0'))

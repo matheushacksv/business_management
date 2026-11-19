@@ -73,3 +73,16 @@ class DRETableOut(Schema):
     title: str
     columns: list[DRETableColumn]
     lines: list[DRETableLine]
+
+
+class DelinquencyMonth(Schema):
+    month: int | None  # None = year total
+    due: Decimal
+    overdue: Decimal
+    count: int
+    rate: Decimal | None  # overdue / due
+
+
+class DelinquencyOut(Schema):
+    months: list[DelinquencyMonth]
+    total: DelinquencyMonth

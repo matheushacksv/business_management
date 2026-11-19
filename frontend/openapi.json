@@ -2715,6 +2715,230 @@
     ]
    }
   },
+  "/api/reports/delinquency": {
+   "get": {
+    "operationId": "api_endpoints_reports_delinquency_endpoint",
+    "summary": "Delinquency Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "year",
+      "schema": {
+       "title": "Year",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "type",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/TransactionType"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Type"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/Group"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "account_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_min",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Min"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "amount_max",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Amount Max"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DelinquencyOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/dre/table": {
    "get": {
     "operationId": "api_endpoints_reports_dre_table_endpoint",
@@ -10729,6 +10953,73 @@
      "lines"
     ],
     "title": "DREOut",
+    "type": "object"
+   },
+   "DelinquencyMonth": {
+    "properties": {
+     "month": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Month"
+     },
+     "due": {
+      "title": "Due",
+      "type": "string"
+     },
+     "overdue": {
+      "title": "Overdue",
+      "type": "string"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "rate": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rate"
+     }
+    },
+    "required": [
+     "month",
+     "due",
+     "overdue",
+     "count",
+     "rate"
+    ],
+    "title": "DelinquencyMonth",
+    "type": "object"
+   },
+   "DelinquencyOut": {
+    "properties": {
+     "months": {
+      "items": {
+       "$ref": "#/components/schemas/DelinquencyMonth"
+      },
+      "title": "Months",
+      "type": "array"
+     },
+     "total": {
+      "$ref": "#/components/schemas/DelinquencyMonth"
+     }
+    },
+    "required": [
+     "months",
+     "total"
+    ],
+    "title": "DelinquencyOut",
     "type": "object"
    },
    "DRETableParams": {
