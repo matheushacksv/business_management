@@ -8,7 +8,7 @@ export interface CrudField {
   label: string
   type?: 'text' | 'email' | 'password' | 'money' | 'number' | 'select' | 'multiselect' | 'switch' | 'textarea'
   options?: { label: string; value: unknown }[]
-  required?: boolean
+  required?: boolean | ((state: Record<string, any>) => boolean)  // function: depends on other fields
   createOnly?: boolean      // hidden when editing
   readonlyOnEdit?: boolean  // shown but locked when editing
   placeholder?: string
@@ -76,6 +76,7 @@ const open = ref(false)
 const editingId = ref<number | null>(null)
 const state = reactive<Record<string, any>>({})
 const saving = ref(false)
+const isRequired = (f: CrudField) => typeof f.required === 'function' ? f.required(state) : !!f.required
 const visibleFields = computed(() => props.fields.filter(f => !(editingId.value && f.createOnly)))
 
 function blank(field: CrudField) {
@@ -98,7 +99,7 @@ function openEdit(row: T) {
 }
 
 async function save() {
-  const missing = visibleFields.value.filter(f => f.required && (state[f.key] === '' || state[f.key] === undefined || state[f.key] === null))
+  const missing = visibleFields.value.filter(f => isRequired(f) && (state[f.key] === '' || state[f.key] === undefined || state[f.key] === null))
   if (missing.length) {
     notifyError(`Preencha: ${missing.map(f => f.label).join(', ')}`, 'Campos obrigatórios')
     return
@@ -166,7 +167,7 @@ async function destroy() {
             :ui="{ content: 'max-w-xl' }">
       <template #body>
         <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="save">
-          <UFormField v-for="f in visibleFields" :key="f.key" :label="f.label" :required="f.required" :hint="f.hint"
+          <UFormField v-for="f in visibleFields" :key="f.key" :label="f.label" :required="isRequired(f)" :hint="f.hint"
                       :class="f.span === 2 || f.type === 'textarea' ? 'sm:col-span-2' : ''">
             <USelect v-if="f.type === 'select'" v-model="state[f.key]" :items="(f.options as any)" :placeholder="f.placeholder"
                      :disabled="!!editingId && f.readonlyOnEdit" class="w-full" />

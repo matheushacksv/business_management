@@ -45,17 +45,18 @@ const situation = ref<string>()
 const situationItems = [
   { label: 'Regularizado', value: 'ok' }, { label: 'Atenção', value: 'attention' }, { label: 'Crítico', value: 'critical' },
 ]
+const customer = (s: Record<string, any>) => s.kind === 'customer'
 const fields = [
   { key: 'name', label: 'Nome', required: true },
   { key: 'kind', label: 'Tipo', type: 'select' as const, options: [{ label: 'Cliente', value: 'customer' }, { label: 'Fornecedor', value: 'supplier' }], required: true },
   { key: 'company_name', label: 'Razão social' },
-  { key: 'document', label: 'CPF/CNPJ' },
-  { key: 'email', label: 'E-mail', type: 'email' as const },
+  { key: 'document', label: 'CPF/CNPJ', required: customer },
+  { key: 'email', label: 'E-mail', type: 'email' as const, required: customer },
   { key: 'phone', label: 'Telefone' },
-  { key: 'postal_code', label: 'CEP' },
-  { key: 'address_number', label: 'Número' },
+  { key: 'postal_code', label: 'CEP', required: customer },
+  { key: 'address_number', label: 'Número', required: customer },
   { key: 'address_complement', label: 'Complemento' },
-  { key: 'address_district', label: 'Bairro' },
+  { key: 'address_district', label: 'Bairro', required: customer },
 ]
 </script>
 
