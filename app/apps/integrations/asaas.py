@@ -16,9 +16,13 @@ import urllib.request
 from decimal import Decimal
 
 import pghistory
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.utils import timezone
 
+from apps.attachments.models import Attachment
+from apps.attachments.services import MAX_SIZE
 from apps.companies.models import Company
 from apps.finance.models import Account, Contact, Invoice, InvoiceKind, Transaction, TransactionStatus, TransactionType
 from apps.integrations.models import AsaasConfig, EventStatus, WebhookEvent
@@ -250,6 +254,32 @@ def _invoice_body(config: AsaasConfig, tx: Transaction, p: dict) -> dict:
     return body
 
 
+def _attach_files(invoice: Invoice, i: dict) -> list[str]:
+    """PDF + XML of the issued NFS-e as the invoice's attachments (public links on asaas.com)."""
+    have, errors = {a.mime_type for a in invoice.attachments.all()}, []
+    for key, ext, mime in (('pdfUrl', 'pdf', 'application/pdf'), ('xmlUrl', 'xml', 'application/xml')):
+        if mime in have:  # Reprocess / redelivery
+            continue
+        url = i.get(key) or ''
+        host = urllib.parse.urlparse(url).hostname or ''
+        if not (url.startswith('https://') and (host == 'asaas.com' or host.endswith('.asaas.com'))):
+            continue  # only Asaas links: the URL comes from the payload
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'gestao-empresarial'})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                data = r.read(MAX_SIZE + 1)
+        except (urllib.error.URLError, TimeoutError) as e:
+            errors.append(f'{ext}: {getattr(e, "reason", e)}')
+            continue
+        if not data or len(data) > MAX_SIZE:
+            errors.append(f'{ext}: tamanho inválido')
+            continue
+        name = f'NFS-e {invoice.number or invoice.asaas_id}.{ext}'
+        Attachment.objects.create(content_type=ContentType.objects.get_for_model(Invoice), object_id=invoice.pk,
+                                  file=ContentFile(data, name=name), name=name, mime_type=mime, size=len(data))
+    return errors
+
+
 def _invoice_update(i: dict) -> tuple[str, str]:
     invoice = Invoice.objects.filter(asaas_id=i['id']).first()
     if invoice is None:
@@ -259,6 +289,10 @@ def _invoice_update(i: dict) -> tuple[str, str]:
         if status == 'AUTHORIZED':
             invoice.done, invoice.number = True, str(i.get('number') or '')
             invoice.issue_date = dt.date.fromisoformat(i.get('effectiveDate') or timezone.localdate().isoformat())
+            invoice.save()
+            errors = _attach_files(invoice, i)
+            if errors:  # NF already marked issued; Reprocess retries the download
+                return EventStatus.ERROR, 'NFS-e emitida, arquivo não baixado: ' + '; '.join(errors)
         elif status in ('ERROR', 'CANCELED'):
             invoice.done, invoice.issue_date = False, None
             invoice.notes = f'Asaas: {i.get("statusDescription") or status}'

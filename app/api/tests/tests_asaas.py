@@ -2,9 +2,10 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from ninja_jwt.tokens import AccessToken
 
+from api.tests.tests_sales import MEMORY_STORAGES
 from apps.companies.models import Company
 from apps.finance import services as finance
 from apps.finance.models import Contact, Group, Invoice, Transaction
@@ -34,6 +35,7 @@ class FakeAsaas:
         return [c for c in self.calls if c[0] == method and c[1] == path]
 
 
+@override_settings(STORAGES=MEMORY_STORAGES)
 class AsaasTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
@@ -96,11 +98,18 @@ class AsaasTests(TestCase):
         self.hook(paid)  # Asaas redelivery: no second NFS-e
         self.assertEqual(len(self.fake.made('POST', '/invoices')), 1)
         invoice = Invoice.objects.get()
-        self.hook({'event': 'INVOICE_AUTHORIZED', 'invoice': {'id': invoice.asaas_id, 'status': 'AUTHORIZED',
-                                                               'number': '123', 'effectiveDate': '2026-11-24'}})
+        authorized = {'event': 'INVOICE_AUTHORIZED', 'invoice': {
+            'id': invoice.asaas_id, 'status': 'AUTHORIZED', 'number': '123', 'effectiveDate': '2026-11-24',
+            'pdfUrl': 'https://sandbox.asaas.com/n/1.pdf', 'xmlUrl': 'https://evil.example/x.xml'}}
+        with patch('urllib.request.urlopen') as urlopen:
+            urlopen.return_value.__enter__.return_value.read.return_value = b'%PDF-1'
+            self.assertEqual(self.hook(authorized).json()['status'], 'processed')
+            self.hook(authorized)  # redelivery: no second file
         invoice.refresh_from_db()
         self.assertEqual((invoice.done, invoice.number), (True, '123'))
-        self.assertEqual(WebhookEvent.objects.filter(source='asaas').count(), 3)
+        self.assertEqual(urlopen.call_count, 1)  # only the asaas.com link
+        self.assertEqual([a.name for a in invoice.attachments.all()], ['NFS-e 123.pdf'])
+        self.assertEqual(WebhookEvent.objects.filter(source='asaas').count(), 4)
 
     def test_edits_and_deletes_follow_to_asaas(self):
         self.configure()
