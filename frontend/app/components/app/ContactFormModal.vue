@@ -10,16 +10,17 @@ const props = defineProps<{ initialName?: string; contact?: Contact | null }>()
 const emit = defineEmits<{ created: [contact: Contact]; saved: [contact: Contact] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
-const blank = () => ({ name: '', company_name: '', document: '', email: '', phone: '', postal_code: '', address_number: '', address_complement: '', address_district: '' })
+const blank = () => ({ name: '', kind: 'supplier' as 'customer' | 'supplier', company_name: '', document: '', email: '', phone: '', postal_code: '', address_number: '', address_complement: '', address_district: '' })
 const state = reactive(blank())
 const saving = ref(false)
+const customer = computed(() => state.kind === 'customer')
 
 // Every opening starts clean, with the name typed in the search
 watch(open, (isOpen) => {
   if (!isOpen) return
   const c = props.contact
   Object.assign(state, blank(), c
-    ? { name: c.name, company_name: c.company_name, document: c.document, email: c.email, phone: c.phone,
+    ? { name: c.name, kind: c.kind, company_name: c.company_name, document: c.document, email: c.email, phone: c.phone,
         postal_code: c.postal_code, address_number: c.address_number, address_complement: c.address_complement, address_district: c.address_district }
     : { name: props.initialName?.trim() ?? '' })
 })
@@ -55,32 +56,35 @@ async function save() {
   <UModal v-model:open="open" :title="contact ? 'Editar cliente/fornecedor' : 'Novo cliente/fornecedor'" :ui="{ content: 'max-w-lg' }">
     <template #body>
       <form class="grid gap-4 sm:grid-cols-2" @submit.prevent.stop="save">
-        <UFormField label="Nome" required class="sm:col-span-2">
+        <UFormField label="Nome" required>
           <UInput v-model="state.name" autofocus class="w-full" />
+        </UFormField>
+        <UFormField label="Tipo" required>
+          <USelect v-model="state.kind" :items="[{ label: 'Cliente', value: 'customer' }, { label: 'Fornecedor', value: 'supplier' }]" class="w-full" />
         </UFormField>
         <UFormField label="Razão social">
           <UInput v-model="state.company_name" class="w-full" />
         </UFormField>
-        <UFormField label="CPF/CNPJ">
+        <UFormField label="CPF/CNPJ" :required="customer">
           <UInput v-model="state.document" placeholder="Com ou sem pontuação" class="w-full" />
         </UFormField>
-        <UFormField label="E-mail">
+        <UFormField label="E-mail" :required="customer">
           <UInput v-model="state.email" type="email" class="w-full" />
         </UFormField>
         <UFormField label="Telefone">
           <UInput v-model="state.phone" type="tel" class="w-full" />
         </UFormField>
-        <UFormField label="CEP">
+        <UFormField label="CEP" :required="customer">
           <UInput v-model="state.postal_code" inputmode="numeric" maxlength="9" class="w-full"
                   @update:model-value="(v: any) => (state.postal_code = String(v).replace(/\D/g, '').slice(0, 8))" />
         </UFormField>
-        <UFormField label="Número">
+        <UFormField label="Número" :required="customer">
           <UInput v-model="state.address_number" class="w-full" />
         </UFormField>
         <UFormField label="Complemento">
           <UInput v-model="state.address_complement" class="w-full" />
         </UFormField>
-        <UFormField label="Bairro">
+        <UFormField label="Bairro" :required="customer">
           <UInput v-model="state.address_district" class="w-full" />
         </UFormField>
         <div class="flex justify-end gap-2 sm:col-span-2">

@@ -14,7 +14,8 @@ from apps.users.models import Role, User
 
 DEAL = {
     'deal_id': 1234, 'person_id': 567, 'person_name': 'Fulano da Silva', 'person_email': 'Fulano@Empresa.com',
-    'person_phone': '51999990000', 'client_document': '12.345.678/0001-90', 'company_document': '81.585.365/0001-27',
+    'person_phone': '51999990000', 'client_document': '12.345.678/0001-90', 'client_postal_code': '90000-000', 'client_address_number': '10',
+    'client_address_complement': '', 'client_district': 'Centro', 'company_document': '81.585.365/0001-27',
     'proposal_value': 'R$ 28.996,98', 'product': 'ASSESSORIAS', 'owner_name': 'renato luciano', 'installments': '10',
     'payment_method': 'PARCELADO NO ASAAS', 'notes': 'Obs', 'signed_date': '19/11/2026',
 }
@@ -37,6 +38,12 @@ class PipedriveWebhookTests(TestCase):
     def post(self, body, auth=None):
         return self.client.post('/api/webhooks/pipedrive/deal', data=body, content_type='application/json',
                                 headers={'Authorization': auth or self.basic})
+
+    def test_customer_without_address_is_an_error(self):
+        r = self.post({**DEAL, 'client_district': ''}).json()
+        self.assertEqual(r['status'], 'error')
+        self.assertIn('bairro', r['message'])
+        self.assertFalse(Sale.objects.exists())
 
     def test_rejects_without_credentials(self):
         self.assertEqual(self.post(DEAL, auth='Basic ' + base64.b64encode(b'x:y').decode()).status_code, 401)

@@ -14,7 +14,7 @@ from django.db.models import Case, CharField, Exists, OuterRef, ProtectedError, 
 from apps.companies.services import list_companies_service, normalize_cnpj
 from apps.attachments.models import Attachment
 from apps.finance.models import (
-    TRANSFER_SUBGROUP_NAME, Account, Contact, Group, Invoice, InvoiceKind, SeriesKind, SubGroup, Transaction,
+    CUSTOMER_REQUIRED, TRANSFER_SUBGROUP_NAME, Account, Contact, ContactKind, Group, Invoice, InvoiceKind, SeriesKind, SubGroup, Transaction,
     TransactionSeries, TransactionStatus, TransactionType, Transfer,
 )
 from apps.users.models import User
@@ -76,9 +76,18 @@ def delete_subgroup_service(subgroup_id: int):
 # Contacts services
 
 
+def check_customer(contact: Contact) -> None:
+    if contact.kind != ContactKind.CUSTOMER:
+        return
+    missing = [label for field, label in CUSTOMER_REQUIRED if not getattr(contact, field)]
+    if missing:
+        raise ValidationError(f'Cliente sem {", ".join(missing)}')
+
+
 def create_contact_service(
     *,
     name: str,
+    kind: str = ContactKind.SUPPLIER,
     company_name: str = '',
     document: str = '',
     email: str = '',
@@ -86,17 +95,21 @@ def create_contact_service(
     notes: str = '',
     **address: str,  # postal_code, address_number, address_complement
 ) -> Contact:
+    contact = Contact(
+        name=name.strip(),
+        kind=kind,
+        company_name=company_name.strip(),
+        document=normalize_cnpj(document),
+        email=email.strip().lower(),
+        phone=phone.strip(),
+        notes=notes.strip(),
+        **{k: re.sub(r'\D', '', v)[:8] if k == 'postal_code' else v.strip() for k, v in address.items()},
+    )
+    check_customer(contact)
     try:
         with transaction.atomic():
-            return Contact.objects.create(
-                name=name.strip(),
-                company_name=company_name.strip(),
-                document=normalize_cnpj(document),
-                email=email.strip().lower(),
-                phone=phone.strip(),
-                notes=notes.strip(),
-                **{k: re.sub(r'\D', '', v)[:8] if k == 'postal_code' else v.strip() for k, v in address.items()},
-            )
+            contact.save()
+            return contact
     except IntegrityError:
         raise ValidationError('Contact with this document already exists')
 
@@ -126,6 +139,7 @@ def update_contact_service(*, contact_id: int, **fields) -> Contact:
         fields['postal_code'] = re.sub(r'\D', '', fields['postal_code'])[:8]
     for field, value in fields.items():
         setattr(contact, field, value.strip() if isinstance(value, str) else value)
+    check_customer(contact)
     try:
         with transaction.atomic():
             contact.save(update_fields=list(fields))

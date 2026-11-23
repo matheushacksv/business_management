@@ -42,7 +42,8 @@ class AsaasTests(TestCase):
         self.company = Company.objects.create(name='A', cnpj='81585365000127')
         self.account = finance.create_account_service(user=self.admin, company_id=self.company.pk, name='Banco')
         self.subgroup = finance.create_subgroup_service(name='Assessorias', group=Group.OPERATING_REVENUE)
-        self.contact = Contact.objects.create(name='Fulano', document='12345678000190', email='f@x.com', postal_code='90000000', address_number='10')
+        self.contact = Contact.objects.create(name='Fulano', kind='customer', document='12345678000190', email='f@x.com',
+                                              postal_code='90000000', address_number='10', address_district='Centro')
         self.sale = sales.create_sale_service(user=self.admin, company_id=self.company.pk, date=date(2026, 11, 1),
                                               amount=Decimal('3000'), contact_id=self.contact.pk,
                                               product_id=Product.objects.create(name='ASSESSORIAS').pk)

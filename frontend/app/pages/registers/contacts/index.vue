@@ -33,6 +33,7 @@ async function confirmMerge() {
 const SStatusBadge = resolveComponent('SStatusBadge')
 const columns = [
   { accessorKey: 'name', header: 'Nome' },
+  { accessorKey: 'kind', header: 'Tipo', cell: ({ row }: any) => row.original.kind === 'customer' ? 'Cliente' : 'Fornecedor' },
   { accessorKey: 'company_name', header: 'Razão social' },
   { accessorKey: 'document', header: 'CPF/CNPJ' },
   { accessorKey: 'email', header: 'E-mail' },
@@ -45,7 +46,8 @@ const situationItems = [
   { label: 'Regularizado', value: 'ok' }, { label: 'Atenção', value: 'attention' }, { label: 'Crítico', value: 'critical' },
 ]
 const fields = [
-  { key: 'name', label: 'Nome', required: true, span: 2 as const },
+  { key: 'name', label: 'Nome', required: true },
+  { key: 'kind', label: 'Tipo', type: 'select' as const, options: [{ label: 'Cliente', value: 'customer' }, { label: 'Fornecedor', value: 'supplier' }], required: true },
   { key: 'company_name', label: 'Razão social' },
   { key: 'document', label: 'CPF/CNPJ' },
   { key: 'email', label: 'E-mail', type: 'email' as const },

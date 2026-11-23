@@ -24,7 +24,8 @@ from django.utils import timezone
 from apps.attachments.models import Attachment
 from apps.attachments.services import MAX_SIZE
 from apps.companies.models import Company
-from apps.finance.models import Account, Contact, Invoice, InvoiceKind, Transaction, TransactionStatus, TransactionType
+from apps.finance.models import Account, Contact, ContactKind, Invoice, InvoiceKind, Transaction, TransactionStatus, TransactionType
+from apps.finance.services import check_customer
 from apps.integrations.models import AsaasConfig, EventStatus, WebhookEvent
 from apps.sales.models import Sale
 from apps.users.models import User
@@ -89,10 +90,11 @@ def save_config_service(*, company_id: int, api_key: str | None = None, account_
 # Charges
 
 def _customer_body(c: Contact | None) -> dict:
-    missing = [label for label, value in (('CPF/CNPJ', c and c.document), ('e-mail', c and c.email),
-                                          ('CEP', c and c.postal_code), ('número', c and c.address_number)) if not value]
-    if missing:  # all required by the NFS-e
-        raise ValidationError(f'Cadastro do cliente sem {", ".join(missing)}')
+    if c is None:
+        raise ValidationError('Venda sem cliente')
+    if c.kind != ContactKind.CUSTOMER:
+        raise ValidationError(f'"{c.name}" está cadastrado como fornecedor: mude para cliente e complete o cadastro')
+    check_customer(c)  # everything the NFS-e needs
     return {
         'name': c.company_name or c.name, 'cpfCnpj': c.document, 'email': c.email,  # type:ignore
         'mobilePhone': re.sub(r'\D', '', c.phone)[-11:] or None, 'postalCode': c.postal_code,  # type:ignore

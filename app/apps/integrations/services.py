@@ -15,8 +15,8 @@ from pydantic import BaseModel, ValidationError as PydanticError, field_validato
 
 from apps.companies.models import Company
 from apps.companies.services import normalize_cnpj
-from apps.finance.models import Contact
-from apps.finance.services import create_contact_service, parse_amount
+from apps.finance.models import Contact, ContactKind
+from apps.finance.services import check_customer, parse_amount
 from apps.integrations.models import AsaasConfig, EventStatus, PipedriveConfig, WebhookEvent
 from apps.sales.models import CommissionKind, Product, Sale, Salesperson
 from apps.sales.services import create_commission_service, create_sale_service, generate_receivables_service
@@ -56,6 +56,10 @@ class DealPayload(BaseModel):
     person_email: str = ''
     person_phone: str = ''
     client_document: str = ''
+    client_postal_code: str = ''
+    client_address_number: str = ''
+    client_address_complement: str = ''
+    client_district: str = ''
     company_document: str
     proposal_value: Decimal
     product: str = ''
@@ -92,6 +96,7 @@ class DealPayload(BaseModel):
         return v if v not in ('', None) else None
 
     @field_validator('person_name', 'person_email', 'person_phone', 'client_document', 'company_document',
+                     'client_postal_code', 'client_address_number', 'client_address_complement', 'client_district',
                      'product', 'owner_name', 'payment_method', 'notes', mode='before')
     @classmethod
     def text(cls, v):
@@ -173,20 +178,27 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
 
 
 def _contact(data: DealPayload) -> Contact:
-    """Pipedrive person id, then document, then e-mail; otherwise a new contact. Fills blanks."""
+    """Pipedrive person id, then document, then e-mail; otherwise a new contact. Fills blanks; becomes a
+    customer, so the customer data is required (error on the event)."""
     document = normalize_cnpj(data.client_document)
     contact = (data.person_id and Contact.objects.filter(pipedrive_id=data.person_id).first()) \
         or (document and Contact.objects.filter(document=document).first()) \
         or (data.person_email and Contact.objects.filter(email__iexact=data.person_email).first()) \
-        or create_contact_service(name=data.person_name, document=document, email=data.person_email, phone=data.person_phone)
+        or Contact(name=data.person_name)
+    contact.kind = ContactKind.CUSTOMER
     for field, value in (('pipedrive_id', data.person_id), ('document', document),
-                         ('email', data.person_email.lower()), ('phone', data.person_phone)):
+                         ('email', data.person_email.lower()), ('phone', data.person_phone),
+                         ('postal_code', re.sub(r'\D', '', data.client_postal_code)[:8]),
+                         ('address_number', data.client_address_number[:20]),
+                         ('address_complement', data.client_address_complement[:60]),
+                         ('address_district', data.client_district[:60])):
         if value and not getattr(contact, field):
             if field == 'document' and Contact.objects.filter(document=value).exclude(pk=contact.pk).exists():
                 continue
             if field == 'pipedrive_id' and Contact.objects.filter(pipedrive_id=value).exclude(pk=contact.pk).exists():
                 continue
             setattr(contact, field, value)
+    check_customer(contact)
     contact.save()
     return contact
 

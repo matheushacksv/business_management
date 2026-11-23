@@ -35,6 +35,15 @@ class ContactEndpointTests(TestCase):
 
     # Create
 
+    def test_customer_requires_document_email_and_address(self):
+        r = self.post({'name': 'Cliente', 'kind': 'customer', 'email': 'c@x.com'})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('CPF/CNPJ', r.content.decode())
+        r = self.post({'name': 'Cliente', 'kind': 'customer', 'document': '529.982.247-25', 'email': 'c@x.com',
+                       'postal_code': '90000-000', 'address_number': '10', 'address_district': 'Centro'})
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(r.json()['postal_code'], '90000000')
+
     def test_create_contact_with_name_only(self):
         response = self.post({'name': 'John Doe'})
 

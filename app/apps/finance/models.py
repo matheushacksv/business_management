@@ -48,9 +48,20 @@ class SubGroup(models.Model):
         return f'{self.get_group_display()} / {self.name}'  #type:ignore
 
 
+class ContactKind(models.TextChoices):
+    CUSTOMER = 'customer', 'Cliente'
+    SUPPLIER = 'supplier', 'Fornecedor'
+
+
+# A customer needs these (NFS-e taker / Asaas): field, label
+CUSTOMER_REQUIRED = (('document', 'CPF/CNPJ'), ('email', 'e-mail'), ('postal_code', 'CEP'),
+                     ('address_number', 'número'), ('address_district', 'bairro'))
+
+
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class Contact(models.Model):
     name = models.CharField(max_length=160)
+    kind = models.CharField(max_length=10, choices=ContactKind.choices, default=ContactKind.SUPPLIER)
     company_name = models.CharField(max_length=160, blank=True)
     document = models.CharField(max_length=14, blank=True) # CPF or CNPJ
     email = models.EmailField(max_length=100, blank=True)
@@ -61,7 +72,7 @@ class Contact(models.Model):
     postal_code = models.CharField(max_length=8, blank=True)
     address_number = models.CharField(max_length=20, blank=True)
     address_complement = models.CharField(max_length=60, blank=True)
-    address_district = models.CharField(max_length=60, blank=True)  # needed when the CEP is city-wide
+    address_district = models.CharField(max_length=60, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

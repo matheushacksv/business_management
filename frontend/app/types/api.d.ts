@@ -2009,6 +2009,11 @@ export interface components {
             id?: number | null;
             /** Name */
             name: string;
+            /**
+             * Kind
+             * @default supplier
+             */
+            kind: string;
             /** Company Name */
             company_name?: string | null;
             /** Document */
@@ -2038,10 +2043,17 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * ContactKind
+         * @enum {string}
+         */
+        ContactKind: "customer" | "supplier";
         /** CreateContact */
         CreateContact: {
             /** Name */
             name: string;
+            /** @default supplier */
+            kind: components["schemas"]["ContactKind"];
             /**
              * Company Name
              * @default
@@ -2092,6 +2104,7 @@ export interface components {
         PatchContact: {
             /** Name */
             name?: string | null;
+            kind?: components["schemas"]["ContactKind"] | null;
             /** Company Name */
             company_name?: string | null;
             /** Document */

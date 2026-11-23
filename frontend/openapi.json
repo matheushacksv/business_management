@@ -9129,6 +9129,12 @@
       "title": "Name",
       "type": "string"
      },
+     "kind": {
+      "default": "supplier",
+      "maxLength": 10,
+      "title": "Kind",
+      "type": "string"
+     },
      "company_name": {
       "anyOf": [
        {
@@ -9255,11 +9261,27 @@
     "title": "ContactOut",
     "type": "object"
    },
+   "ContactKind": {
+    "enum": [
+     "customer",
+     "supplier"
+    ],
+    "title": "ContactKind",
+    "type": "string"
+   },
    "CreateContact": {
     "properties": {
      "name": {
       "title": "Name",
       "type": "string"
+     },
+     "kind": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/ContactKind"
+       }
+      ],
+      "default": "supplier"
      },
      "company_name": {
       "default": "",
@@ -9334,6 +9356,16 @@
        }
       ],
       "title": "Name"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ContactKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
      },
      "company_name": {
       "anyOf": [
