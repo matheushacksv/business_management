@@ -9221,6 +9221,18 @@
       ],
       "title": "Address Complement"
      },
+     "address_district": {
+      "anyOf": [
+       {
+        "maxLength": 60,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address District"
+     },
      "created_at": {
       "format": "date-time",
       "title": "Created At",
@@ -9293,6 +9305,11 @@
      "address_complement": {
       "default": "",
       "title": "Address Complement",
+      "type": "string"
+     },
+     "address_district": {
+      "default": "",
+      "title": "Address District",
       "type": "string"
      }
     },
@@ -9407,6 +9424,17 @@
        }
       ],
       "title": "Address Complement"
+     },
+     "address_district": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address District"
      }
     },
     "title": "PatchContact",

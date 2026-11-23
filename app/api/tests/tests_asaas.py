@@ -40,7 +40,7 @@ class AsaasTests(TestCase):
         self.company = Company.objects.create(name='A', cnpj='81585365000127')
         self.account = finance.create_account_service(user=self.admin, company_id=self.company.pk, name='Banco')
         self.subgroup = finance.create_subgroup_service(name='Assessorias', group=Group.OPERATING_REVENUE)
-        self.contact = Contact.objects.create(name='Fulano', document='12345678000190', postal_code='90000000', address_number='10')
+        self.contact = Contact.objects.create(name='Fulano', document='12345678000190', email='f@x.com', postal_code='90000000', address_number='10')
         self.sale = sales.create_sale_service(user=self.admin, company_id=self.company.pk, date=date(2026, 11, 1),
                                               amount=Decimal('3000'), contact_id=self.contact.pk,
                                               product_id=Product.objects.create(name='ASSESSORIAS').pk)
@@ -108,6 +108,9 @@ class AsaasTests(TestCase):
         tx = Transaction.objects.filter(series__isnull=False).first()
         finance.update_transaction_service(user=self.admin, transaction_id=tx.pk, date=date(2026, 12, 15))
         self.assertEqual(self.fake.calls[-1][:3], ('POST', f'/payments/{tx.asaas_id}', {'dueDate': '2026-12-15', 'value': float(tx.amount)}))
+        self.hook({'event': 'PAYMENT_UPDATED', 'payment': {'id': tx.asaas_id, 'dueDate': '2026-12-20', 'value': 1500}})
+        tx.refresh_from_db()
+        self.assertEqual((tx.date, tx.amount), (date(2026, 12, 20), Decimal('1500')))
         sales.delete_sale_service(user=self.admin, sale_id=self.sale.pk)
         self.assertEqual(len(self.fake.made('DELETE', f'/payments/{tx.asaas_id}')), 1)
         self.assertEqual(len([c for c in self.fake.calls if c[0] == 'DELETE']), 3)

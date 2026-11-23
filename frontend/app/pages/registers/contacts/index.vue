@@ -52,7 +52,8 @@ const fields = [
   { key: 'phone', label: 'Telefone' },
   { key: 'postal_code', label: 'CEP' },
   { key: 'address_number', label: 'Número' },
-  { key: 'address_complement', label: 'Complemento', span: 2 as const },
+  { key: 'address_complement', label: 'Complemento' },
+  { key: 'address_district', label: 'Bairro' },
 ]
 </script>
 

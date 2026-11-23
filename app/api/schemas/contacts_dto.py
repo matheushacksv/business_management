@@ -17,6 +17,7 @@ class CreateContact(Schema):
     postal_code: str = ''
     address_number: str = ''
     address_complement: str = ''
+    address_district: str = ''
 
 
 class PatchContact(Schema):
@@ -29,6 +30,7 @@ class PatchContact(Schema):
     postal_code: str | None = None
     address_number: str | None = None
     address_complement: str | None = None
+    address_district: str | None = None
 
 
 class MergeContacts(Schema):
@@ -44,7 +46,7 @@ class ContactOut(ModelSchema):
     class Meta:
         model = Contact
         fields = ['id', 'name', 'company_name', 'document', 'email', 'phone', 'notes',
-                  'postal_code', 'address_number', 'address_complement', 'created_at', 'updated_at']
+                  'postal_code', 'address_number', 'address_complement', 'address_district', 'created_at', 'updated_at']
 
 
 class ContactSalesSummary(Schema):

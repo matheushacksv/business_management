@@ -2025,6 +2025,8 @@ export interface components {
             address_number?: string | null;
             /** Address Complement */
             address_complement?: string | null;
+            /** Address District */
+            address_district?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2080,6 +2082,11 @@ export interface components {
              * @default
              */
             address_complement: string;
+            /**
+             * Address District
+             * @default
+             */
+            address_district: string;
         };
         /** PatchContact */
         PatchContact: {
@@ -2101,6 +2108,8 @@ export interface components {
             address_number?: string | null;
             /** Address Complement */
             address_complement?: string | null;
+            /** Address District */
+            address_district?: string | null;
         };
         /** ContactMoneySummary */
         ContactMoneySummary: {

@@ -61,6 +61,7 @@ class Contact(models.Model):
     postal_code = models.CharField(max_length=8, blank=True)
     address_number = models.CharField(max_length=20, blank=True)
     address_complement = models.CharField(max_length=60, blank=True)
+    address_district = models.CharField(max_length=60, blank=True)  # needed when the CEP is city-wide
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

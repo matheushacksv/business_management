@@ -10,7 +10,7 @@ const props = defineProps<{ initialName?: string; contact?: Contact | null }>()
 const emit = defineEmits<{ created: [contact: Contact]; saved: [contact: Contact] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
-const blank = () => ({ name: '', company_name: '', document: '', email: '', phone: '', postal_code: '', address_number: '', address_complement: '' })
+const blank = () => ({ name: '', company_name: '', document: '', email: '', phone: '', postal_code: '', address_number: '', address_complement: '', address_district: '' })
 const state = reactive(blank())
 const saving = ref(false)
 
@@ -20,7 +20,7 @@ watch(open, (isOpen) => {
   const c = props.contact
   Object.assign(state, blank(), c
     ? { name: c.name, company_name: c.company_name, document: c.document, email: c.email, phone: c.phone,
-        postal_code: c.postal_code, address_number: c.address_number, address_complement: c.address_complement }
+        postal_code: c.postal_code, address_number: c.address_number, address_complement: c.address_complement, address_district: c.address_district }
     : { name: props.initialName?.trim() ?? '' })
 })
 
@@ -77,8 +77,11 @@ async function save() {
         <UFormField label="Número">
           <UInput v-model="state.address_number" class="w-full" />
         </UFormField>
-        <UFormField label="Complemento" class="sm:col-span-2">
+        <UFormField label="Complemento">
           <UInput v-model="state.address_complement" class="w-full" />
+        </UFormField>
+        <UFormField label="Bairro">
+          <UInput v-model="state.address_district" class="w-full" />
         </UFormField>
         <div class="flex justify-end gap-2 sm:col-span-2">
           <UButton label="Cancelar" color="neutral" variant="ghost" @click="open = false" />

@@ -20,13 +20,13 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.companies.models import Company
-from apps.finance.models import Account, Invoice, InvoiceKind, Transaction, TransactionStatus, TransactionType
+from apps.finance.models import Account, Contact, Invoice, InvoiceKind, Transaction, TransactionStatus, TransactionType
 from apps.integrations.models import AsaasConfig, EventStatus, WebhookEvent
 from apps.sales.models import Sale
 from apps.users.models import User
 
 BASE_URL = {True: 'https://api-sandbox.asaas.com/v3', False: 'https://api.asaas.com/v3'}
-PAID = {'PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED_IN_CASH'}
+PAID = {'PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED'}
 CENT = Decimal('0.01')
 
 
@@ -84,21 +84,26 @@ def save_config_service(*, company_id: int, api_key: str | None = None, account_
 
 # Charges
 
+def _customer_body(c: Contact | None) -> dict:
+    missing = [label for label, value in (('CPF/CNPJ', c and c.document), ('e-mail', c and c.email),
+                                          ('CEP', c and c.postal_code), ('número', c and c.address_number)) if not value]
+    if missing:  # all required by the NFS-e
+        raise ValidationError(f'Cadastro do cliente sem {", ".join(missing)}')
+    return {
+        'name': c.company_name or c.name, 'cpfCnpj': c.document, 'email': c.email,  # type:ignore
+        'mobilePhone': re.sub(r'\D', '', c.phone)[-11:] or None, 'postalCode': c.postal_code,  # type:ignore
+        'addressNumber': c.address_number, 'complement': c.address_complement or None,  # type:ignore
+        'province': c.address_district or None, 'notificationDisabled': True,  # type:ignore
+    }
+
+
 def _customer(config: AsaasConfig, sale: Sale) -> str:
-    c = sale.contact
-    if c is None or not c.document:
-        raise ValidationError('Cliente sem CPF/CNPJ')
-    found = [x for x in request(config, 'GET', '/customers', cpfCnpj=c.document)['data'] if not x.get('deleted')]
+    """Found by CPF/CNPJ (then updated with the system's data) or created."""
+    body = _customer_body(sale.contact)
+    found = [x for x in request(config, 'GET', '/customers', cpfCnpj=body['cpfCnpj'])['data'] if not x.get('deleted')]
     if found:
-        return found[0]['id']
-    if not (c.postal_code and c.address_number):
-        raise ValidationError('Cliente sem CEP e número do endereço (necessários para a NFS-e)')
-    return request(config, 'POST', '/customers', {
-        'name': c.company_name or c.name, 'cpfCnpj': c.document, 'email': c.email or None,
-        'mobilePhone': re.sub(r'\D', '', c.phone)[-11:] or None, 'postalCode': c.postal_code,
-        'addressNumber': c.address_number, 'complement': c.address_complement or None,
-        'notificationDisabled': True,
-    })['id']
+        return request(config, 'POST', f'/customers/{found[0]["id"]}', body)['id']
+    return request(config, 'POST', '/customers', body)['id']
 
 
 def _label(tx: Transaction) -> str:
@@ -169,6 +174,8 @@ def process_event_service(*, event: WebhookEvent) -> WebhookEvent:
     try:
         if payload.get('event') in PAID:
             event.status, event.message = _paid(payload['payment'])
+        elif payload.get('event') == 'PAYMENT_UPDATED':
+            event.status, event.message = _updated(payload['payment'])
         elif str(payload.get('event', '')).startswith('INVOICE_'):
             event.status, event.message = _invoice_update(payload['invoice'])
         else:
@@ -186,7 +193,7 @@ def process_event_service(*, event: WebhookEvent) -> WebhookEvent:
 
 
 def _paid(p: dict) -> tuple[str, str]:
-    tx = Transaction.objects.select_related('company', 'series', 'sale__product').filter(asaas_id=p['id']).first()
+    tx = Transaction.objects.select_related('company', 'contact', 'series', 'sale__product').filter(asaas_id=p['id']).first()
     if tx is None:
         return EventStatus.IGNORED, 'Cobrança fora do sistema'
     config = _config(tx.company_id)  # type:ignore
@@ -200,15 +207,31 @@ def _paid(p: dict) -> tuple[str, str]:
         if invoice and (invoice.asaas_id or invoice.done):
             return EventStatus.PROCESSED, 'Parcela baixada; NFS-e já existia'
         found = [i for i in request(config, 'GET', '/invoices', payment=p['id'])['data'] if i.get('status') != 'CANCELED']
+        if not found and p.get('customer'):  # customer data fixed in the system since the charge: Reprocess picks it up
+            request(config, 'POST', f'/customers/{p["customer"]}', _customer_body(tx.contact))
         data = found[0] if found else request(config, 'POST', '/invoices', _invoice_body(config, tx, p))
         Invoice.objects.update_or_create(transaction=tx, kind=InvoiceKind.SERVICE, defaults={'asaas_id': data['id']})
     return EventStatus.PROCESSED, 'Parcela baixada; NFS-e solicitada'
 
 
+def _updated(p: dict) -> tuple[str, str]:
+    """Due date / value changed on Asaas: same on the open receivable."""
+    tx = Transaction.objects.filter(asaas_id=p['id'], status=TransactionStatus.PLANNED).first()
+    if tx is None:
+        return EventStatus.IGNORED, 'Cobrança fora do sistema ou já baixada'
+    date, amount = dt.date.fromisoformat(p['dueDate']), Decimal(str(p['value']))
+    if (tx.date, tx.amount) == (date, amount):
+        return EventStatus.IGNORED, 'Sem mudança'
+    tx.date, tx.amount = date, amount
+    with pghistory.context(source='asaas'):
+        tx.save(update_fields=['date', 'amount', 'updated_at'])
+    return EventStatus.PROCESSED, f'Vencimento {date:%d/%m/%Y}, valor {amount}'
+
+
 def _invoice_body(config: AsaasConfig, tx: Transaction, p: dict) -> dict:
     sale = tx.sale
-    if not (config.service_id or config.service_name):
-        raise ValidationError('Serviço municipal da NFS-e não configurado')
+    if not config.service_name:  # Asaas requires the name even with the id
+        raise ValidationError('Nome do serviço municipal da NFS-e não configurado (Integrações)')
     percent = config.invoice_percent.normalize()
     description = config.description_template.format(
         percent=f'{percent:f}'.replace('.', ','), reference=_label(tx).lower(),
