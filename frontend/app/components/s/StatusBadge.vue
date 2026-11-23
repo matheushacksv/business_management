@@ -25,7 +25,7 @@ const map: Record<string, Record<string, { label: string; color: 'success' | 'er
   invoice: {
     missing_invoice: { label: 'Sem nota', color: 'warning' },
     missing_attachment: { label: 'Sem arquivo', color: 'primary' },
-    done: { label: 'OK', color: 'success' },
+    done: { label: 'Completa', color: 'success' },
   },
 }
 

@@ -42,7 +42,7 @@ class InvoiceOut(ModelSchema):
 
 
 class PendingInvoiceOut(InvoiceOut):
-    pending_reason: Literal['missing_invoice', 'missing_attachment']
+    pending_reason: Literal['missing_invoice', 'missing_attachment', 'done']
     transaction_date: dt.date = Field(alias='transaction.date')
     transaction_amount: Decimal = Field(alias='transaction.amount')
     company_id: int = Field(alias='transaction.company_id')
@@ -61,5 +61,5 @@ class PendingInvoiceFilters(Schema):
     date_to: dt.date | None = None
     direction: Literal['receive', 'issue'] | None = None
     kind: InvoiceKind | None = None
-    reason: Literal['missing_invoice', 'missing_attachment'] | None = None
+    reason: Literal['pending', 'all', 'missing_invoice', 'missing_attachment', 'done'] | None = None
     contact_id: int | None = None

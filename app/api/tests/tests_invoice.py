@@ -247,6 +247,14 @@ class InvoiceEndpointTests(TestCase):
 
         self.assertEqual([i['id'] for i in self.pending()], [inv.pk])
 
+    def test_complete_ones_only_when_asked(self):
+        pending = self.invoice()
+        complete = self.invoice(tx=self.revenue, done=True, issue_date=date(2026, 2, 5), number='1')
+        self.attach(complete)
+        self.assertEqual([i['id'] for i in self.pending()], [pending.pk])
+        self.assertEqual([i['id'] for i in self.pending('reason=done')], [complete.pk])
+        self.assertCountEqual([i['id'] for i in self.pending('reason=all')], [pending.pk, complete.pk])
+
     def test_pending_filters(self):
         to_receive = self.invoice()
         to_issue = self.invoice(tx=self.revenue, kind=InvoiceKind.PRODUCT)

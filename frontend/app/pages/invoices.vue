@@ -13,7 +13,7 @@ const SStatusBadge = resolveComponent('SStatusBadge')
 const SMoney = resolveComponent('SMoney')
 
 const filters = reactive({
-  direction: undefined as string | undefined, kind: undefined as string | undefined, reason: undefined as string | undefined,
+  direction: undefined as string | undefined, kind: undefined as string | undefined, reason: 'all',
   company_id: [] as number[], date_from: '', date_to: today(),
 })
 const page = ref(1)
@@ -47,36 +47,43 @@ const columns: TableColumn<Pending>[] = [
     h('p', LABELS.invoiceKind[row.original.kind]),
     h('p', { class: 'text-xs text-dimmed' }, row.original.direction === 'receive' ? 'Receber do fornecedor' : 'Emitir ao cliente'),
   ]) },
-  { accessorKey: 'pending_reason', header: 'Pendência', cell: ({ row }) => h(SStatusBadge, { kind: 'invoice', value: row.original.pending_reason }) },
+  { accessorKey: 'number', header: 'Número', cell: ({ row }) => row.original.done ? h('div', [
+    h('p', row.original.number || '—'),
+    row.original.issue_date && h('p', { class: 'text-xs text-dimmed' }, formatDate(row.original.issue_date)),
+  ]) : '—' },
+  { accessorKey: 'pending_reason', header: 'Situação', cell: ({ row }) => h(SStatusBadge, { kind: 'invoice', value: row.original.pending_reason }) },
   { accessorKey: 'transaction_amount', header: () => h('span', { class: 'block text-right' }, 'Valor'),
     cell: ({ row }) => h('div', { class: 'text-right' }, h(SMoney, { value: row.original.transaction_amount })) },
 ]
 
+const REASONS = [
+  { label: 'Todas', value: 'all' }, { label: 'Pendentes', value: 'pending' }, { label: 'Sem nota', value: 'missing_invoice' },
+  { label: 'Sem arquivo', value: 'missing_attachment' }, { label: 'Completas', value: 'done' },
+]
 const selected = ref<number | null>(null)
 const drawerOpen = ref(false)
 </script>
 
 <template>
-  <AppPage title="Notas fiscais pendentes">
+  <AppPage title="Notas fiscais">
     <template #toolbar>
       <USelect v-model="filters.direction" :items="[{ label: 'A receber', value: 'receive' }, { label: 'A emitir', value: 'issue' }]"
                placeholder="Receber e emitir" class="w-44" />
       <USelect v-model="filters.kind" :items="[{ label: 'Serviço', value: 'service' }, { label: 'Produto', value: 'product' }]"
                placeholder="Serviço e produto" class="w-44" />
-      <USelect v-model="filters.reason" :items="[{ label: 'Sem nota', value: 'missing_invoice' }, { label: 'Sem arquivo', value: 'missing_attachment' }]"
-               placeholder="Toda pendência" class="w-44" />
+      <USelect v-model="filters.reason" :items="REASONS" class="w-44" />
       <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple placeholder="Empresas" class="w-44" />
       <UInput v-model="filters.date_from" type="date" class="w-40" aria-label="De" />
       <UInput v-model="filters.date_to" type="date" class="w-40" aria-label="Até" />
     </template>
 
     <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
-      <UTable :data="items" :columns="columns" :loading="loading" sticky empty="Nenhuma nota pendente 🎉"
+      <UTable :data="items" :columns="columns" :loading="loading" sticky empty="Nenhuma nota"
               class="max-h-[calc(100dvh-16rem)]"
               @select="(_: Event, row: any) => { selected = row.original.transaction_id; drawerOpen = true }" />
     </div>
     <div class="flex items-center justify-between text-sm text-muted">
-      <span>{{ count.toLocaleString('pt-BR') }} pendência(s) · clique para abrir o lançamento</span>
+      <span>{{ count.toLocaleString('pt-BR') }} nota(s)</span>
       <UPagination v-if="count > 50" v-model:page="page" :total="count" :items-per-page="50" />
     </div>
 

@@ -3028,7 +3028,7 @@ export interface components {
             direction?: ("receive" | "issue") | null;
             kind?: components["schemas"]["InvoiceKind"] | null;
             /** Reason */
-            reason?: ("missing_invoice" | "missing_attachment") | null;
+            reason?: ("pending" | "all" | "missing_invoice" | "missing_attachment" | "done") | null;
             /** Contact Id */
             contact_id?: number | null;
         };
@@ -3080,7 +3080,7 @@ export interface components {
              * Pending Reason
              * @enum {string}
              */
-            pending_reason: "missing_invoice" | "missing_attachment";
+            pending_reason: "missing_invoice" | "missing_attachment" | "done";
             /**
              * Transaction Date
              * Format: date
@@ -6035,7 +6035,7 @@ export interface operations {
                 date_to?: string | null;
                 direction?: ("receive" | "issue") | null;
                 kind?: components["schemas"]["InvoiceKind"] | null;
-                reason?: ("missing_invoice" | "missing_attachment") | null;
+                reason?: ("pending" | "all" | "missing_invoice" | "missing_attachment" | "done") | null;
                 contact_id?: number | null;
                 page?: number;
                 page_size?: number | null;

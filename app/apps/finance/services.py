@@ -615,7 +615,8 @@ def pending_invoices_service(
     direction: str | None = None, kind: str | None = None, reason: str | None = None,
     contact_id: int | None = None,
 ):
-    """NFs still pending: not received/issued yet, or done but without the file attached."""
+    """NFs by situation. reason: None/'pending' = not received/issued yet or done without the file;
+    'all'; or one situation (missing_invoice, missing_attachment, done)."""
     has_attachment = Attachment.objects.filter(
         content_type=ContentType.objects.get_for_model(Invoice), object_id=OuterRef('pk')
     )
@@ -625,19 +626,24 @@ def pending_invoices_service(
             has_attachment=Exists(has_attachment),
             pending_reason=Case(
                 When(done=False, then=Value('missing_invoice')),
-                default=Value('missing_attachment'),
+                When(has_attachment=False, then=Value('missing_attachment')),
+                default=Value('done'),
                 output_field=CharField(),
             ),
         )
-        .filter(Q(done=False) | Q(has_attachment=False))
         .select_related('transaction__company', 'transaction__contact')
     )
     filters = {
         'transaction__company_id__in': company_id, 'transaction__date__gte': date_from,
-        'transaction__date__lte': date_to, 'kind': kind, 'pending_reason': reason,
+        'transaction__date__lte': date_to, 'kind': kind,
+        'pending_reason': None if reason in (None, 'pending', 'all') else reason,
         'transaction__contact_id': contact_id,
         'transaction__type': {'receive': TransactionType.OUTFLOW, 'issue': TransactionType.INFLOW}.get(direction or ''),
     }
+    if reason in (None, 'pending'):
+        qs = qs.exclude(pending_reason='done')  # oldest pending first (model ordering)
+    else:
+        qs = qs.order_by('-transaction__date', '-id')
     return qs.filter(**{k: v for k, v in filters.items() if v not in (None, [])})
 
 

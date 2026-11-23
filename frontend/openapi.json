@@ -4405,8 +4405,11 @@
        "anyOf": [
         {
          "enum": [
+          "pending",
+          "all",
           "missing_invoice",
-          "missing_attachment"
+          "missing_attachment",
+          "done"
          ],
          "type": "string"
         },
@@ -12391,8 +12394,11 @@
       "anyOf": [
        {
         "enum": [
+         "pending",
+         "all",
          "missing_invoice",
-         "missing_attachment"
+         "missing_attachment",
+         "done"
         ],
         "type": "string"
        },
@@ -12522,7 +12528,8 @@
      "pending_reason": {
       "enum": [
        "missing_invoice",
-       "missing_attachment"
+       "missing_attachment",
+       "done"
       ],
       "title": "Pending Reason",
       "type": "string"
