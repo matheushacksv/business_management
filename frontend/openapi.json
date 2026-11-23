@@ -8341,6 +8341,167 @@
      }
     ]
    }
+  },
+  "/api/webhooks/asaas": {
+   "post": {
+    "operationId": "api_endpoints_integrations_asaas_webhook",
+    "summary": "Asaas Webhook",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WebhookResult"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ]
+   }
+  },
+  "/api/integrations/asaas": {
+   "get": {
+    "operationId": "api_endpoints_integrations_list_asaas_configs",
+    "summary": "List Asaas Configs",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AsaasConfigOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/asaas/{company_id}": {
+   "put": {
+    "operationId": "api_endpoints_integrations_update_asaas_config",
+    "summary": "Update Asaas Config",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AsaasConfigOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AsaasConfigIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/sale/{sale_id}/asaas-charges": {
+   "post": {
+    "operationId": "api_endpoints_integrations_create_asaas_charges",
+    "summary": "Create Asaas Charges",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "sale_id",
+      "schema": {
+       "title": "Sale Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ChargesOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
   }
  },
  "components": {
@@ -9024,6 +9185,42 @@
       ],
       "title": "Notes"
      },
+     "postal_code": {
+      "anyOf": [
+       {
+        "maxLength": 8,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Postal Code"
+     },
+     "address_number": {
+      "anyOf": [
+       {
+        "maxLength": 20,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address Number"
+     },
+     "address_complement": {
+      "anyOf": [
+       {
+        "maxLength": 60,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address Complement"
+     },
      "created_at": {
       "format": "date-time",
       "title": "Created At",
@@ -9081,6 +9278,21 @@
      "notes": {
       "default": "",
       "title": "Notes",
+      "type": "string"
+     },
+     "postal_code": {
+      "default": "",
+      "title": "Postal Code",
+      "type": "string"
+     },
+     "address_number": {
+      "default": "",
+      "title": "Address Number",
+      "type": "string"
+     },
+     "address_complement": {
+      "default": "",
+      "title": "Address Complement",
       "type": "string"
      }
     },
@@ -9162,6 +9374,39 @@
        }
       ],
       "title": "Notes"
+     },
+     "postal_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Postal Code"
+     },
+     "address_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address Number"
+     },
+     "address_complement": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Address Complement"
      }
     },
     "title": "PatchContact",
@@ -9540,6 +9785,18 @@
        }
       ],
       "title": "Notes"
+     },
+     "asaas_id": {
+      "anyOf": [
+       {
+        "maxLength": 40,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Asaas Id"
      },
      "created_at": {
       "format": "date-time",
@@ -16009,6 +16266,10 @@
       "title": "Id",
       "type": "integer"
      },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
      "key": {
       "title": "Key",
       "type": "string"
@@ -16056,6 +16317,7 @@
     },
     "required": [
      "id",
+     "source",
      "key",
      "status",
      "message",
@@ -16086,6 +16348,206 @@
      "count"
     ],
     "title": "PagedEventOut",
+    "type": "object"
+   },
+   "AsaasConfigOut": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "has_key": {
+      "title": "Has Key",
+      "type": "boolean"
+     },
+     "sandbox": {
+      "title": "Sandbox",
+      "type": "boolean"
+     },
+     "webhook_token": {
+      "title": "Webhook Token",
+      "type": "string"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "fine_percent": {
+      "title": "Fine Percent",
+      "type": "string"
+     },
+     "interest_percent": {
+      "title": "Interest Percent",
+      "type": "string"
+     },
+     "invoice_percent": {
+      "title": "Invoice Percent",
+      "type": "string"
+     },
+     "service_id": {
+      "title": "Service Id",
+      "type": "string"
+     },
+     "service_name": {
+      "title": "Service Name",
+      "type": "string"
+     },
+     "iss_rate": {
+      "title": "Iss Rate",
+      "type": "string"
+     },
+     "description_template": {
+      "title": "Description Template",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "company_name",
+     "has_key",
+     "sandbox",
+     "webhook_token",
+     "account_id",
+     "fine_percent",
+     "interest_percent",
+     "invoice_percent",
+     "service_id",
+     "service_name",
+     "iss_rate",
+     "description_template"
+    ],
+    "title": "AsaasConfigOut",
+    "type": "object"
+   },
+   "AsaasConfigIn": {
+    "properties": {
+     "api_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Api Key"
+     },
+     "sandbox": {
+      "title": "Sandbox",
+      "type": "boolean"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "fine_percent": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Fine Percent"
+     },
+     "interest_percent": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Interest Percent"
+     },
+     "invoice_percent": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "maximum": 100.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Invoice Percent"
+     },
+     "service_id": {
+      "title": "Service Id",
+      "type": "string"
+     },
+     "service_name": {
+      "title": "Service Name",
+      "type": "string"
+     },
+     "iss_rate": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Iss Rate"
+     },
+     "description_template": {
+      "title": "Description Template",
+      "type": "string"
+     }
+    },
+    "required": [
+     "sandbox",
+     "account_id",
+     "fine_percent",
+     "interest_percent",
+     "invoice_percent",
+     "service_id",
+     "service_name",
+     "iss_rate",
+     "description_template"
+    ],
+    "title": "AsaasConfigIn",
+    "type": "object"
+   },
+   "ChargesOut": {
+    "properties": {
+     "created": {
+      "title": "Created",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "created"
+    ],
+    "title": "ChargesOut",
     "type": "object"
    }
   },

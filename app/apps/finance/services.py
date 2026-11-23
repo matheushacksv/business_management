@@ -84,6 +84,7 @@ def create_contact_service(
     email: str = '',
     phone: str = '',
     notes: str = '',
+    **address: str,  # postal_code, address_number, address_complement
 ) -> Contact:
     try:
         with transaction.atomic():
@@ -94,6 +95,7 @@ def create_contact_service(
                 email=email.strip().lower(),
                 phone=phone.strip(),
                 notes=notes.strip(),
+                **{k: v.strip() for k, v in address.items()},
             )
     except IntegrityError:
         raise ValidationError('Contact with this document already exists')
@@ -372,8 +374,12 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
     for field in ('reference', 'notes'):
         if field in fields:
             fields[field] = fields[field].strip()
+    was_planned = tx.status == TransactionStatus.PLANNED
     for field, value in fields.items():
         setattr(tx, field, value)
+    if was_planned and tx.asaas_id and {'date', 'amount'} & set(fields):
+        from apps.integrations.asaas import sync_charge
+        sync_charge(tx)
     try:
         with transaction.atomic(), pghistory.context(user=user.pk):
             tx.save(update_fields=[*fields, 'updated_at'])
@@ -385,6 +391,8 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
 def delete_transaction_service(*, user: User, transaction_id: int) -> None:
     tx = get_transaction_service(user=user, transaction_id=transaction_id)
     _reject_transfer_leg(tx)
+    from apps.integrations.asaas import sync_charge
+    sync_charge(tx, deleted=True)
     with transaction.atomic(), pghistory.context(user=user.pk):
         tx.delete()
 

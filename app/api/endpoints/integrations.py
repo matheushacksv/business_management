@@ -3,11 +3,15 @@ import json
 from ninja import Router
 from ninja.pagination import PageNumberPagination, paginate
 
-from api.schemas.integrations_dto import CredentialsOut, EventOut, PipedriveConfigIn, PipedriveConfigOut, WebhookResult
+from api.schemas.integrations_dto import (
+    AsaasConfigIn, AsaasConfigOut, ChargesOut, CredentialsOut, EventOut, PipedriveConfigIn, PipedriveConfigOut,
+    WebhookResult,
+)
+from apps.companies.models import Company
 from apps.finance.models import SubGroup
-from apps.integrations import services
-from apps.integrations.models import PipedriveConfig, WebhookEvent
-from apps.users.permissions import CHANGE, VIEW, require_permission
+from apps.integrations import asaas, services
+from apps.integrations.models import AsaasConfig, PipedriveConfig, WebhookEvent
+from apps.users.permissions import CHANGE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Integrations'])
 
@@ -69,3 +73,48 @@ def list_events(request, status: str | None = None):
 @require_permission('users', CHANGE)
 def reprocess_event(request, event_id: int):
     return services.reprocess_event_service(event_id=event_id)
+
+
+# Asaas
+
+@router.post('/webhooks/asaas', auth=None, response={200: WebhookResult, 400: dict, 401: dict})
+def asaas_webhook(request):
+    if not asaas.authenticate(request.headers.get('asaas-access-token')):
+        return 401, {'detail': 'Invalid token'}
+    try:
+        payload = json.loads(request.body or b'{}')
+    except ValueError:
+        return 400, {'detail': 'Body must be JSON'}
+    if not isinstance(payload, dict):
+        return 400, {'detail': 'Body must be a JSON object'}
+    return asaas.receive_event_service(payload=payload)  # 200 even on error: Asaas pauses the queue otherwise
+
+
+def _asaas_out(company: Company) -> dict:
+    config = AsaasConfig.objects.filter(company=company).first() or AsaasConfig(company=company)
+    return {
+        'company_id': company.pk, 'company_name': company.name, 'has_key': bool(config.api_key),
+        'sandbox': config.sandbox, 'webhook_token': config.webhook_token, 'account_id': config.account_id,
+        **{f: getattr(config, f) for f in ('fine_percent', 'interest_percent', 'invoice_percent', 'service_id',
+                                           'service_name', 'iss_rate', 'description_template')},
+    }
+
+
+@router.get('/integrations/asaas', response=list[AsaasConfigOut])
+@require_permission('users', VIEW)
+def list_asaas_configs(request):
+    return [_asaas_out(c) for c in Company.objects.order_by('name')]
+
+
+@router.put('/integrations/asaas/{company_id}', response=AsaasConfigOut)
+@require_permission('users', CHANGE)
+def update_asaas_config(request, company_id: int, data: AsaasConfigIn):
+    config = asaas.save_config_service(company_id=company_id, **data.dict())
+    return _asaas_out(config.company)
+
+
+@router.post('/sale/{sale_id}/asaas-charges', response=ChargesOut, tags=['Sales'])
+@require_permission('sales', CHANGE)
+def create_asaas_charges(request, sale_id: int):
+    check_permission(request.user, 'transactions', CHANGE)
+    return {'created': asaas.create_charges_service(user=request.user, sale_id=sale_id)}

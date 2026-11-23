@@ -96,6 +96,22 @@ async function remove() {
   }
 }
 
+const withoutCharge = computed(() => receivables.value.filter(t => t.status === 'planned' && !t.asaas_id).length)
+const charging = ref(false)
+async function createCharges() {
+  charging.value = true
+  try {
+    const r = await unwrap(api.POST('/api/sale/{sale_id}/asaas-charges', { params: { path: { sale_id: sale.value!.id! } } }))
+    notifySuccess(`${r.created} cobrança(s) criada(s) no Asaas`)
+    await load()
+  } catch (e) {
+    notifyError(e)
+    await load()
+  } finally {
+    charging.value = false
+  }
+}
+
 async function setDate(r: Transaction, date: string) {
   if (!date || date === r.date) return
   try {
@@ -168,11 +184,16 @@ async function saved() {
                         aria-label="Vencimento" @change="(e: Event) => setDate(r, (e.target as HTMLInputElement).value)" />
                 <span v-else class="w-24 text-muted tabular">{{ formatDate(r.date) }}</span>
                 <span class="flex-1 truncate">{{ r.reference || (r.series_index ? `Parcela ${r.series_index}` : 'Parcela') }}</span>
+                <UTooltip v-if="r.asaas_id" :text="`Asaas ${r.asaas_id}`">
+                  <UIcon name="i-lucide-receipt" class="size-4 text-primary" />
+                </UTooltip>
                 <SStatusBadge kind="status" :value="r.status" />
                 <SMoney :value="r.amount" class="w-28 text-right" />
               </li>
             </ul>
             <p v-else class="text-sm text-dimmed">Nenhuma parcela programada ainda.</p>
+            <UButton v-if="canChange && auth.can('transactions', 'change') && withoutCharge" label="Gerar cobranças no Asaas"
+                     icon="i-lucide-receipt" color="neutral" variant="outline" :loading="charging" @click="createCharges" />
 
             <SPanel v-if="canChange && auth.can('transactions', 'create') && toSchedule > 0.005" title="Programar recebimento"
                     :description="`Falta programar ${formatMoney(toSchedule)}`">

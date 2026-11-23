@@ -105,7 +105,7 @@ class TransactionOut(ModelSchema):
         model = Transaction
         fields = [
             'id', 'company', 'subgroup', 'account', 'contact', 'date', 'amount',
-            'type', 'status', 'reference', 'notes', 'created_at', 'updated_at',
+            'type', 'status', 'reference', 'notes', 'asaas_id', 'created_at', 'updated_at',
         ]
 
 

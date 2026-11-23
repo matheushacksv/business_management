@@ -57,6 +57,10 @@ class Contact(models.Model):
     phone = models.CharField(max_length=50, blank=True)
     notes = models.TextField(blank=True)
     pipedrive_id = models.PositiveBigIntegerField(null=True, blank=True, unique=True)  # person id
+    # address of the NFS-e taker (Asaas fills street/city from the CEP)
+    postal_code = models.CharField(max_length=8, blank=True)
+    address_number = models.CharField(max_length=20, blank=True)
+    address_complement = models.CharField(max_length=60, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -158,6 +162,7 @@ class Transaction(models.Model):
     collection_case = models.ForeignKey(  # planned + linked = out of DRE / cash flow (uncertain)
         'legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions'
     )
+    asaas_id = models.CharField(max_length=40, blank=True, db_index=True)  # charge (pay_...)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -196,6 +201,7 @@ class Invoice(models.Model):
     number = models.CharField(max_length=60, blank=True)
     issue_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    asaas_id = models.CharField(max_length=40, blank=True, db_index=True)  # NFS-e issued by Asaas (inv_...)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

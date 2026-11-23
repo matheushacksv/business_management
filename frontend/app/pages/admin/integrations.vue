@@ -91,8 +91,9 @@ const LABEL: Record<string, { label: string; color: 'success' | 'neutral' | 'err
 }
 const columns: TableColumn<Event>[] = [
   { accessorKey: 'received_at', header: 'Recebido', cell: ({ row }) => formatDateTime(row.original.received_at) },
-  { accessorKey: 'key', header: 'Negócio', cell: ({ row }) => h('div', [
-    h('p', { class: 'text-highlighted' }, String(row.original.payload.person_name ?? '—')),
+  { accessorKey: 'key', header: 'Origem', cell: ({ row }) => h('div', [
+    h('p', { class: 'text-highlighted' }, row.original.source === 'asaas'
+      ? `Asaas · ${row.original.payload.event ?? '—'}` : String(row.original.payload.person_name ?? '—')),
     h('p', { class: 'text-xs text-dimmed' }, `#${row.original.key}`),
   ]) },
   { accessorKey: 'status', header: 'Status', cell: ({ row }) => h(UBadge, { ...LABEL[row.original.status], variant: 'subtle' }) },
@@ -109,8 +110,8 @@ const columns: TableColumn<Event>[] = [
 </script>
 
 <template>
-  <AppPage title="Integrações · Pipedrive">
-    <SPanel title="Webhook">
+  <AppPage title="Integrações">
+    <SPanel title="Pipedrive">
       <div class="grid gap-4 md:grid-cols-2">
         <UFormField label="URL (POST)">
           <UInput :model-value="webhookUrl" readonly class="w-full">
@@ -137,6 +138,7 @@ const columns: TableColumn<Event>[] = [
       <UButton label="Copiar modelo do JSON" icon="i-lucide-braces" color="neutral" variant="outline" size="sm" class="mt-4"
                @click="copy(BODY_TEMPLATE)" />
     </SPanel>
+    <IntegrationsAsaas />
 
     <template #toolbar>
       <USelect v-model="status" :items="Object.entries(LABEL).map(([value, l]) => ({ label: l.label, value }))"

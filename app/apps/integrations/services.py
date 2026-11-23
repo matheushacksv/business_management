@@ -17,7 +17,7 @@ from apps.companies.models import Company
 from apps.companies.services import normalize_cnpj
 from apps.finance.models import Contact
 from apps.finance.services import create_contact_service, parse_amount
-from apps.integrations.models import EventStatus, PipedriveConfig, WebhookEvent
+from apps.integrations.models import AsaasConfig, EventStatus, PipedriveConfig, WebhookEvent
 from apps.sales.models import CommissionKind, Product, Sale, Salesperson
 from apps.sales.services import create_commission_service, create_sale_service, generate_receivables_service
 from apps.users.models import User
@@ -161,6 +161,14 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
                                       kind=CommissionKind.SELLER, percent=SELLER_PERCENT)
         if data.first_installment_date:
             warnings += _receivables(user, sale, data, config)
+    # outside the DB transaction: charges created on Asaas must not point to rolled-back receivables
+    if 'ASAAS' in data.payment_method.upper() and sale.receivables.exists() \
+            and AsaasConfig.objects.filter(company=company).exclude(api_key='').exists():
+        from apps.integrations.asaas import create_charges_service
+        try:
+            create_charges_service(user=user, sale_id=sale.pk)
+        except ValidationError as e:
+            warnings.append(f'Cobranças no Asaas não geradas: {"; ".join(e.messages)}')
     return sale, warnings
 
 
@@ -199,4 +207,8 @@ def _receivables(user: User, sale: Sale, data: DealPayload, config: PipedriveCon
 
 
 def reprocess_event_service(*, event_id: int) -> WebhookEvent:
-    return process_event_service(event=WebhookEvent.objects.get(pk=event_id))
+    event = WebhookEvent.objects.get(pk=event_id)
+    if event.source == 'asaas':
+        from apps.integrations import asaas
+        return asaas.process_event_service(event=event)
+    return process_event_service(event=event)

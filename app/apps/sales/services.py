@@ -198,6 +198,9 @@ def delete_sale_service(*, user: User, sale_id: int) -> None:
     """Takes its receivables (paid ones too: the UI warns) and commissions along. Outflows that paid
     commissions stay: that money left the account."""
     sale = _sales_for(user).get(pk=sale_id)
+    from apps.integrations.asaas import sync_charge
+    for tx in sale.receivables.exclude(asaas_id=''):
+        sync_charge(tx, deleted=True)
     with transaction.atomic(), pghistory.context(user=user.pk):
         series_ids = set(sale.receivables.exclude(series=None).values_list('series_id', flat=True))
         sale.receivables.all().delete()

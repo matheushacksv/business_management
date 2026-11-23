@@ -10,7 +10,7 @@ const props = defineProps<{ initialName?: string; contact?: Contact | null }>()
 const emit = defineEmits<{ created: [contact: Contact]; saved: [contact: Contact] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
-const blank = () => ({ name: '', company_name: '', document: '', email: '', phone: '' })
+const blank = () => ({ name: '', company_name: '', document: '', email: '', phone: '', postal_code: '', address_number: '', address_complement: '' })
 const state = reactive(blank())
 const saving = ref(false)
 
@@ -19,7 +19,8 @@ watch(open, (isOpen) => {
   if (!isOpen) return
   const c = props.contact
   Object.assign(state, blank(), c
-    ? { name: c.name, company_name: c.company_name, document: c.document, email: c.email, phone: c.phone }
+    ? { name: c.name, company_name: c.company_name, document: c.document, email: c.email, phone: c.phone,
+        postal_code: c.postal_code, address_number: c.address_number, address_complement: c.address_complement }
     : { name: props.initialName?.trim() ?? '' })
 })
 
@@ -68,6 +69,16 @@ async function save() {
         </UFormField>
         <UFormField label="Telefone">
           <UInput v-model="state.phone" type="tel" class="w-full" />
+        </UFormField>
+        <UFormField label="CEP">
+          <UInput v-model="state.postal_code" inputmode="numeric" maxlength="9" class="w-full"
+                  @update:model-value="(v: any) => (state.postal_code = String(v).replace(/\D/g, '').slice(0, 8))" />
+        </UFormField>
+        <UFormField label="Número">
+          <UInput v-model="state.address_number" class="w-full" />
+        </UFormField>
+        <UFormField label="Complemento" class="sm:col-span-2">
+          <UInput v-model="state.address_complement" class="w-full" />
         </UFormField>
         <div class="flex justify-end gap-2 sm:col-span-2">
           <UButton label="Cancelar" color="neutral" variant="ghost" @click="open = false" />
