@@ -2,7 +2,7 @@
 @import "@nuxt/ui";
 
 /* SORA tokens. Fonts declared here are self-hosted by @nuxt/fonts. */
-@theme {
+@theme static {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Geist', 'Inter', system-ui, sans-serif;
 
