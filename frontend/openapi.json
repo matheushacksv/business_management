@@ -2491,6 +2491,96 @@
     ]
    }
   },
+  "/api/statement-import/analyze": {
+   "post": {
+    "operationId": "api_endpoints_transactions_analyze_statement_endpoint",
+    "summary": "Analyze Statement Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StatementAnalysisOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "properties": {
+         "file": {
+          "format": "binary",
+          "title": "File",
+          "type": "string"
+         },
+         "account_id": {
+          "title": "Account Id",
+          "type": "integer"
+         }
+        },
+        "required": [
+         "file",
+         "account_id"
+        ],
+        "title": "MultiPartBodyParams",
+        "type": "object"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/statement-import": {
+   "post": {
+    "operationId": "api_endpoints_transactions_commit_statement_endpoint",
+    "summary": "Commit Statement Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StatementResultOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/StatementCommit"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/dre": {
    "get": {
     "operationId": "api_endpoints_reports_dre_endpoint",
@@ -10828,6 +10918,315 @@
      "created"
     ],
     "title": "MappedImportOut",
+    "type": "object"
+   },
+   "StatementAnalysisOut": {
+    "properties": {
+     "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+     },
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/StatementLineOut"
+      },
+      "title": "Lines",
+      "type": "array"
+     },
+     "candidates": {
+      "items": {
+       "$ref": "#/components/schemas/StatementCandidate"
+      },
+      "title": "Candidates",
+      "type": "array"
+     }
+    },
+    "required": [
+     "account_id",
+     "company_id",
+     "company_name",
+     "warnings",
+     "lines",
+     "candidates"
+    ],
+    "title": "StatementAnalysisOut",
+    "type": "object"
+   },
+   "StatementCandidate": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TransactionType"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "label",
+     "type",
+     "amount"
+    ],
+    "title": "StatementCandidate",
+    "type": "object"
+   },
+   "StatementLineOut": {
+    "properties": {
+     "index": {
+      "title": "Index",
+      "type": "integer"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TransactionType"
+     },
+     "description": {
+      "title": "Description",
+      "type": "string"
+     },
+     "party": {
+      "title": "Party",
+      "type": "string"
+     },
+     "duplicate": {
+      "title": "Duplicate",
+      "type": "boolean"
+     },
+     "action": {
+      "enum": [
+       "create",
+       "settle",
+       "transfer",
+       "skip"
+      ],
+      "title": "Action",
+      "type": "string"
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "match_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Match Id"
+     },
+     "match_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Match Label"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     }
+    },
+    "required": [
+     "index",
+     "date",
+     "amount",
+     "type",
+     "description",
+     "party",
+     "duplicate",
+     "action"
+    ],
+    "title": "StatementLineOut",
+    "type": "object"
+   },
+   "StatementResultOut": {
+    "properties": {
+     "created": {
+      "title": "Created",
+      "type": "integer"
+     },
+     "settled": {
+      "title": "Settled",
+      "type": "integer"
+     },
+     "transfers": {
+      "title": "Transfers",
+      "type": "integer"
+     },
+     "skipped": {
+      "title": "Skipped",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "created",
+     "settled",
+     "transfers",
+     "skipped"
+    ],
+    "title": "StatementResultOut",
+    "type": "object"
+   },
+   "StatementCommit": {
+    "properties": {
+     "account_id": {
+      "title": "Account Id",
+      "type": "integer"
+     },
+     "lines": {
+      "items": {
+       "$ref": "#/components/schemas/StatementLineIn"
+      },
+      "minItems": 1,
+      "title": "Lines",
+      "type": "array"
+     }
+    },
+    "required": [
+     "account_id",
+     "lines"
+    ],
+    "title": "StatementCommit",
+    "type": "object"
+   },
+   "StatementLineIn": {
+    "properties": {
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "type": {
+      "$ref": "#/components/schemas/TransactionType"
+     },
+     "description": {
+      "maxLength": 200,
+      "title": "Description",
+      "type": "string"
+     },
+     "party": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Party",
+      "type": "string"
+     },
+     "action": {
+      "enum": [
+       "create",
+       "settle",
+       "transfer",
+       "skip"
+      ],
+      "title": "Action",
+      "type": "string"
+     },
+     "subgroup_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subgroup Id"
+     },
+     "match_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Match Id"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     }
+    },
+    "required": [
+     "date",
+     "amount",
+     "type",
+     "description",
+     "action"
+    ],
+    "title": "StatementLineIn",
     "type": "object"
    },
    "DREParams": {

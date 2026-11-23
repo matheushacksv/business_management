@@ -576,6 +576,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/statement-import/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze Statement Endpoint */
+        post: operations["api_endpoints_transactions_analyze_statement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/statement-import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Commit Statement Endpoint */
+        post: operations["api_endpoints_transactions_commit_statement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/dre": {
         parameters: {
             query?: never;
@@ -2494,6 +2528,110 @@ export interface components {
             preview: components["schemas"]["ImportPreviewRow"][];
             /** Created */
             created: number;
+        };
+        /** StatementAnalysisOut */
+        StatementAnalysisOut: {
+            /** Account Id */
+            account_id: number;
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Warnings */
+            warnings: string[];
+            /** Lines */
+            lines: components["schemas"]["StatementLineOut"][];
+            /** Candidates */
+            candidates: components["schemas"]["StatementCandidate"][];
+        };
+        /** StatementCandidate */
+        StatementCandidate: {
+            /** Id */
+            id: number;
+            /** Label */
+            label: string;
+            type: components["schemas"]["TransactionType"];
+            /** Amount */
+            amount: string;
+        };
+        /** StatementLineOut */
+        StatementLineOut: {
+            /** Index */
+            index: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount */
+            amount: string;
+            type: components["schemas"]["TransactionType"];
+            /** Description */
+            description: string;
+            /** Party */
+            party: string;
+            /** Duplicate */
+            duplicate: boolean;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create" | "settle" | "transfer" | "skip";
+            /** Subgroup Id */
+            subgroup_id?: number | null;
+            /** Match Id */
+            match_id?: number | null;
+            /** Match Label */
+            match_label?: string | null;
+            /** Company Id */
+            company_id?: number | null;
+        };
+        /** StatementResultOut */
+        StatementResultOut: {
+            /** Created */
+            created: number;
+            /** Settled */
+            settled: number;
+            /** Transfers */
+            transfers: number;
+            /** Skipped */
+            skipped: number;
+        };
+        /** StatementCommit */
+        StatementCommit: {
+            /** Account Id */
+            account_id: number;
+            /** Lines */
+            lines: components["schemas"]["StatementLineIn"][];
+        };
+        /** StatementLineIn */
+        StatementLineIn: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Amount */
+            amount: number | string;
+            type: components["schemas"]["TransactionType"];
+            /** Description */
+            description: string;
+            /**
+             * Party
+             * @default
+             */
+            party: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create" | "settle" | "transfer" | "skip";
+            /** Subgroup Id */
+            subgroup_id?: number | null;
+            /** Match Id */
+            match_id?: number | null;
+            /** Company Id */
+            company_id?: number | null;
         };
         /** DREParams */
         DREParams: {
@@ -5320,6 +5458,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MappedImportOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_analyze_statement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                    /** Account Id */
+                    account_id: number;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementAnalysisOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_commit_statement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementCommit"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementResultOut"];
                 };
             };
         };

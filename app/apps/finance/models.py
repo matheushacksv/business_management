@@ -218,3 +218,15 @@ class Invoice(models.Model):
     @property
     def direction(self) -> str:
         return 'receive' if self.transaction.type == TransactionType.OUTFLOW else 'issue'
+
+
+class StatementRule(models.Model):
+    """Learned on bank statement imports: a line with this description (normalized) and type gets this subgroup."""
+
+    key = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=TransactionType.choices)
+    subgroup = models.ForeignKey(SubGroup, on_delete=models.CASCADE, related_name='+')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['key', 'type'], name='unique_statement_rule')]

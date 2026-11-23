@@ -260,3 +260,63 @@ class MappedImportOut(Schema):
     unknown: dict[str, list[ImportUnknownValue]]  # field -> values to map (value_maps)
     preview: list[ImportPreviewRow]  # first 50 valid rows
     created: int
+
+
+# Bank statement import
+
+StatementAction = Literal['create', 'settle', 'transfer', 'skip']
+
+
+class StatementLineOut(Schema):
+    index: int
+    date: dt.date
+    amount: Decimal
+    type: TransactionType
+    description: str
+    party: str
+    duplicate: bool
+    action: StatementAction
+    subgroup_id: int | None = None
+    match_id: int | None = None
+    match_label: str | None = None
+    company_id: int | None = None  # transfer: the other company
+
+
+class StatementCandidate(Schema):
+    id: int
+    label: str
+    type: TransactionType
+    amount: Decimal
+
+
+class StatementAnalysisOut(Schema):
+    account_id: int
+    company_id: int
+    company_name: str
+    warnings: list[str]
+    lines: list[StatementLineOut]
+    candidates: list[StatementCandidate]  # planned transactions that can be settled
+
+
+class StatementLineIn(Schema):
+    date: dt.date
+    amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    type: TransactionType
+    description: str = Field(max_length=200)
+    party: str = Field('', max_length=200)
+    action: StatementAction
+    subgroup_id: int | None = None
+    match_id: int | None = None
+    company_id: int | None = None
+
+
+class StatementCommit(Schema):
+    account_id: int
+    lines: list[StatementLineIn] = Field(min_length=1)
+
+
+class StatementResultOut(Schema):
+    created: int
+    settled: int
+    transfers: int
+    skipped: int

@@ -20,6 +20,9 @@ from api.schemas.transactions_dto import (
     PatchTransfer,
     SeriesChangeOut,
     SeriesOut,
+    StatementAnalysisOut,
+    StatementCommit,
+    StatementResultOut,
     TransactionFilters,
     TransactionOut,
     TransferOut,
@@ -27,6 +30,7 @@ from api.schemas.transactions_dto import (
 from apps.finance import services
 from apps.finance.exporter import XLSX_CONTENT_TYPE, transactions_xlsx
 from apps.finance.mapped_import import inspect_file, run_mapped_import
+from apps.finance.statement_import import analyze_statement_service, commit_statement_service
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Transactions'])
@@ -204,3 +208,19 @@ def mapped_import_endpoint(
     return run_mapped_import(
         file, user=request.user, mapping=mapping_data, sheet=sheet, header_row=header_row, commit=commit,
     )
+
+
+# Bank statement (OFX or C6 Bank PDF): analyze -> review on screen -> commit
+
+@router.post('/statement-import/analyze', response=StatementAnalysisOut)
+@require_permission('transactions', CREATE)
+def analyze_statement_endpoint(request, file: File[UploadedFile], account_id: Form[int]):
+    return analyze_statement_service(user=request.user, account_id=account_id, file=file)
+
+
+@router.post('/statement-import', response=StatementResultOut)
+@require_permission('transactions', CREATE)
+def commit_statement_endpoint(request, data: StatementCommit):
+    check_permission(request.user, 'transactions', CHANGE)  # settling changes planned installments
+    return commit_statement_service(user=request.user, account_id=data.account_id,
+                                    lines=[line.dict() for line in data.lines])
