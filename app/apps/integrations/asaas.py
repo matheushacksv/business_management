@@ -209,7 +209,9 @@ def _paid(p: dict) -> tuple[str, str]:
             tx.date = dt.date.fromisoformat(p.get('clientPaymentDate') or p.get('paymentDate') or timezone.localdate().isoformat())
             tx.account_id = tx.account_id or config.account_id  # type:ignore
             tx.save(update_fields=['status', 'date', 'account', 'updated_at'])
-        invoice = Invoice.objects.filter(transaction=tx, kind=InvoiceKind.SERVICE).first()
+        # ponytail: Asaas only issues NFS-e; the product NF-e (other half) stays pending for manual issue + upload
+        Invoice.objects.get_or_create(transaction=tx, kind=InvoiceKind.PRODUCT)
+        invoice =Invoice.objects.filter(transaction=tx, kind=InvoiceKind.SERVICE).first()
         if invoice and (invoice.asaas_id or invoice.done):
             return EventStatus.PROCESSED, 'Parcela baixada; NFS-e já existia'
         found = [i for i in request(config, 'GET', '/invoices', payment=p['id'])['data'] if i.get('status') != 'CANCELED']

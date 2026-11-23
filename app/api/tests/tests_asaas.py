@@ -98,7 +98,9 @@ class AsaasTests(TestCase):
 
         self.hook(paid)  # Asaas redelivery: no second NFS-e
         self.assertEqual(len(self.fake.made('POST', '/invoices')), 1)
-        invoice = Invoice.objects.get()
+        product = Invoice.objects.get(kind='product')
+        self.assertEqual((product.transaction_id, product.done, product.asaas_id), (down.pk, False, ''))
+        invoice = Invoice.objects.get(kind='service')
         authorized = {'event': 'INVOICE_AUTHORIZED', 'invoice': {
             'id': invoice.asaas_id, 'status': 'AUTHORIZED', 'number': '123', 'effectiveDate': '2026-11-24',
             'pdfUrl': 'https://sandbox.asaas.com/n/1.pdf', 'xmlUrl': 'https://evil.example/x.xml'}}
