@@ -2,7 +2,7 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'sky',
+      primary: 'brand',
       neutral: 'neutral',
       success: 'emerald',
       error: 'red',

@@ -79,7 +79,7 @@ const rowClass: Record<string, string> = {
   info: 'text-muted italic',
   group: 'font-medium text-highlighted bg-muted',
   subgroup: 'text-toned',
-  result: 'font-semibold text-primary bg-sky-500/[0.06]',
+  result: 'font-semibold text-primary bg-primary/[0.06]',
 }
 
 const signed = (text: string, n: number) => (n > 0 ? `+${text}` : text)

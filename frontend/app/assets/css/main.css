@@ -5,6 +5,19 @@
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Geist', 'Inter', system-ui, sans-serif;
+
+  /* Brand green: 700 = #265F34 */
+  --color-brand-50: #effaf1;
+  --color-brand-100: #d8f3de;
+  --color-brand-200: #b3e6c0;
+  --color-brand-300: #80d199;
+  --color-brand-400: #4db56f;
+  --color-brand-500: #2f9a53;
+  --color-brand-600: #237c41;
+  --color-brand-700: #265f34;
+  --color-brand-800: #1f4c2b;
+  --color-brand-900: #1a3f25;
+  --color-brand-950: #0c2213;
 }
 
 /*
@@ -15,11 +28,11 @@
  * Panels are SOLID-looking (no backdrop-filter): same look, almost no GPU/RAM cost.
  */
 
-/* LIGHT: white panels on a cool off-white, sky-600 for contrast on white */
+/* LIGHT: white panels on a cool off-white, brand #265F34 as primary */
 :root {
   color-scheme: light; /* native inputs (date picker, scrollbars) follow the theme */
   --ui-radius: 0.5rem;
-  --ui-primary: var(--ui-color-primary-600);
+  --ui-primary: var(--ui-color-primary-700);
 
   --ui-bg: #f6f8fa;
   --ui-bg-muted: #f1f4f7;
@@ -38,16 +51,16 @@
   --s-solid: #fff;
   --s-overlay: #fff;
   --s-sidebar: rgb(255 255 255 / 0.7);
-  --s-result: #eef8fe;
+  --s-result: #effaf1;
   --s-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
-  --s-glow-1: rgb(14 165 233 / 0.10);
-  --s-glow-2: rgb(2 132 199 / 0.06);
+  --s-glow-1: rgb(38 95 52 / 0.10);
+  --s-glow-2: rgb(38 95 52 / 0.06);
 }
 
 /* DARK (Sora original): solid equivalents of white/4, white/5, white/10 over black */
 .dark {
   color-scheme: dark;
-  --ui-primary: var(--ui-color-primary-400); /* sky-400 rgb(56 189 248) */
+  --ui-primary: var(--ui-color-primary-400); /* #265F34 too dark on black: lighter shade */
 
   --ui-bg: #000;
   --ui-bg-muted: #0a0a0a;      /* white/4 */
@@ -67,10 +80,10 @@
   --s-solid: #0a0a0a;
   --s-overlay: #0d0d0d;
   --s-sidebar: rgb(0 0 0 / 0.6);
-  --s-result: #06121a;
+  --s-result: #07140b;
   --s-shadow: inset 0 1px 1px rgb(255 255 255 / 0.04), 0 25px 50px -12px rgb(0 0 0 / 0.5);
-  --s-glow-1: rgb(14 165 233 / 0.14);
-  --s-glow-2: rgb(2 132 199 / 0.08);
+  --s-glow-1: rgb(77 181 111 / 0.12);
+  --s-glow-2: rgb(77 181 111 / 0.06);
 }
 
 /* Background: a STATIC glow replacing the design system's WebGL scene. Nothing animates. */

@@ -21,7 +21,7 @@ const tones = {
   <div class="s-panel p-5">
     <div class="flex items-center justify-between">
       <p class="text-sm text-muted">{{ label }}</p>
-      <span v-if="icon" class="size-8 rounded-lg bg-sky-500/10 ring ring-sky-500/20 grid place-items-center">
+      <span v-if="icon" class="size-8 rounded-lg bg-primary/10 ring ring-primary/20 grid place-items-center">
         <UIcon :name="icon" class="size-4 text-primary" />
       </span>
     </div>

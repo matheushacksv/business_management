@@ -104,7 +104,7 @@ const greeting = computed(() => {
     </template>
 
     <div class="grid gap-4 sm:grid-cols-2">
-      <NuxtLink v-if="auth.can('transactions')" to="/invoices" class="s-panel p-5 flex items-center gap-4 hover:ring-1 hover:ring-sky-500/30 transition">
+      <NuxtLink v-if="auth.can('transactions')" to="/invoices" class="s-panel p-5 flex items-center gap-4 hover:ring-1 hover:ring-primary/30 transition">
         <span class="size-10 rounded-xl bg-amber-500/10 ring ring-amber-500/20 grid place-items-center">
           <UIcon name="i-lucide-receipt-text" class="size-5 text-amber-400" />
         </span>
@@ -114,8 +114,8 @@ const greeting = computed(() => {
         </div>
         <UIcon name="i-lucide-chevron-right" class="size-5 text-dimmed" />
       </NuxtLink>
-      <NuxtLink v-if="auth.can('transactions', 'create')" to="/transactions" class="s-panel p-5 flex items-center gap-4 hover:ring-1 hover:ring-sky-500/30 transition">
-        <span class="size-10 rounded-xl bg-sky-500/10 ring ring-sky-500/20 grid place-items-center">
+      <NuxtLink v-if="auth.can('transactions', 'create')" to="/transactions" class="s-panel p-5 flex items-center gap-4 hover:ring-1 hover:ring-primary/30 transition">
+        <span class="size-10 rounded-xl bg-primary/10 ring ring-primary/20 grid place-items-center">
           <UIcon name="i-lucide-arrow-left-right" class="size-5 text-primary" />
         </span>
         <div class="flex-1">
