@@ -95,7 +95,7 @@ def create_contact_service(
                 email=email.strip().lower(),
                 phone=phone.strip(),
                 notes=notes.strip(),
-                **{k: v.strip() for k, v in address.items()},
+                **{k: re.sub(r'\D', '', v)[:8] if k == 'postal_code' else v.strip() for k, v in address.items()},
             )
     except IntegrityError:
         raise ValidationError('Contact with this document already exists')
@@ -122,6 +122,8 @@ def update_contact_service(*, contact_id: int, **fields) -> Contact:
         fields['document'] = normalize_cnpj(fields['document'])
     if 'email' in fields:
         fields['email'] = fields['email'].strip().lower()
+    if 'postal_code' in fields:
+        fields['postal_code'] = re.sub(r'\D', '', fields['postal_code'])[:8]
     for field, value in fields.items():
         setattr(contact, field, value.strip() if isinstance(value, str) else value)
     try:

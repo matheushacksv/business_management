@@ -50,6 +50,9 @@ const fields = [
   { key: 'document', label: 'CPF/CNPJ' },
   { key: 'email', label: 'E-mail', type: 'email' as const },
   { key: 'phone', label: 'Telefone' },
+  { key: 'postal_code', label: 'CEP' },
+  { key: 'address_number', label: 'Número' },
+  { key: 'address_complement', label: 'Complemento', span: 2 as const },
 ]
 </script>
 
