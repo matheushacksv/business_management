@@ -69,6 +69,8 @@ const TODO = [
   { key: 'invoices', label: 'Notas fiscais pendentes', icon: 'i-lucide-receipt-text', tone: 'text-warning', to: { path: '/invoices', query: { reason: 'pending' } } },
   { key: 'commissions', label: 'Comissões a pagar no mês', icon: 'i-lucide-hand-coins', tone: 'text-primary', to: { path: '/sales/commissions', query: { status: 'pending' } } },
 ] as const
+const todoOpen = ref(false)
+const todoTotal = computed(() => todoRows.value.reduce((s, r) => s + r.count, 0))
 const todoRows = computed(() => TODO.flatMap(r => {
   const item = todo.value?.[r.key]
   return item ? [{ ...r, ...item }] : []
@@ -97,23 +99,32 @@ const greeting = computed(() => {
 
 <template>
   <AppPage title="Início">
+    <template v-if="todoRows.length" #actions>
+      <UChip :text="todoTotal" :show="todoTotal > 0" size="3xl" color="error">
+        <UButton label="Para hoje" icon="i-lucide-list-todo" color="neutral" variant="outline" class="rounded-full" @click="todoOpen = true" />
+      </UChip>
+    </template>
     <div>
       <h1 class="font-display text-3xl font-semibold tracking-tight text-highlighted">{{ greeting }}</h1>
       <p class="mt-1 text-sm text-muted">{{ MONTHS[month] }}/{{ year }} · consolidado de todas as empresas que você acessa</p>
     </div>
 
-    <SPanel v-if="todoRows.length" title="Para hoje">
-      <div class="grid gap-x-6 sm:grid-cols-2">
-        <NuxtLink v-for="r in todoRows" :key="r.key" :to="r.to"
-                  class="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-elevated/60 transition" :class="{ 'opacity-50': !r.count }">
-          <UIcon :name="r.icon" class="size-5 shrink-0" :class="r.count ? r.tone : 'text-dimmed'" />
-          <span class="flex-1 text-sm text-toned">{{ r.label }}</span>
-          <span class="tabular text-sm font-semibold text-highlighted">{{ r.count }}</span>
-          <span v-if="r.amount != null" class="tabular w-32 text-right text-sm text-muted">{{ formatMoney(r.amount) }}</span>
-          <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed" />
-        </NuxtLink>
-      </div>
-    </SPanel>
+    <USlideover v-model:open="todoOpen" title="Para hoje">
+      <template #body>
+        <div class="flex flex-col">
+          <NuxtLink v-for="r in todoRows" :key="r.key" :to="r.to"
+                    class="flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-elevated/60 transition" :class="{ 'opacity-50': !r.count }">
+            <UIcon :name="r.icon" class="size-5 shrink-0" :class="r.count ? r.tone : 'text-dimmed'" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm text-toned">{{ r.label }}</p>
+              <p v-if="r.amount != null" class="tabular text-xs text-muted">{{ formatMoney(r.amount) }}</p>
+            </div>
+            <span class="tabular text-sm font-semibold text-highlighted">{{ r.count }}</span>
+            <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed" />
+          </NuxtLink>
+        </div>
+      </template>
+    </USlideover>
 
     <template v-if="auth.can('reports')">
       <div class="grid gap-4 sm:grid-cols-2" :class="auth.can('investments') ? 'xl:grid-cols-5' : 'xl:grid-cols-4'">
