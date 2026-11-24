@@ -357,7 +357,10 @@ def sales_month_for(due_month: dt.date) -> tuple[dt.date, dt.date]:
 def list_commissions_service(*, user: User, month: dt.date | None = None, salesperson_id=None, company_id=None, status=None):
     # Canceled sale: its unpaid commissions disappear; paid ones stay on record
     qs = _commissions_for(user).exclude(sale__status=SaleStatus.CANCELED, payment__isnull=True)
-    qs = qs.filter(Q(first_payment__isnull=False) | Q(payment__isnull=False))  # released (or paid before the rule)
+    if status == 'planned':  # waiting for the customer's first payment: no due month yet
+        qs, month, status = qs.filter(first_payment__isnull=True, payment__isnull=True), None, None
+    else:
+        qs = qs.filter(Q(first_payment__isnull=False) | Q(payment__isnull=False))  # released (or paid before the rule)
     if month:
         if SalesConfig.get().commission_due == CommissionDue.PAYMENT:
             qs = qs.annotate(due_base=Coalesce('first_payment', 'sale__date')).filter(due_base__range=sales_month_for(month))

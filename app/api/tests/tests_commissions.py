@@ -65,6 +65,7 @@ class CommissionTests(Base):
         r = self.api('post', f'/sale/{sale.pk}/commissions', {'salesperson_id': self.amanda.pk, 'kind': 'seller', 'percent': '10'})
         planned = self.receive(sale, date(2026, 10, 25), status=TransactionStatus.PLANNED)
         self.assertEqual([c['salesperson_name'] for c in self.api('get', '/commission').json()], [])
+        self.assertEqual([c['salesperson_name'] for c in self.api('get', '/commission?status=planned&month=2026-11-01').json()], ['Amanda'])
         pay = {'ids': [r.json()['id']], 'date': '2026-11-10', 'subgroup_id': self.subgroup.pk}
         self.assertEqual(self.api('post', '/commission/pay', pay).status_code, 400)
         # first payment on the 25th, the rest on the 10th: whichever installment was paid first counts
@@ -89,6 +90,8 @@ class CommissionTests(Base):
         self.add(self.matheus, 'seller', percent='10')
         Sale.objects.filter(pk=self.sale.pk).update(status=SaleStatus.CANCELED)
         self.assertEqual(self.api('get', '/commission').json(), [])
+        Transaction.objects.filter(sale=self.sale).delete()
+        self.assertEqual(self.api('get', '/commission?status=planned').json(), [])
 
     def test_pay_groups_by_person_and_freezes(self):
         a = self.add(self.matheus, 'advisor', percent='5')

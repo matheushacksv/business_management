@@ -170,7 +170,7 @@ class CommissionFilters(Schema):
     month: dt.date | None = None  # month the commission is due (sales of the previous month)
     salesperson_id: list[int] | None = None
     company_id: list[int] | None = None
-    status: Literal['pending', 'paid'] | None = None
+    status: Literal['planned', 'pending', 'paid'] | None = None  # planned: customer hasn't paid yet (month ignored)
 
 
 class PayCommissions(Schema):

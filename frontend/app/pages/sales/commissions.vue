@@ -17,7 +17,7 @@ const filters = reactive({
   month: today().slice(0, 7),
   salesperson_id: [] as number[],
   company_id: [] as number[],
-  status: undefined as 'pending' | 'paid' | undefined,
+  status: undefined as 'planned' | 'pending' | 'paid' | undefined,
 })
 const monthItems = monthOptions()
 const query = computed(() => {
@@ -60,7 +60,7 @@ const sum = (list: Commission[]) => list.reduce((s, c) => s + Number(c.amount), 
 const pending = computed(() => items.value.filter(c => !c.payment_id))
 const paid = computed(() => items.value.filter(c => c.payment_id))
 const salesMonth = computed(() => {
-  if (!filters.month) return ''
+  if (!filters.month || filters.status === 'planned') return ''
   const [y, m] = filters.month.split('-').map(Number)
   const d = new Date(y!, m! - 2, 1)
   return `${MONTHS[d.getMonth()]}/${d.getFullYear()}`
@@ -77,7 +77,7 @@ const byPerson = computed(() => {
 
 const selection = useSelection<Commission>(() => items.value)
 const canPay = computed(() => auth.can('sales', 'change') && auth.can('transactions', 'create'))
-const toPay = computed(() => selection.rows.value.filter(c => !c.payment_id))
+const toPay = computed(() => selection.rows.value.filter(c => !c.payment_id && c.first_payment))
 
 const columns = computed<TableColumn<Commission>[]>(() => [
   ...(canPay.value ? [selection.column] : []),
@@ -102,8 +102,8 @@ const columns = computed<TableColumn<Commission>[]>(() => [
   { accessorKey: 'amount', header: () => h('span', { class: 'block text-right' }, 'Comissão'),
     cell: ({ row }) => h('p', { class: 'text-right tabular text-highlighted' }, formatMoney(row.original.amount)) },
   { id: 'status', header: 'Status', cell: ({ row }) => h(UBadge, {
-    label: row.original.payment_id ? `Paga ${formatDate(row.original.paid_on)}` : 'A pagar',
-    color: row.original.payment_id ? 'success' : 'warning', variant: 'subtle',
+    label: row.original.payment_id ? `Paga ${formatDate(row.original.paid_on)}` : row.original.first_payment ? 'A pagar' : 'Prevista',
+    color: row.original.payment_id ? 'success' : row.original.first_payment ? 'warning' : 'neutral', variant: 'subtle',
   }) },
 ])
 
@@ -201,12 +201,12 @@ function exportXlsx() {
                @update:model-value="(v: any) => setDue(v)" />
     </template>
     <template #toolbar>
-      <USelect v-model="filters.month" :items="monthItems" class="w-32" aria-label="Mês de pagamento" />
+      <USelect v-model="filters.month" :items="monthItems" :disabled="filters.status === 'planned'" class="w-32" aria-label="Mês de pagamento" />
       <USelectMenu v-model="filters.salesperson_id" :items="lookups.options.salespeople.value" value-key="value" multiple
                    placeholder="Profissionais" class="w-48" />
       <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple
                    placeholder="Empresas" class="w-44" />
-      <USelect v-model="filters.status" :items="[{ label: 'A pagar', value: 'pending' }, { label: 'Pagas', value: 'paid' }]"
+      <USelect v-model="filters.status" :items="[{ label: 'Previstas', value: 'planned' }, { label: 'A pagar', value: 'pending' }, { label: 'Pagas', value: 'paid' }]"
                placeholder="Status" class="w-32" />
       <UButton v-if="filters.status" icon="i-lucide-x" color="neutral" variant="ghost" aria-label="Limpar status"
                @click="filters.status = undefined" />

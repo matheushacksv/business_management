@@ -3432,7 +3432,7 @@ export interface components {
             /** Company Id */
             company_id?: number[] | null;
             /** Status */
-            status?: ("pending" | "paid") | null;
+            status?: ("planned" | "pending" | "paid") | null;
         };
         /** PayCommissions */
         PayCommissions: {
@@ -6549,7 +6549,7 @@ export interface operations {
                 month?: string | null;
                 salesperson_id?: number[] | null;
                 company_id?: number[] | null;
-                status?: ("pending" | "paid") | null;
+                status?: ("planned" | "pending" | "paid") | null;
             };
             header?: never;
             path?: never;
@@ -6574,7 +6574,7 @@ export interface operations {
                 month?: string | null;
                 salesperson_id?: number[] | null;
                 company_id?: number[] | null;
-                status?: ("pending" | "paid") | null;
+                status?: ("planned" | "pending" | "paid") | null;
             };
             header?: never;
             path?: never;

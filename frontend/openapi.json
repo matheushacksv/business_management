@@ -5546,6 +5546,7 @@
        "anyOf": [
         {
          "enum": [
+          "planned",
           "pending",
           "paid"
          ],
@@ -5653,6 +5654,7 @@
        "anyOf": [
         {
          "enum": [
+          "planned",
           "pending",
           "paid"
          ],
@@ -13822,6 +13824,7 @@
       "anyOf": [
        {
         "enum": [
+         "planned",
          "pending",
          "paid"
         ],
