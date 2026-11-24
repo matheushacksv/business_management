@@ -135,6 +135,26 @@ async function confirmPay() {
 }
 
 // Tax of a sales month per company (empty = the company's default); changes the unpaid commissions
+// Add commissions: pick a sale, then the same editor as in the sale drawer
+const adding = reactive({ open: false, saleId: undefined as number | undefined, search: '', sales: [] as { label: string; value: number }[] })
+let saleTimer: ReturnType<typeof setTimeout> | undefined
+async function loadSales() {
+  try {
+    const query = { ...(adding.search ? { search: adding.search } : {}), ordering: '-date' }
+    adding.sales = (await unwrap(api.GET('/api/sale', { params: { query: query as any } }))).items.map(s => ({
+      label: `${s.contact_name ?? '—'} · ${s.product_name ?? '—'} · ${formatDate(s.date)} · ${formatMoney(s.amount)}`, value: s.id!,
+    }))
+  } catch (e) {
+    notifyError(e)
+  }
+}
+watch(() => adding.search, () => { clearTimeout(saleTimer); saleTimer = setTimeout(loadSales, 250) })
+function openAdd() {
+  Object.assign(adding, { open: true, saleId: undefined, search: '' })
+  loadSales()
+}
+watch(() => adding.open, (v) => { if (!v) load() })
+
 const tax = reactive({ open: false, month: '', rows: [] as components['schemas']['MonthTaxOut'][] })
 async function loadTax() {
   try {
@@ -170,6 +190,7 @@ function exportXlsx() {
 <template>
   <AppPage title="Comissões">
     <template #actions>
+      <UButton v-if="auth.can('sales', 'change')" label="Adicionar" icon="i-lucide-plus" @click="openAdd" />
       <UButton label="Demonstrativo" icon="i-lucide-receipt-text" color="neutral" variant="outline"
                :to="{ path: '/sales/statement', query: { month: filters.month } }" />
       <UButton label="Exportar" icon="i-lucide-file-down" color="neutral" variant="outline" @click="exportXlsx" />
@@ -265,6 +286,18 @@ function exportXlsx() {
               <span class="-ms-2 text-muted">%</span>
             </li>
           </ul>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="adding.open" title="Adicionar comissão" :ui="{ content: 'sm:max-w-3xl' }">
+      <template #body>
+        <div class="flex flex-col gap-4">
+          <UFormField label="Venda" required>
+            <USelectMenu v-model="adding.saleId" v-model:search-term="adding.search" :items="adding.sales" value-key="value"
+                         ignore-filter placeholder="Buscar venda" class="w-full" />
+          </UFormField>
+          <SalesCommissions v-if="adding.saleId" :key="adding.saleId" :sale-id="adding.saleId" />
         </div>
       </template>
     </UModal>
