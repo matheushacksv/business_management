@@ -4864,6 +4864,16 @@ export interface components {
              * @default 30
              */
             critical_days: number;
+            /**
+             * Attention Days
+             * @default 1
+             */
+            attention_days: number;
+            /**
+             * Legal Critical
+             * @default true
+             */
+            legal_critical: boolean;
         };
         /**
          * EventStatus

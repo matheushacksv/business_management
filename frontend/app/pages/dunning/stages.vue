@@ -20,9 +20,9 @@ const fields = [
 ]
 const body = (d: Record<string, any>) => ({ name: d.name, position: Number(d.position ?? 0), severity: d.severity })
 
-// Days late that turn a customer red (traffic light)
+// Traffic light rules
 const auth = useAuth()
-const config = reactive({ start_date: null as string | null, critical_days: 30 })
+const config = reactive({ start_date: null as string | null, critical_days: 30, attention_days: 1, legal_critical: true })
 unwrap(api.GET('/api/dunning/config')).then(c => Object.assign(config, c)).catch(notifyError)
 async function saveConfig() {
   try {
@@ -44,10 +44,16 @@ async function saveConfig() {
     :remove="(id) => unwrap(api.DELETE('/api/dunning/stage/{stage_id}', { params: { path: { stage_id: id } } }))"
   >
     <template #actions>
+      <UFormField label="Atenção após (dias de atraso)" orientation="horizontal" class="items-center">
+        <UInputNumber v-model="config.attention_days" :min="1" :max="config.critical_days" :disabled="!auth.can('dunning', 'change')"
+                      class="w-28" @blur="saveConfig" />
+      </UFormField>
       <UFormField label="Crítico após (dias de atraso)" orientation="horizontal" class="items-center">
         <UInputNumber v-model="config.critical_days" :min="1" :max="365" :disabled="!auth.can('dunning', 'change')"
                       class="w-28" @blur="saveConfig" />
       </UFormField>
+      <USwitch v-model="config.legal_critical" label="Jurídico = crítico" :disabled="!auth.can('dunning', 'change')"
+               @update:model-value="saveConfig" />
     </template>
   </AppCrud>
 </template>

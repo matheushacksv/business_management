@@ -208,6 +208,10 @@ class DunningTests(TestCase):
         self.assertEqual(situation(), 'critical')
         listed = {c['id']: c['situation'] for c in self.api('get', '/contact').json()}
         self.assertEqual(listed[self.client_.pk], 'critical')
+        body = {'start_date': None, 'critical_days': 30, 'attention_days': 5, 'legal_critical': False}
+        self.assertEqual(self.api('put', '/dunning/config', body).status_code, 200)
+        self.assertEqual(situation(), 'attention')  # legal case now yellow
+        self.assertEqual(self.api('put', '/dunning/config', {**body, 'attention_days': 31}).status_code, 400)
 
     def test_unrecoverable_is_a_separate_mark(self):
         from apps.legal.models import CollectionCase

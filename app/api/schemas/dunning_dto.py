@@ -157,6 +157,8 @@ class ProductivityOut(Schema):
 class ConfigIO(Schema):
     start_date: dt.date | None
     critical_days: int = Field(30, ge=1, le=365)
+    attention_days: int = Field(1, ge=1, le=365)
+    legal_critical: bool = True
 
 
 class NoteIn(Schema):

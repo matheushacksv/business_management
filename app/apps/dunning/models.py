@@ -120,6 +120,8 @@ class Config(models.Model):
 
     start_date = models.DateField(null=True, blank=True)
     critical_days = models.PositiveSmallIntegerField(default=30)  # late this long = red
+    attention_days = models.PositiveSmallIntegerField(default=1)  # late this long = yellow
+    legal_critical = models.BooleanField(default=True)  # open legal case = red
 
     @classmethod
     def get(cls) -> 'Config':

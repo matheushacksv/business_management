@@ -18392,6 +18392,18 @@
       "minimum": 1,
       "title": "Critical Days",
       "type": "integer"
+     },
+     "attention_days": {
+      "default": 1,
+      "maximum": 365,
+      "minimum": 1,
+      "title": "Attention Days",
+      "type": "integer"
+     },
+     "legal_critical": {
+      "default": true,
+      "title": "Legal Critical",
+      "type": "boolean"
      }
     },
     "required": [

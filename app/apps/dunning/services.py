@@ -333,9 +333,13 @@ def delete_step_service(*, user: User, step_id: int) -> None:
         CadenceStep.objects.get(pk=step_id).delete()
 
 
-def update_config_service(*, start_date: dt.date | None, critical_days: int) -> Config:
+def update_config_service(*, start_date: dt.date | None, critical_days: int, attention_days: int,
+                          legal_critical: bool) -> Config:
+    if attention_days > critical_days:
+        raise ValidationError('Attention days must not exceed critical days')
     config = Config.get()
     config.start_date, config.critical_days = start_date, critical_days
+    config.attention_days, config.legal_critical = attention_days, legal_critical
     config.save()
     return config
 
@@ -344,14 +348,16 @@ def update_config_service(*, start_date: dt.date | None, critical_days: int) -> 
 
 def situations_service(*, user: User, contact_ids=None) -> dict[int, str]:
     """contact_id -> 'ok' | 'attention' | 'critical', for customers (contacts with inflows or sales).
-    Red: open legal action, late for `critical_days` or more, or card in a critical stage.
-    Yellow: anything late, or an open card. Unrecoverable is a separate mark (legal) and changes nothing here."""
+    Red: open legal action (if `legal_critical`), late for `critical_days` or more, or card in a critical stage.
+    Yellow: late for `attention_days` or more, open legal action otherwise, or an open card. Unrecoverable is a separate mark (legal) and changes nothing here."""
     from apps.legal.models import CaseStage, CollectionCase
     from apps.sales.models import Sale
 
     today = timezone.localdate()
     companies = list_companies_service(user=user)
-    critical_since = today - dt.timedelta(days=Config.get().critical_days)
+    config = Config.get()
+    critical_since = today - dt.timedelta(days=config.critical_days)
+    attention_since = today - dt.timedelta(days=config.attention_days)
 
     def scoped(qs, field='contact_id'):
         qs = qs.filter(company__in=companies)
@@ -366,11 +372,12 @@ def situations_service(*, user: User, contact_ids=None) -> dict[int, str]:
         if rank[level] > rank[result.get(contact_id, 'ok')]:
             result[contact_id] = level
     for contact_id, since in scoped(_overdue(today)).values('contact_id').annotate(since=Min('date')).values_list('contact_id', 'since'):
-        mark(contact_id, 'critical' if since <= critical_since else 'attention')
+        if since <= attention_since:
+            mark(contact_id, 'critical' if since <= critical_since else 'attention')
     for contact_id, severity in scoped(Card.objects.filter(closed_at__isnull=True)).values_list('contact_id', 'stage__severity'):
         mark(contact_id, 'critical' if severity == Severity.CRITICAL else 'attention')
     for contact_id in scoped(CollectionCase.objects.exclude(stage=CaseStage.DONE)).values_list('contact_id', flat=True):
-        mark(contact_id, 'critical')
+        mark(contact_id, 'critical' if config.legal_critical else 'attention')
     return result
 
 
