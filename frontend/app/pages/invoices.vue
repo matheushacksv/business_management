@@ -16,6 +16,7 @@ const filters = reactive({
   direction: undefined as string | undefined, kind: undefined as string | undefined, reason: 'all',
   company_id: [] as number[], date_from: '', date_to: today(),
 })
+useQueryFilters(filters)
 const page = ref(1)
 const items = ref<Pending[]>([])
 const count = ref(0)

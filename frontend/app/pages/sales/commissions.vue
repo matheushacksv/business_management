@@ -19,6 +19,7 @@ const filters = reactive({
   company_id: [] as number[],
   status: undefined as 'planned' | 'pending' | 'paid' | undefined,
 })
+useQueryFilters(filters)
 const monthItems = monthOptions()
 const query = computed(() => {
   const q: Record<string, unknown> = {}

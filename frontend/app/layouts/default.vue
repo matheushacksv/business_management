@@ -136,6 +136,7 @@ async function changePassword() {
       </template>
 
       <template #default="{ collapsed }">
+        <UDashboardSearchButton :collapsed="collapsed" label="Buscar" class="mb-2" />
         <UNavigationMenu
           v-for="(group, i) in items"
           :key="i"
@@ -169,6 +170,7 @@ async function changePassword() {
     </UDashboardSidebar>
 
     <slot />
+    <AppGlobalSearch :menu="items" />
 
     <UModal v-model:open="passwordOpen" title="Alterar senha">
       <template #body>

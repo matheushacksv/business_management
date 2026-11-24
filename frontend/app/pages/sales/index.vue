@@ -17,6 +17,7 @@ const filters = reactive({
   search: '', date_from: '', date_to: '', company_id: [] as number[], product_id: [] as number[],
   salesperson_id: [] as number[], status: [] as string[], ordering: '-date',
 })
+useQueryFilters(filters)
 const page = ref(1)
 const items = ref<Sale[]>([])
 const count = ref(0)
@@ -75,12 +76,8 @@ function onCreated(id: number) {
   selected.value = id
   drawerOpen.value = true
 }
-// /sales?sale=<id> (e.g. from the integrations log) opens that sale
-const saleQuery = useRoute().query.sale
-if (saleQuery) {
-  selected.value = Number(saleQuery)
-  drawerOpen.value = true
-}
+// /sales?sale=<id> (integrations log, global search) opens that sale
+useQueryOpen('sale', (id) => { selected.value = id; drawerOpen.value = true }, drawerOpen)
 </script>
 
 <template>

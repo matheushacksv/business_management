@@ -17,6 +17,7 @@ const view = ref<'kanban' | 'list'>('kanban')  // remembered per browser
 onMounted(() => { if (localStorage.getItem('legal-view') === 'list') view.value = 'list' })
 watch(view, v => localStorage.setItem('legal-view', v))
 const filters = reactive({ search: '', company_id: [] as number[] })
+useQueryFilters(filters)
 const items = ref<Case[]>([])
 const loading = ref(false)
 
@@ -130,6 +131,7 @@ function openCase(id: number) {
   selected.value = id
   drawerOpen.value = true
 }
+useQueryOpen('case', openCase, drawerOpen)
 function onCreated(id: number) {
   createOpen.value = false
   load()
