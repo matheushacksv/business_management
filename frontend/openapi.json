@@ -7089,6 +7089,486 @@
     ]
    }
   },
+  "/api/investment": {
+   "get": {
+    "operationId": "api_endpoints_investments_list_investments_endpoint",
+    "summary": "List Investments Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "holder",
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/Holder"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "institution",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Institution"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "active",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Active"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "as_of",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "As Of"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/InvestmentOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_investments_create_investment_endpoint",
+    "summary": "Create Investment Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvestmentOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateInvestment"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/investment/export": {
+   "get": {
+    "operationId": "api_endpoints_investments_export_investments_endpoint",
+    "summary": "Export Investments Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "holder",
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/Holder"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "institution",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Institution"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "active",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Active"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "as_of",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "As Of"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/investment/{investment_id}": {
+   "get": {
+    "operationId": "api_endpoints_investments_get_investment_endpoint",
+    "summary": "Get Investment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "investment_id",
+      "schema": {
+       "title": "Investment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvestmentOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "patch": {
+    "operationId": "api_endpoints_investments_update_investment_endpoint",
+    "summary": "Update Investment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "investment_id",
+      "schema": {
+       "title": "Investment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InvestmentOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchInvestment"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_investments_delete_investment_endpoint",
+    "summary": "Delete Investment Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "investment_id",
+      "schema": {
+       "title": "Investment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/investment/{investment_id}/movements": {
+   "get": {
+    "operationId": "api_endpoints_investments_list_movements_endpoint",
+    "summary": "List Movements Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "investment_id",
+      "schema": {
+       "title": "Investment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/MovementOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_investments_create_movement_endpoint",
+    "summary": "Create Movement Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "investment_id",
+      "schema": {
+       "title": "Investment Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MovementOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateMovement"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/investment-movement/{movement_id}": {
+   "delete": {
+    "operationId": "api_endpoints_investments_delete_movement_endpoint",
+    "summary": "Delete Movement Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "movement_id",
+      "schema": {
+       "title": "Movement Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Investments"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/dunning/card": {
    "get": {
     "operationId": "api_endpoints_dunning_list_cards_endpoint",
@@ -15333,6 +15813,492 @@
     ],
     "title": "CreateComment",
     "type": "object"
+   },
+   "Holder": {
+    "enum": [
+     "company",
+     "personal"
+    ],
+    "title": "Holder",
+    "type": "string"
+   },
+   "InvestmentFilters": {
+    "properties": {
+     "holder": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Holder"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "integer"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Institution"
+     },
+     "active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Active"
+     },
+     "as_of": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "As Of"
+     }
+    },
+    "title": "InvestmentFilters",
+    "type": "object"
+   },
+   "InvestmentOut": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "applied": {
+      "title": "Applied",
+      "type": "string"
+     },
+     "redeemed": {
+      "title": "Redeemed",
+      "type": "string"
+     },
+     "balance": {
+      "title": "Balance",
+      "type": "string"
+     },
+     "yield_amount": {
+      "title": "Yield Amount",
+      "type": "string"
+     },
+     "yield_percent": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Yield Percent"
+     },
+     "balance_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Balance Date"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "holder": {
+      "default": "company",
+      "maxLength": 10,
+      "title": "Holder",
+      "type": "string"
+     },
+     "institution": {
+      "maxLength": 120,
+      "title": "Institution",
+      "type": "string"
+     },
+     "kind": {
+      "default": "cdb",
+      "maxLength": 10,
+      "title": "Kind",
+      "type": "string"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "maxLength": 160,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "company_name",
+     "applied",
+     "redeemed",
+     "balance",
+     "yield_amount",
+     "yield_percent",
+     "balance_date",
+     "institution",
+     "created_at"
+    ],
+    "title": "InvestmentOut",
+    "type": "object"
+   },
+   "CreateInvestment": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "holder": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/Holder"
+       }
+      ],
+      "default": "company"
+     },
+     "institution": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Institution",
+      "type": "string"
+     },
+     "kind": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentKind"
+       }
+      ],
+      "default": "cdb"
+     },
+     "description": {
+      "default": "",
+      "maxLength": 160,
+      "title": "Description",
+      "type": "string"
+     },
+     "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "company_id",
+     "institution"
+    ],
+    "title": "CreateInvestment",
+    "type": "object"
+   },
+   "InvestmentKind": {
+    "enum": [
+     "cdb",
+     "lci_lca",
+     "treasury",
+     "fund",
+     "stocks",
+     "savings",
+     "other"
+    ],
+    "title": "InvestmentKind",
+    "type": "string"
+   },
+   "PatchInvestment": {
+    "properties": {
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "holder": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Holder"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "institution": {
+      "anyOf": [
+       {
+        "maxLength": 120,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Institution"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/InvestmentKind"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "description": {
+      "anyOf": [
+       {
+        "maxLength": 160,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Active"
+     }
+    },
+    "title": "PatchInvestment",
+    "type": "object"
+   },
+   "MovementOut": {
+    "properties": {
+     "investment_id": {
+      "title": "Investment Id",
+      "type": "integer"
+     },
+     "transaction_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Transaction Id"
+     },
+     "account_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Name"
+     },
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "kind": {
+      "maxLength": 12,
+      "title": "Kind",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "string"
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notes"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "investment_id",
+     "transaction_id",
+     "date",
+     "kind",
+     "amount",
+     "created_at"
+    ],
+    "title": "MovementOut",
+    "type": "object"
+   },
+   "CreateMovement": {
+    "properties": {
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "kind": {
+      "$ref": "#/components/schemas/MovementKind"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "account_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Account Id"
+     },
+     "notes": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Notes",
+      "type": "string"
+     }
+    },
+    "required": [
+     "date",
+     "kind",
+     "amount"
+    ],
+    "title": "CreateMovement",
+    "type": "object"
+   },
+   "MovementKind": {
+    "enum": [
+     "application",
+     "redemption",
+     "balance"
+    ],
+    "title": "MovementKind",
+    "type": "string"
    },
    "CardFilters": {
     "properties": {

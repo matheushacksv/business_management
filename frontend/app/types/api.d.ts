@@ -1362,6 +1362,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/investment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Investments Endpoint */
+        get: operations["api_endpoints_investments_list_investments_endpoint"];
+        put?: never;
+        /** Create Investment Endpoint */
+        post: operations["api_endpoints_investments_create_investment_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/investment/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Investments Endpoint */
+        get: operations["api_endpoints_investments_export_investments_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/investment/{investment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Investment Endpoint */
+        get: operations["api_endpoints_investments_get_investment_endpoint"];
+        put?: never;
+        post?: never;
+        /** Delete Investment Endpoint */
+        delete: operations["api_endpoints_investments_delete_investment_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Investment Endpoint */
+        patch: operations["api_endpoints_investments_update_investment_endpoint"];
+        trace?: never;
+    };
+    "/api/investment/{investment_id}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Movements Endpoint */
+        get: operations["api_endpoints_investments_list_movements_endpoint"];
+        put?: never;
+        /** Create Movement Endpoint */
+        post: operations["api_endpoints_investments_create_movement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/investment-movement/{movement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Movement Endpoint */
+        delete: operations["api_endpoints_investments_delete_movement_endpoint"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dunning/card": {
         parameters: {
             query?: never;
@@ -3930,6 +4019,166 @@ export interface components {
             /** Text */
             text: string;
         };
+        /**
+         * Holder
+         * @enum {string}
+         */
+        Holder: "company" | "personal";
+        /** InvestmentFilters */
+        InvestmentFilters: {
+            holder?: components["schemas"]["Holder"] | null;
+            /** Company Id */
+            company_id?: number[] | null;
+            /** Institution */
+            institution?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** As Of */
+            as_of?: string | null;
+        };
+        /** InvestmentOut */
+        InvestmentOut: {
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Applied */
+            applied: string;
+            /** Redeemed */
+            redeemed: string;
+            /** Balance */
+            balance: string;
+            /** Yield Amount */
+            yield_amount: string;
+            /** Yield Percent */
+            yield_percent: string | null;
+            /** Balance Date */
+            balance_date: string | null;
+            /** ID */
+            id?: number | null;
+            /**
+             * Holder
+             * @default company
+             */
+            holder: string;
+            /** Institution */
+            institution: string;
+            /**
+             * Kind
+             * @default cdb
+             */
+            kind: string;
+            /** Description */
+            description?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CreateInvestment */
+        CreateInvestment: {
+            /** Company Id */
+            company_id: number;
+            /** @default company */
+            holder: components["schemas"]["Holder"];
+            /** Institution */
+            institution: string;
+            /** @default cdb */
+            kind: components["schemas"]["InvestmentKind"];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /**
+         * InvestmentKind
+         * @enum {string}
+         */
+        InvestmentKind: "cdb" | "lci_lca" | "treasury" | "fund" | "stocks" | "savings" | "other";
+        /** PatchInvestment */
+        PatchInvestment: {
+            /** Company Id */
+            company_id?: number | null;
+            holder?: components["schemas"]["Holder"] | null;
+            /** Institution */
+            institution?: string | null;
+            kind?: components["schemas"]["InvestmentKind"] | null;
+            /** Description */
+            description?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Active */
+            active?: boolean | null;
+        };
+        /** MovementOut */
+        MovementOut: {
+            /** Investment Id */
+            investment_id: number;
+            /** Transaction Id */
+            transaction_id: number | null;
+            /** Account Name */
+            account_name?: string | null;
+            /** ID */
+            id?: number | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Kind */
+            kind: string;
+            /** Amount */
+            amount: string;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CreateMovement */
+        CreateMovement: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            kind: components["schemas"]["MovementKind"];
+            /** Amount */
+            amount: number | string;
+            /** Account Id */
+            account_id?: number | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * MovementKind
+         * @enum {string}
+         */
+        MovementKind: "application" | "redemption" | "balance";
         /** CardFilters */
         CardFilters: {
             /** @default open */
@@ -7248,6 +7497,216 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TransactionOut"][];
                 };
+            };
+        };
+    };
+    api_endpoints_investments_list_investments_endpoint: {
+        parameters: {
+            query?: {
+                holder?: components["schemas"]["Holder"] | null;
+                company_id?: number[] | null;
+                institution?: string | null;
+                active?: boolean | null;
+                as_of?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_investments_create_investment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvestment"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_investments_export_investments_endpoint: {
+        parameters: {
+            query?: {
+                holder?: components["schemas"]["Holder"] | null;
+                company_id?: number[] | null;
+                institution?: string | null;
+                active?: boolean | null;
+                as_of?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_investments_get_investment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_investments_delete_investment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_investments_update_investment_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchInvestment"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_investments_list_movements_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_investments_create_movement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                investment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMovement"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_investments_delete_movement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movement_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

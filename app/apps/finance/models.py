@@ -10,8 +10,8 @@ class Group(models.TextChoices):
     VARIABLE_COSTS = 'variable_costs', 'Custos Variáveis'
     FIXED_COSTS = 'fixed_costs', 'Custos Fixos'
     NON_OPERATING_EXPENSES = 'non_operating_expenses', 'Despesas Não Operacionais'
-    # Money moved between companies of the group: hits each company's cash, never the DRE
-    TRANSFER = 'transfer', 'Transferências entre empresas'
+    # Money moved between companies of the group or to/from investments: hits cash, never the DRE
+    TRANSFER = 'transfer', 'Transferências e aplicações'
 
 class TransactionType(models.TextChoices):
     INFLOW = 'inflow', 'Entrada'
@@ -30,6 +30,7 @@ NATURAL_TYPE: dict[str, str] = {
 }  # TRANSFER has no natural type: each transfer has one leg of each
 
 TRANSFER_SUBGROUP_NAME = 'Transferência entre empresas'
+INVESTMENT_SUBGROUP_NAME = 'Aplicações e resgates'
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class SubGroup(models.Model):

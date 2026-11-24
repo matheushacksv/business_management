@@ -23,6 +23,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
     ...section('Financeiro', [
       can('transactions') && { label: 'Lançamentos', icon: 'i-lucide-arrow-left-right', to: '/transactions' },
       can('transactions') && { label: 'Notas fiscais', icon: 'i-lucide-receipt-text', to: '/invoices' },
+      can('investments') && { label: 'Investimentos', icon: 'i-lucide-piggy-bank', to: '/investments' },
       parent({ label: 'Cobrança', icon: 'i-lucide-phone-call' }, ['/dunning'], [
         can('dunning') && { label: 'Funil', to: '/dunning', exact: true },
         can('dunning') && { label: 'Agenda', to: '/dunning/agenda' },

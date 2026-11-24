@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.legal',
     'apps.dunning',
     'apps.integrations',
+    'apps.investments',
 ]
 
 AUTH_USER_MODEL = 'users.User'

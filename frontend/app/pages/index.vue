@@ -17,6 +17,7 @@ const chartLoading = ref(false)
 const yearOptions = Array.from({ length: 5 }, (_, i) => ({ label: String(year - i), value: year - i }))
 const cash = ref<{ opening: string; closing: string } | null>(null)
 const pendingInvoices = ref<number | null>(null)
+const invested = ref<number | null>(null)  // company money in investments today
 const loading = ref(true)
 
 onMounted(async () => {
@@ -29,6 +30,8 @@ onMounted(async () => {
       })).then(c => (cash.value = c)),
       auth.can('transactions') && unwrap(api.GET('/api/invoice/pending', { params: { query: { date_to: today() } as any } }))
         .then(p => (pendingInvoices.value = p.count)),
+      auth.can('investments') && unwrap(api.GET('/api/investment', { params: { query: { holder: 'company' } } }))
+        .then(list => (invested.value = list.reduce((s, i) => s + Number(i.balance), 0))),
     ])
   } catch (e) {
     notifyError(e)
@@ -82,13 +85,16 @@ const greeting = computed(() => {
     </div>
 
     <template v-if="auth.can('reports')">
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2" :class="auth.can('investments') ? 'xl:grid-cols-5' : 'xl:grid-cols-4'">
         <SStat label="Receitas operacionais no mês" :value="formatMoney(at('group:operating_revenue'))" tone="primary"
                :loading="loading" icon="i-lucide-trending-up" />
         <SStat label="Custos no mês" :value="formatMoney(costs)" tone="error" :loading="loading" icon="i-lucide-trending-down" />
         <SStat label="Resultado líquido no mês" :value="formatMoney(at('net_result'))"
                :tone="Number(at('net_result')) < 0 ? 'error' : 'success'" :loading="loading" icon="i-lucide-scale" />
         <SStat label="Saldo em caixa hoje" :value="formatMoney(cash?.closing)" :loading="loading" icon="i-lucide-landmark" />
+        <NuxtLink v-if="auth.can('investments')" to="/investments">
+          <SStat label="Investimentos da empresa" :value="formatMoney(invested)" :loading="loading" icon="i-lucide-piggy-bank" />
+        </NuxtLink>
       </div>
 
       <SPanel title="Evolução mensal">

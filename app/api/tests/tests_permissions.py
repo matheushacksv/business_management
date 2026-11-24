@@ -86,15 +86,15 @@ class PermissionMatrixTest(TestCase):
     def test_expected_matrix(self):
         expected = {
             Role.ADMIN: {'users': 'vcud', 'companies': 'vcud', 'subgroups': 'vcud', 'contacts': 'vcud',
-                         'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'vcud', 'sales': 'vcud', 'legal': 'vcud', 'dunning': 'vcud'},
+                         'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'vcud', 'sales': 'vcud', 'legal': 'vcud', 'dunning': 'vcud', 'investments': 'vcud'},
             Role.FINANCE: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': 'vcud',
-                           'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'v', 'sales': 'vcud', 'legal': 'vcud', 'dunning': 'vcud'},
+                           'accounts': 'vcud', 'transactions': 'vcud', 'reports': 'v', 'sales': 'vcud', 'legal': 'vcud', 'dunning': 'vcud', 'investments': 'vcud'},
             Role.ACCOUNTANT: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': 'v',
-                              'accounts': 'v', 'transactions': 'v', 'reports': 'v', 'sales': 'v', 'legal': '', 'dunning': ''},
+                              'accounts': 'v', 'transactions': 'v', 'reports': 'v', 'sales': 'v', 'legal': '', 'dunning': '', 'investments': 'v'},
             Role.MANAGER: {'users': '', 'companies': 'v', 'subgroups': 'v', 'contacts': '',
-                           'accounts': '', 'transactions': '', 'reports': 'v', 'sales': 'v', 'legal': 'v', 'dunning': 'v'},
+                           'accounts': '', 'transactions': '', 'reports': 'v', 'sales': 'v', 'legal': 'v', 'dunning': 'v', 'investments': 'v'},
             Role.LEGAL: {'users': '', 'companies': 'v', 'subgroups': '', 'contacts': 'v',
-                         'accounts': '', 'transactions': '', 'reports': '', 'sales': 'v', 'legal': 'vcud', 'dunning': ''},
+                         'accounts': '', 'transactions': '', 'reports': '', 'sales': 'v', 'legal': 'vcud', 'dunning': '', 'investments': ''},
         }
         letters = {'view': 'v', 'create': 'c', 'change': 'u', 'delete': 'd'}
         for role, modules in expected.items():

@@ -421,6 +421,8 @@ def _bulk_targets(user: User, ids: list[int]) -> list[Transaction]:
         raise Transaction.DoesNotExist('One or more transactions do not exist')
     if any(t.transfer_id for t in txs):  # type:ignore
         raise ValidationError('Transfers must be changed one by one')
+    for t in txs:
+        _reject_transfer_leg(t)  # investment legs
     return txs
 
 
@@ -467,6 +469,8 @@ def bulk_delete_transactions_service(*, user: User, ids: list[int]) -> int:
 def _reject_transfer_leg(tx: Transaction) -> None:
     if tx.transfer_id:  # type:ignore
         raise ValidationError('This transaction is part of a transfer: change the transfer instead')
+    if getattr(tx, 'investment_movement', None) is not None:
+        raise ValidationError('Lançamento de um investimento: altere pelo módulo Investimentos')
 
 
 # Transfers between companies services

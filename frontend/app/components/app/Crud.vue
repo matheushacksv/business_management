@@ -150,6 +150,7 @@ async function destroy() {
       <slot name="toolbar" />
     </template>
 
+    <slot name="summary" :rows="filtered" />
     <div class="s-panel overflow-hidden">
       <UTable :data="pageRows" :columns="tableColumns" :loading="loading" sticky :empty="`Nenhum registro`"
               class="max-h-[calc(100dvh-14rem)]" @select="(_: Event, row: any) => rowTo ? navigateTo(rowTo(row.original)) : openEdit(row.original)" />

@@ -66,6 +66,11 @@ export const LABELS = {
   commissionKind: {
     seller: 'Vendedor', advisor: 'Assessor', scheduling: 'Agendamento', crm: 'Implementação de CRM', other: 'Outro',
   } as Record<string, string>,
+  investmentKind: {
+    cdb: 'CDB', lci_lca: 'LCI/LCA', treasury: 'Tesouro Direto', fund: 'Fundo', stocks: 'Ações', savings: 'Poupança', other: 'Outro',
+  } as Record<string, string>,
+  holder: { company: 'Empresa', personal: 'Pessoal' } as Record<string, string>,
+  movementKind: { application: 'Aplicação', redemption: 'Resgate', balance: 'Saldo atualizado' } as Record<string, string>,
 }
 
 export const DUNNING_LABELS = {
