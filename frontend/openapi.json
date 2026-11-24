@@ -7177,6 +7177,226 @@
     ]
    }
   },
+  "/api/collection-case/prefill": {
+   "get": {
+    "operationId": "api_endpoints_legal_prefill_endpoint",
+    "summary": "Prefill Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PrefillOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Suggested values for a new case, from the customer's sales, payments and collection attempts.",
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/responsibles": {
+   "get": {
+    "operationId": "api_endpoints_legal_responsibles_endpoint",
+    "summary": "Responsibles Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ResponsibleOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "description": "Who can be the legal responsible: active legal-team users and admins.",
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/legal-checklist-item": {
+   "get": {
+    "operationId": "api_endpoints_legal_list_checklist_items_endpoint",
+    "summary": "List Checklist Items Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ChecklistItemOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_legal_create_checklist_item_endpoint",
+    "summary": "Create Checklist Item Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ChecklistItemOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ChecklistItemIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/legal-checklist-item/{item_id}": {
+   "put": {
+    "operationId": "api_endpoints_legal_update_checklist_item_endpoint",
+    "summary": "Update Checklist Item Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "item_id",
+      "schema": {
+       "title": "Item Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ChecklistItemOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ChecklistItemIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_legal_delete_checklist_item_endpoint",
+    "summary": "Delete Checklist Item Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "item_id",
+      "schema": {
+       "title": "Item Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/collection-case/{case_id}": {
    "get": {
     "operationId": "api_endpoints_legal_get_case_endpoint",
@@ -7407,6 +7627,107 @@
     "tags": [
      "Legal"
     ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/{case_id}/checklist": {
+   "get": {
+    "operationId": "api_endpoints_legal_checklist_endpoint",
+    "summary": "Checklist Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CheckOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/{case_id}/checklist/{item_id}": {
+   "put": {
+    "operationId": "api_endpoints_legal_set_check_endpoint",
+    "summary": "Set Check Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     },
+     {
+      "in": "path",
+      "name": "item_id",
+      "schema": {
+       "title": "Item Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CheckOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SetCheck"
+       }
+      }
+     },
+     "required": true
+    },
     "security": [
      {
       "CookieJWTAuth": []
@@ -15940,6 +16261,28 @@
       ],
       "title": "Unrecoverable By Name"
      },
+     "responsible_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Responsible Id"
+     },
+     "responsible_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Responsible Name"
+     },
      "id": {
       "anyOf": [
        {
@@ -16078,6 +16421,7 @@
      "contact_name",
      "open_amount",
      "received_amount",
+     "responsible_id",
      "created_at",
      "updated_at"
     ],
@@ -16172,6 +16516,177 @@
      "drive_link"
     ],
     "title": "CreateCase",
+    "type": "object"
+   },
+   "PrefillOut": {
+    "properties": {
+     "client_company": {
+      "title": "Client Company",
+      "type": "string"
+     },
+     "contact_info": {
+      "title": "Contact Info",
+      "type": "string"
+     },
+     "delivered": {
+      "title": "Delivered",
+      "type": "string"
+     },
+     "proposal_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Proposal Amount"
+     },
+     "paid_amount": {
+      "title": "Paid Amount",
+      "type": "string"
+     },
+     "summary": {
+      "title": "Summary",
+      "type": "string"
+     }
+    },
+    "required": [
+     "client_company",
+     "contact_info",
+     "delivered",
+     "proposal_amount",
+     "paid_amount",
+     "summary"
+    ],
+    "title": "PrefillOut",
+    "type": "object"
+   },
+   "ResponsibleOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "ResponsibleOut",
+    "type": "object"
+   },
+   "ChecklistItemOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "label": {
+      "maxLength": 160,
+      "title": "Label",
+      "type": "string"
+     },
+     "required": {
+      "default": true,
+      "title": "Required",
+      "type": "boolean"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "position": {
+      "default": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "auto": {
+      "anyOf": [
+       {
+        "maxLength": 20,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Auto"
+     }
+    },
+    "required": [
+     "label"
+    ],
+    "title": "ChecklistItemOut",
+    "type": "object"
+   },
+   "AutoCheck": {
+    "description": "Checklist items the system ticks by itself from data it already has.",
+    "enum": [
+     "customer_data",
+     "contract",
+     "amounts",
+     "attempts",
+     "responsible"
+    ],
+    "title": "AutoCheck",
+    "type": "string"
+   },
+   "ChecklistItemIn": {
+    "properties": {
+     "label": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+     },
+     "required": {
+      "default": true,
+      "title": "Required",
+      "type": "boolean"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "position": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "auto": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AutoCheck"
+       },
+       {
+        "const": "",
+        "type": "string"
+       }
+      ],
+      "default": "",
+      "title": "Auto"
+     }
+    },
+    "required": [
+     "label"
+    ],
+    "title": "ChecklistItemIn",
     "type": "object"
    },
    "PatchCase": {
@@ -16299,6 +16814,17 @@
        }
       ],
       "title": "Unrecoverable"
+     },
+     "responsible_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Responsible Id"
      }
     },
     "title": "PatchCase",
@@ -16357,6 +16883,94 @@
      "text"
     ],
     "title": "CreateComment",
+    "type": "object"
+   },
+   "CheckOut": {
+    "properties": {
+     "item_id": {
+      "title": "Item Id",
+      "type": "integer"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "required": {
+      "title": "Required",
+      "type": "boolean"
+     },
+     "auto": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AutoCheck"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "done": {
+      "title": "Done",
+      "type": "boolean"
+     },
+     "note": {
+      "title": "Note",
+      "type": "string"
+     },
+     "checked_by_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Checked By Name"
+     },
+     "checked_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Checked At"
+     }
+    },
+    "required": [
+     "item_id",
+     "label",
+     "required",
+     "auto",
+     "done",
+     "note",
+     "checked_by_name",
+     "checked_at"
+    ],
+    "title": "CheckOut",
+    "type": "object"
+   },
+   "SetCheck": {
+    "properties": {
+     "done": {
+      "title": "Done",
+      "type": "boolean"
+     },
+     "note": {
+      "default": "",
+      "maxLength": 300,
+      "title": "Note",
+      "type": "string"
+     }
+    },
+    "required": [
+     "done"
+    ],
+    "title": "SetCheck",
     "type": "object"
    },
    "Holder": {

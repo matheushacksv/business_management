@@ -21,6 +21,7 @@ const editing = ref(false)
 // Progress (comments) lives in its own column, always visible
 const tabs = [
   { label: 'Resumo', value: 'summary', icon: 'i-lucide-file-text' },
+  { label: 'Checklist', value: 'checklist', icon: 'i-lucide-list-checks' },
   { label: 'Parcelas', value: 'installments', icon: 'i-lucide-calendar-range' },
   { label: 'Documentos', value: 'documents', icon: 'i-lucide-paperclip' },
 ]
@@ -174,6 +175,8 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </div>
           </template>
         </template>
+
+        <LegalChecklist v-else-if="tab === 'checklist'" :item="item" @changed="saved" />
 
         <AppAttachments v-else-if="tab === 'documents'" target="collection_case" :target-id="item.id!" :editable="canChange" />
 

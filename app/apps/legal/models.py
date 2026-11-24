@@ -39,6 +39,7 @@ class CollectionCase(models.Model):
     # Loss classification, apart from the stage: sent to legal is not the same as unrecoverable (PDF 15)
     unrecoverable_at = models.DateField(null=True, blank=True)
     unrecoverable_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    responsible = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')  # legal
     created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -62,3 +63,40 @@ class CaseComment(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-id']
+
+
+class AutoCheck(models.TextChoices):
+    """Checklist items the system ticks by itself from data it already has."""
+    CUSTOMER_DATA = 'customer_data', 'Cadastro do cliente completo'
+    CONTRACT = 'contract', 'Contrato anexado na venda'
+    AMOUNTS = 'amounts', 'Valores informados'
+    ATTEMPTS = 'attempts', 'Tentativas de cobrança registradas'
+    RESPONSIBLE = 'responsible', 'Responsável jurídico definido'
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class ChecklistItem(models.Model):
+    """What a case needs before it is filed (PDF 11.2), set up by the admin."""
+
+    label = models.CharField(max_length=160)
+    required = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)
+    position = models.PositiveSmallIntegerField(default=0)
+    auto = models.CharField(max_length=20, choices=AutoCheck.choices, blank=True)  # blank: ticked by hand
+
+    class Meta:
+        ordering = ['position', 'id']
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class CaseCheck(models.Model):
+    """A manual item ticked on a case."""
+
+    case = models.ForeignKey(CollectionCase, on_delete=models.CASCADE, related_name='checks')
+    item = models.ForeignKey(ChecklistItem, on_delete=models.CASCADE, related_name='+')
+    note = models.CharField(max_length=300, blank=True)
+    checked_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    checked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['case', 'item'], name='unique_case_check')]

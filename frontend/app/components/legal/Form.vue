@@ -29,19 +29,27 @@ watch(lookups.options.companies, (list) => {
   if (!state.company_id && list.length) state.company_id = list[0]!.value as number
 }, { immediate: true })
 
-// New case: prefill "Empresa" and "Contato" from the customer's registration
-watch(() => state.contact_id, async (id) => {
-  if (c || !id) return
+// New case: prefill from what the system already has (registration, sales, payments, collection attempts)
+let autoSummary = ''  // replaced (not appended again) when the customer/company changes
+watch(() => [state.contact_id, state.company_id], async ([contactId, companyId]) => {
+  if (c || !contactId || !companyId) return
   try {
-    const contact = await unwrap(api.GET('/api/contact/{contact_id}', { params: { path: { contact_id: id } } }))
-    state.client_company ||= contact.company_name ?? ''
-    state.contact_info ||= [contact.phone, contact.email].filter(Boolean).join(' · ')
+    const p = await unwrap(api.GET('/api/collection-case/prefill', { params: { query: { company_id: companyId as number, contact_id: contactId as number } } }))
+    state.client_company ||= p.client_company
+    state.contact_info ||= p.contact_info
+    state.delivered ||= p.delivered
+    state.summary = [state.summary.replace(autoSummary, '').trim(), p.summary].filter(Boolean).join(' ')
+    autoSummary = p.summary
+    if (state.proposal_amount == null && p.proposal_amount != null) state.proposal_amount = Number(p.proposal_amount)
+    if (state.paid_amount == null) state.paid_amount = Number(p.paid_amount)
   } catch (e) {
     notifyError(e)
   }
 }, { immediate: true })
 
+const OPEN_STAGES = ['new', 'stand_by', 'requested']  // from "Ação Protocolada" on: checklist (Drawer)
 const stageOptions = Object.entries(LABELS.caseStage).map(([value, label]) => ({ value, label }))
+  .filter(o => c || OPEN_STAGES.includes(o.value))
 const needsAgreement = computed(() => state.stage === 'agreement')
 const saving = ref(false)
 

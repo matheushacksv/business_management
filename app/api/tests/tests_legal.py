@@ -7,7 +7,7 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import selectors, services
 from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
-from apps.legal.models import CaseStage, CollectionCase
+from apps.legal.models import CaseStage, ChecklistItem, CollectionCase
 from apps.users.models import Role, User
 
 
@@ -88,6 +88,7 @@ class CollectionCaseTests(TestCase):
         self.assertFalse(CollectionCase.objects.exists())
 
     def test_agreement_stage_requires_agreement_and_logs_moves(self):
+        ChecklistItem.objects.update(required=False)  # checklist: ChecklistTests
         case_id = self.create().json()['id']
         self.assertEqual(self.patch(case_id, stage=CaseStage.FILED).status_code, 200)
         self.assertEqual(self.patch(case_id, stage=CaseStage.AGREEMENT).status_code, 400)
@@ -138,3 +139,53 @@ class CollectionCaseTests(TestCase):
         self.assertEqual(self.create().status_code, 403)
         stages = self.client.get('/api/collection-case/stages', headers=self.auth).json()
         self.assertEqual(len(stages), 8)
+
+
+class ChecklistTests(TestCase):
+    setUp, payload, create = CollectionCaseTests.setUp, CollectionCaseTests.payload, CollectionCaseTests.create
+
+    def patch(self, case_id, body):
+        return self.client.patch(f'/api/collection-case/{case_id}', data=body, content_type='application/json', headers=self.auth)
+
+    def test_prefill_from_sales_payments_and_overdue(self):
+        from apps.sales.models import Product, Sale
+        Sale.objects.create(company=self.a, contact=self.maria, date=dt.date(2026, 1, 5), amount=Decimal('2000'),
+                            product=Product.objects.create(name='Mentoria'))
+        r = self.client.get(f'/api/collection-case/prefill?company_id={self.a.pk}&contact_id={self.maria.pk}', headers=self.auth)
+        data = r.json()
+        self.assertEqual((Decimal(data['proposal_amount']), Decimal(data['paid_amount'])), (Decimal('2000'), Decimal('1000')))
+        self.assertEqual(data['delivered'], 'Mentoria (contrato de 05/01/2026)')
+        self.assertIn('2 parcela(s) em atraso desde 10/02/2026, total R$ 1.000,00', data['summary'])
+
+    def test_filed_needs_required_items(self):
+        case_id = self.create().json()['id']
+        self.assertEqual(self.create(stage='filed').status_code, 400)
+        r = self.patch(case_id, {'stage': 'filed'})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('Contrato assinado', str(r.json()))
+        items = self.client.get(f'/api/collection-case/{case_id}/checklist', headers=self.auth).json()
+        self.assertTrue(next(i for i in items if i['auto'] == 'amounts')['done'])
+        auto = next(i for i in items if i['auto'] == 'contract')
+        self.assertEqual(self.client.put(f'/api/collection-case/{case_id}/checklist/{auto["item_id"]}', data={'done': True},
+                                         content_type='application/json', headers=self.auth).status_code, 400)
+        # admin makes the automatic ones optional; manual ones get ticked; responsible set
+        ChecklistItem.objects.filter(auto__in=['customer_data', 'contract', 'attempts']).update(required=False)
+        for i in items:
+            if not i['auto']:
+                r = self.client.put(f'/api/collection-case/{case_id}/checklist/{i["item_id"]}', data={'done': True, 'note': 'ok'},
+                                    content_type='application/json', headers=self.auth)
+                self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(self.patch(case_id, {'stage': 'filed'}).status_code, 400)  # responsible missing
+        self.assertEqual(self.patch(case_id, {'responsible_id': self.admin.pk}).json()['responsible_name'], 'admin@test.com')
+        self.assertEqual(self.patch(case_id, {'stage': 'filed'}).status_code, 200)
+        self.assertEqual(self.patch(case_id, {'summary': 'Ainda devendo'}).status_code, 200)
+
+    def test_items_admin_only(self):
+        legal = User.objects.create_user(email='j@test.com', password='Str@ngPassw8rd2026', role=Role.LEGAL)
+        body = {'label': 'Procuração', 'required': True}
+        self.assertEqual(self.client.post('/api/legal-checklist-item', data=body, content_type='application/json',
+                                          headers=auth_for(legal)).status_code, 403)
+        self.assertEqual(self.client.post('/api/legal-checklist-item', data=body, content_type='application/json',
+                                          headers=self.auth).status_code, 201)
+        names = [r['name'] for r in self.client.get('/api/collection-case/responsibles', headers=auth_for(legal)).json()]
+        self.assertEqual(sorted(names), ['admin@test.com', 'j@test.com'])

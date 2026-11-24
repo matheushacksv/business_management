@@ -1,11 +1,14 @@
+from django.db.models import Q
 from ninja import Query, Router
 
 from api.schemas.legal_dto import (
-    CaseFilters, CaseOut, CommentOut, CreateCase, CreateComment, PatchCase, StageOut,
+    CaseFilters, CaseOut, CheckOut, ChecklistItemIn, ChecklistItemOut, CommentOut, CreateCase, CreateComment, PatchCase,
+    PrefillOut, ResponsibleOut, SetCheck, StageOut,
 )
 from api.schemas.transactions_dto import TransactionOut
 from apps.legal import services
-from apps.legal.models import CaseStage
+from apps.legal.models import CaseStage, ChecklistItem
+from apps.users.models import Role, User
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
 
 router = Router(tags=['Legal'])
@@ -13,6 +16,8 @@ router = Router(tags=['Legal'])
 
 def _clean(data) -> dict:
     fields = data.dict(exclude_unset=True, exclude_none=True)
+    if 'responsible_id' in data.dict(exclude_unset=True):  # null clears it
+        fields['responsible_id'] = data.responsible_id
     if 'drive_link' in fields:
         fields['drive_link'] = str(fields['drive_link'])
     return fields
@@ -35,6 +40,52 @@ def list_cases_endpoint(request, filters: Query[CaseFilters]):
 @require_permission('legal', CREATE)
 def create_case_endpoint(request, data: CreateCase):
     return 201, services.create_case_service(user=request.user, **_clean(data))
+
+
+@router.get('/collection-case/prefill', response=PrefillOut)
+@require_permission('legal', VIEW)
+def prefill_endpoint(request, company_id: int, contact_id: int):
+    """Suggested values for a new case, from the customer's sales, payments and collection attempts."""
+    return services.prefill_service(user=request.user, company_id=company_id, contact_id=contact_id)
+
+
+@router.get('/collection-case/responsibles', response=list[ResponsibleOut])
+@require_permission('legal', VIEW)
+def responsibles_endpoint(request):
+    """Who can be the legal responsible: active legal-team users and admins."""
+    users = User.objects.filter(is_active=True).filter(Q(role__in=[Role.LEGAL, Role.ADMIN]) | Q(is_superuser=True))
+    return [{'id': u.pk, 'name': u.name or u.email} for u in users.order_by('name', 'email')]
+
+
+# Checklist items: set up by the admin (users module)
+
+@router.get('/legal-checklist-item', response=list[ChecklistItemOut])
+@require_permission('legal', VIEW)
+def list_checklist_items_endpoint(request):
+    return ChecklistItem.objects.all()
+
+
+@router.post('/legal-checklist-item', response={201: ChecklistItemOut})
+@require_permission('users', CHANGE)
+def create_checklist_item_endpoint(request, data: ChecklistItemIn):
+    return 201, ChecklistItem.objects.create(**data.dict())
+
+
+@router.put('/legal-checklist-item/{item_id}', response=ChecklistItemOut)
+@require_permission('users', CHANGE)
+def update_checklist_item_endpoint(request, item_id: int, data: ChecklistItemIn):
+    item = ChecklistItem.objects.get(pk=item_id)
+    for key, value in data.dict().items():
+        setattr(item, key, value)
+    item.save()
+    return item
+
+
+@router.delete('/legal-checklist-item/{item_id}', response={204: None})
+@require_permission('users', CHANGE)
+def delete_checklist_item_endpoint(request, item_id: int):
+    ChecklistItem.objects.filter(pk=item_id).delete()
+    return 204, None
 
 
 @router.get('/collection-case/{case_id}', response=CaseOut)
@@ -72,3 +123,15 @@ def add_comment_endpoint(request, case_id: int, data: CreateComment):
 @require_permission('legal', VIEW)
 def case_transactions_endpoint(request, case_id: int):
     return services.case_transactions_service(user=request.user, case_id=case_id)
+
+
+@router.get('/collection-case/{case_id}/checklist', response=list[CheckOut])
+@require_permission('legal', VIEW)
+def checklist_endpoint(request, case_id: int):
+    return services.checklist_service(user=request.user, case_id=case_id)
+
+
+@router.put('/collection-case/{case_id}/checklist/{item_id}', response=list[CheckOut])
+@require_permission('legal', CHANGE)
+def set_check_endpoint(request, case_id: int, item_id: int, data: SetCheck):
+    return services.set_check_service(user=request.user, case_id=case_id, item_id=item_id, **data.dict())

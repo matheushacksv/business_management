@@ -1377,6 +1377,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/collection-case/prefill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prefill Endpoint
+         * @description Suggested values for a new case, from the customer's sales, payments and collection attempts.
+         */
+        get: operations["api_endpoints_legal_prefill_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case/responsibles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Responsibles Endpoint
+         * @description Who can be the legal responsible: active legal-team users and admins.
+         */
+        get: operations["api_endpoints_legal_responsibles_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/legal-checklist-item": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Checklist Items Endpoint */
+        get: operations["api_endpoints_legal_list_checklist_items_endpoint"];
+        put?: never;
+        /** Create Checklist Item Endpoint */
+        post: operations["api_endpoints_legal_create_checklist_item_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/legal-checklist-item/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Checklist Item Endpoint */
+        put: operations["api_endpoints_legal_update_checklist_item_endpoint"];
+        post?: never;
+        /** Delete Checklist Item Endpoint */
+        delete: operations["api_endpoints_legal_delete_checklist_item_endpoint"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/collection-case/{case_id}": {
         parameters: {
             query?: never;
@@ -1424,6 +1500,40 @@ export interface paths {
         /** Case Transactions Endpoint */
         get: operations["api_endpoints_legal_case_transactions_endpoint"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case/{case_id}/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checklist Endpoint */
+        get: operations["api_endpoints_legal_checklist_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case/{case_id}/checklist/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Check Endpoint */
+        put: operations["api_endpoints_legal_set_check_endpoint"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4053,6 +4163,10 @@ export interface components {
             received_amount: string;
             /** Unrecoverable By Name */
             unrecoverable_by_name?: string | null;
+            /** Responsible Id */
+            responsible_id: number | null;
+            /** Responsible Name */
+            responsible_name?: string | null;
             /** ID */
             id?: number | null;
             /** Client Company */
@@ -4123,6 +4237,83 @@ export interface components {
              */
             agreement: string;
         };
+        /** PrefillOut */
+        PrefillOut: {
+            /** Client Company */
+            client_company: string;
+            /** Contact Info */
+            contact_info: string;
+            /** Delivered */
+            delivered: string;
+            /** Proposal Amount */
+            proposal_amount: string | null;
+            /** Paid Amount */
+            paid_amount: string;
+            /** Summary */
+            summary: string;
+        };
+        /** ResponsibleOut */
+        ResponsibleOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
+        /** ChecklistItemOut */
+        ChecklistItemOut: {
+            /** ID */
+            id?: number | null;
+            /** Label */
+            label: string;
+            /**
+             * Required
+             * @default true
+             */
+            required: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** Auto */
+            auto?: string | null;
+        };
+        /**
+         * AutoCheck
+         * @description Checklist items the system ticks by itself from data it already has.
+         * @enum {string}
+         */
+        AutoCheck: "customer_data" | "contract" | "amounts" | "attempts" | "responsible";
+        /** ChecklistItemIn */
+        ChecklistItemIn: {
+            /** Label */
+            label: string;
+            /**
+             * Required
+             * @default true
+             */
+            required: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /**
+             * Auto
+             * @default
+             */
+            auto: components["schemas"]["AutoCheck"] | "";
+        };
         /** PatchCase */
         PatchCase: {
             /** Client Company */
@@ -4144,6 +4335,8 @@ export interface components {
             agreement?: string | null;
             /** Unrecoverable */
             unrecoverable?: boolean | null;
+            /** Responsible Id */
+            responsible_id?: number | null;
         };
         /** CommentOut */
         CommentOut: {
@@ -4163,6 +4356,34 @@ export interface components {
         CreateComment: {
             /** Text */
             text: string;
+        };
+        /** CheckOut */
+        CheckOut: {
+            /** Item Id */
+            item_id: number;
+            /** Label */
+            label: string;
+            /** Required */
+            required: boolean;
+            auto: components["schemas"]["AutoCheck"] | null;
+            /** Done */
+            done: boolean;
+            /** Note */
+            note: string;
+            /** Checked By Name */
+            checked_by_name: string | null;
+            /** Checked At */
+            checked_at: string | null;
+        };
+        /** SetCheck */
+        SetCheck: {
+            /** Done */
+            done: boolean;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
         };
         /**
          * Holder
@@ -7621,6 +7842,139 @@ export interface operations {
             };
         };
     };
+    api_endpoints_legal_prefill_endpoint: {
+        parameters: {
+            query: {
+                company_id: number;
+                contact_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrefillOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_responsibles_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponsibleOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_list_checklist_items_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_create_checklist_item_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_update_checklist_item_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItemOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_delete_checklist_item_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_endpoints_legal_get_case_endpoint: {
         parameters: {
             query?: never;
@@ -7755,6 +8109,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_checklist_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_set_check_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCheck"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckOut"][];
                 };
             };
         };

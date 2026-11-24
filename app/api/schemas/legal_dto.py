@@ -1,9 +1,11 @@
 from decimal import Decimal
+from typing import Literal
 
 from ninja import ModelSchema, Schema
 from pydantic import Field, HttpUrl
+import datetime as dt
 
-from apps.legal.models import CaseComment, CaseStage, CollectionCase
+from apps.legal.models import AutoCheck, CaseComment, CaseStage, ChecklistItem, CollectionCase
 
 Money = Field(ge=0, max_digits=14, decimal_places=2)
 Required = Field(min_length=1)
@@ -35,6 +37,7 @@ class PatchCase(Schema):
     stage: CaseStage | None = None
     agreement: str | None = None
     unrecoverable: bool | None = None
+    responsible_id: int | None = None
 
 
 class CaseOut(ModelSchema):
@@ -45,11 +48,18 @@ class CaseOut(ModelSchema):
     open_amount: Decimal  # linked installments still planned: what is owed
     received_amount: Decimal  # linked installments realized
     unrecoverable_by_name: str | None = None
+    responsible_id: int | None
+    responsible_name: str | None = None
 
     class Meta:
         model = CollectionCase
         fields = ['id', 'client_company', 'contact_info', 'delivered', 'proposal_amount', 'paid_amount',
                   'summary', 'drive_link', 'stage', 'agreement', 'unrecoverable_at', 'created_at', 'updated_at']
+
+    @staticmethod
+    def resolve_responsible_name(obj) -> str | None:
+        u = obj.responsible
+        return (u.name or u.email) if u else None
 
     @staticmethod
     def resolve_unrecoverable_by_name(obj) -> str | None:
@@ -84,3 +94,47 @@ class StageOut(Schema):
     value: str
     label: str
 
+
+
+class PrefillOut(Schema):
+    client_company: str
+    contact_info: str
+    delivered: str
+    proposal_amount: Decimal | None
+    paid_amount: Decimal
+    summary: str
+
+
+class CheckOut(Schema):
+    item_id: int
+    label: str
+    required: bool
+    auto: AutoCheck | None
+    done: bool
+    note: str
+    checked_by_name: str | None
+    checked_at: dt.datetime | None
+
+
+class SetCheck(Schema):
+    done: bool
+    note: str = Field('', max_length=300)
+
+
+class ChecklistItemIn(Schema):
+    label: str = Field(min_length=1, max_length=160)
+    required: bool = True
+    active: bool = True
+    position: int = Field(0, ge=0)
+    auto: AutoCheck | Literal[''] = ''
+
+
+class ChecklistItemOut(ModelSchema):
+    class Meta:
+        model = ChecklistItem
+        fields = ['id', 'label', 'required', 'active', 'position', 'auto']
+
+
+class ResponsibleOut(Schema):
+    id: int
+    name: str

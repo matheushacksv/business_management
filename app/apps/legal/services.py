@@ -3,18 +3,21 @@ from decimal import Decimal
 import pghistory
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import DecimalField, Q, Sum, Value
+from django.db.models import Count, DecimalField, Min, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, Transaction, TransactionStatus, TransactionType
-from apps.legal.models import CaseComment, CaseStage, CollectionCase
+from apps.legal.models import AutoCheck, CaseCheck, CaseComment, CaseStage, ChecklistItem, CollectionCase
 from apps.users.models import User
 
 MONEY = DecimalField(max_digits=16, decimal_places=2)
 TEXT_FIELDS = ('client_company', 'contact_info', 'delivered', 'summary', 'drive_link', 'agreement')
 AGREEMENT_STAGES = {CaseStage.AGREEMENT}
+_ORDER = list(CaseStage.values)
+# From "Ação Protocolada" on, the required checklist items must be done (PDF 11.2)
+LOCKED_STAGES = set(_ORDER[_ORDER.index(CaseStage.FILED):])
 
 
 def _linked(status: str):
@@ -26,7 +29,7 @@ def _cases_for(user: User):
     return (CollectionCase.objects.filter(company__in=list_companies_service(user=user))
             .annotate(open_amount=_linked(TransactionStatus.PLANNED),  # still owed
                       received_amount=_linked(TransactionStatus.REALIZED))
-            .select_related('company', 'contact', 'unrecoverable_by'))
+            .select_related('company', 'contact', 'unrecoverable_by', 'responsible'))
 
 
 def _check(case: CollectionCase) -> None:
@@ -66,6 +69,8 @@ def create_case_service(*, user: User, company_id: int, contact_id: int, **field
             fields[field] = fields[field].strip()
     case = CollectionCase(company=company, contact_id=contact_id, created_by=user, **fields)
     _check(case)
+    if case.stage in LOCKED_STAGES:
+        raise ValidationError('Abra o caso numa etapa anterior a "Ação Protocolada" e complete o checklist')
     with transaction.atomic(), pghistory.context(user=user.pk):
         case.save()
         linked = Transaction.objects.filter(
@@ -89,11 +94,18 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
     for field in TEXT_FIELDS:
         if field in fields:
             fields[field] = fields[field].strip()
+    if 'responsible_id' in fields and fields['responsible_id'] is not None \
+            and not User.objects.filter(pk=fields['responsible_id'], is_active=True).exists():
+        raise ValidationError('Responsável não existe')
     for field, value in fields.items():
         setattr(case, field, value)
     _check(case)
+    if case.stage in LOCKED_STAGES and old_stage not in LOCKED_STAGES:
+        missing = [c['label'] for c in checklist_service(user=user, case_id=case.pk, case=case) if c['required'] and not c['done']]
+        if missing:
+            raise ValidationError(f'Checklist incompleto: {"; ".join(missing)}')
     with transaction.atomic(), pghistory.context(user=user.pk):
-        case.save(update_fields=[*fields, 'updated_at'])
+        case.save(update_fields=[*fields, 'updated_at'])  # responsible_id: Django accepts the attname
         if case.stage != old_stage:
             text = f'Etapa: {CaseStage(old_stage).label} → {CaseStage(case.stage).label}'
             if case.stage in AGREEMENT_STAGES:
@@ -127,3 +139,98 @@ def add_comment_service(*, user: User, case_id: int, text: str) -> CaseComment:
 def case_transactions_service(*, user: User, case_id: int):
     case = get_case_service(user=user, case_id=case_id)
     return case.transactions.select_related('company', 'subgroup', 'account', 'contact').order_by('date', 'id')
+
+
+
+# Data the system already has: prefill of the legal form and automatic checklist items
+
+def _overdue(company_id: int, contact_id: int):
+    return Transaction.objects.filter(company_id=company_id, contact_id=contact_id, type=TransactionType.INFLOW,
+                                      status=TransactionStatus.PLANNED, date__lt=timezone.localdate())
+
+
+def prefill_service(*, user: User, company_id: int, contact_id: int) -> dict:
+    from apps.dunning.models import Activity, ActivityKind
+    from apps.sales.models import Sale, SaleStatus
+
+    company = list_companies_service(user=user).get(pk=company_id)
+    contact = Contact.objects.get(pk=contact_id)
+    sales = list(Sale.objects.filter(company=company, contact=contact).exclude(status=SaleStatus.CANCELED)
+                 .select_related('product').order_by('date'))
+    received = Transaction.objects.filter(company=company, contact=contact, type=TransactionType.INFLOW,
+                                          status=TransactionStatus.REALIZED).aggregate(t=Sum('amount'))['t']
+    overdue = _overdue(company.pk, contact.pk).aggregate(t=Sum('amount'), n=Count('id'), since=Min('date'))
+    done = Activity.objects.filter(card__company=company, card__contact=contact, done_at__isnull=False)
+    summary = []
+    if overdue['n']:
+        total = f'{overdue["t"]:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+        summary.append(f'{overdue["n"]} parcela(s) em atraso desde {overdue["since"]:%d/%m/%Y}, total R$ {total}.')
+    if done.exists():
+        counts = {k: done.filter(kind=k).count() for k in ActivityKind.values}
+        parts = [f'{n} {ActivityKind(k).label.lower()}(s)' for k, n in counts.items() if n]
+        silent = done.filter(answered=False).count()
+        summary.append(f'Cobrança: {", ".join(parts)}' + (f', {silent} sem retorno' if silent else '') + '.')
+    return {
+        'client_company': contact.company_name,
+        'contact_info': ' · '.join(v for v in (contact.phone, contact.email) if v),
+        'delivered': '; '.join(f'{s.product.name if s.product else "Venda"} (contrato de {s.date:%d/%m/%Y})' for s in sales),
+        'proposal_amount': sum((s.amount for s in sales), Decimal('0')) if sales else None,
+        'paid_amount': received or Decimal('0'),
+        'summary': ' '.join(summary),
+    }
+
+
+def _auto_done(case: CollectionCase) -> dict[str, bool]:
+    from apps.attachments.models import Attachment
+    from apps.dunning.models import Activity
+    from apps.finance.services import check_customer
+    from apps.sales.models import Sale, SaleStatus
+    from django.contrib.contenttypes.models import ContentType
+
+    try:
+        check_customer(case.contact)
+        customer_ok = True
+    except ValidationError:
+        customer_ok = False
+    sale_ids = Sale.objects.filter(company_id=case.company_id, contact_id=case.contact_id) \
+        .exclude(status=SaleStatus.CANCELED).values_list('pk', flat=True)  # type:ignore
+    return {
+        AutoCheck.CUSTOMER_DATA: customer_ok,
+        AutoCheck.CONTRACT: Attachment.objects.filter(content_type=ContentType.objects.get_for_model(Sale),
+                                                      object_id__in=list(sale_ids)).exists(),
+        AutoCheck.AMOUNTS: case.proposal_amount is not None and case.paid_amount is not None,
+        AutoCheck.ATTEMPTS: Activity.objects.filter(card__company_id=case.company_id, card__contact_id=case.contact_id,  # type:ignore
+                                                    done_at__isnull=False).exists(),
+        AutoCheck.RESPONSIBLE: case.responsible_id is not None,  # type:ignore
+    }
+
+
+def checklist_service(*, user: User, case_id: int, case: CollectionCase | None = None) -> list[dict]:
+    case = case or get_case_service(user=user, case_id=case_id)
+    auto = _auto_done(case)
+    checks = {c.item_id: c for c in case.checks.select_related('checked_by')}  # type:ignore
+    result = []
+    for item in ChecklistItem.objects.filter(active=True):
+        check = checks.get(item.pk)
+        result.append({
+            'item_id': item.pk, 'label': item.label, 'required': item.required, 'auto': item.auto or None,
+            'done': auto[item.auto] if item.auto else check is not None,
+            'note': check.note if check else '',
+            'checked_by_name': (check.checked_by.name or check.checked_by.email) if check and check.checked_by else None,
+            'checked_at': check.checked_at if check else None,
+        })
+    return result
+
+
+def set_check_service(*, user: User, case_id: int, item_id: int, done: bool, note: str = '') -> list[dict]:
+    case = get_case_service(user=user, case_id=case_id)
+    item = ChecklistItem.objects.get(pk=item_id, active=True)
+    if item.auto:
+        raise ValidationError('Este item é marcado pelo sistema')
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        if done:
+            CaseCheck.objects.update_or_create(case=case, item=item, defaults={'note': note.strip(), 'checked_by': user})
+            _log(user, case, f'Checklist: ✓ {item.label}' + (f' ({note.strip()})' if note.strip() else ''))
+        elif CaseCheck.objects.filter(case=case, item=item).delete()[0]:
+            _log(user, case, f'Checklist: desmarcado {item.label}')
+    return checklist_service(user=user, case_id=case.pk, case=case)

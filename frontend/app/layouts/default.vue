@@ -50,6 +50,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
 
   const legal = section('Jurídico', [
     can('legal') && { label: 'Ações', icon: 'i-lucide-scale', to: '/legal' },
+    !!auth.me.value?.is_admin && { label: 'Checklist', icon: 'i-lucide-list-checks', to: '/legal/checklist' },
   ])
 
   const tools = keep<NavigationMenuItem>([
