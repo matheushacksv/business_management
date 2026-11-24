@@ -53,7 +53,10 @@ const BODY_TEMPLATE = JSON.stringify({
   notes: '', signed_date: '', down_payment: '', down_payment_date: '', first_installment_date: '',
 }, null, 2)
 
-// Event log
+const TABS = [{ label: 'Pipedrive', value: 'pipedrive' }, { label: 'Asaas', value: 'asaas' }]
+const tab = ref('pipedrive')
+
+// Event log of the current tab
 const status = ref<string>()
 const page = ref(1)
 const events = ref<Event[]>([])
@@ -62,7 +65,7 @@ const loading = ref(false)
 async function load() {
   loading.value = true
   try {
-    const data = await unwrap(api.GET('/api/integrations/events', { params: { query: { status: status.value, page: page.value } } }))
+    const data = await unwrap(api.GET('/api/integrations/events', { params: { query: { source: tab.value, status: status.value, page: page.value } } }))
     events.value = data.items
     count.value = data.count
   } catch (e) {
@@ -71,8 +74,8 @@ async function load() {
     loading.value = false
   }
 }
-watch(status, () => { page.value = 1 })
-watch([status, page], load, { immediate: true })
+watch([tab, status], () => { page.value = 1 })
+watch([tab, status, page], load, { immediate: true })
 
 async function reprocess(e: Event) {
   try {
@@ -112,7 +115,8 @@ const columns: TableColumn<Event>[] = [
 
 <template>
   <AppPage title="Integrações">
-    <SPanel title="Pipedrive">
+    <UTabs v-model="tab" :items="TABS" :content="false" class="w-fit" />
+    <SPanel v-if="tab === 'pipedrive'" title="Pipedrive">
       <div class="grid gap-4 md:grid-cols-2">
         <UFormField label="URL (POST)">
           <UInput :model-value="webhookUrl" readonly class="w-full">
@@ -139,7 +143,7 @@ const columns: TableColumn<Event>[] = [
       <UButton label="Copiar modelo do JSON" icon="i-lucide-braces" color="neutral" variant="outline" size="sm" class="mt-4"
                @click="copy(BODY_TEMPLATE)" />
     </SPanel>
-    <IntegrationsAsaas />
+    <IntegrationsAsaas v-else />
 
     <template #toolbar>
       <USelect v-model="status" :items="Object.entries(LABEL).map(([value, l]) => ({ label: l.label, value }))"

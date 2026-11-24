@@ -64,8 +64,10 @@ def generate_pipedrive_credentials(request):
 @router.get('/integrations/events', response=list[EventOut])
 @paginate(PageNumberPagination, page_size=50)
 @require_permission('users', VIEW)
-def list_events(request, status: str | None = None):
+def list_events(request, status: str | None = None, source: str | None = None):
     qs = WebhookEvent.objects.all()
+    if source:
+        qs = qs.filter(source=source)
     return qs.filter(status=status) if status else qs
 
 
