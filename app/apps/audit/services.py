@@ -9,10 +9,12 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, Validat
 from django.db import models
 
 from apps.attachments.services import TARGETS as ATTACHMENT_TARGETS
-from apps.companies.services import get_company_service
+from apps.companies.services import get_company_service, list_companies_service
 from apps.finance.models import Account, SubGroup
 from apps.finance.services import get_account_service, get_subgroup_service
-from apps.sales.models import Product, Salesperson
+from apps.investments.models import Investment, Movement
+from apps.investments.services import get_investment_service
+from apps.sales.models import Commission, Product, Salesperson
 from apps.users.models import User
 from apps.users.permissions import VIEW, check_permission
 from apps.users.services import get_user_service
@@ -34,6 +36,11 @@ TARGETS: dict[str, Target] = {
     'product': Target(Product, 'sales', lambda user, pk: Product.objects.get(pk=pk)),
     'salesperson': Target(Salesperson, 'sales', lambda user, pk: Salesperson.objects.get(pk=pk)),
     'user': Target(User, 'users', lambda user, pk: get_user_service(user_id=pk)),
+    'investment': Target(Investment, 'investments', lambda user, pk: get_investment_service(user=user, investment_id=pk)),
+    'movement': Target(Movement, 'investments', lambda user, pk: Movement.objects.get(
+        pk=pk, investment__company__in=list_companies_service(user=user))),
+    'commission': Target(Commission, 'sales', lambda user, pk: Commission.objects.get(
+        pk=pk, sale__company__in=list_companies_service(user=user))),
 }
 
 

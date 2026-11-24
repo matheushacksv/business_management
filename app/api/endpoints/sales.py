@@ -40,7 +40,7 @@ from api.schemas.transactions_dto import TransactionOut
 from apps.finance.exporter import XLSX_CONTENT_TYPE
 from apps.sales import selectors, services
 from apps.sales.models import SalesConfig
-from apps.sales.exporter import commissions_xlsx
+from apps.sales.exporter import commissions_xlsx, sales_report_xlsx
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Sales'])
@@ -286,3 +286,13 @@ def delete_commission_endpoint(request, commission_id: int):
 def sales_report_endpoint(request, params: Query[SalesReportParams], filters: Query[SaleFilters]):
     check_permission(request.user, 'sales', VIEW)
     return selectors.sales_report_selector(user=request.user, **params.dict(), **filters.dict())
+
+
+@router.get('/reports/sales/export')
+@require_permission('reports', VIEW)
+def export_sales_report_endpoint(request, params: Query[SalesReportParams], filters: Query[SaleFilters]):
+    check_permission(request.user, 'sales', VIEW)
+    report = selectors.sales_report_selector(user=request.user, **params.dict(), **filters.dict())
+    response = HttpResponse(sales_report_xlsx(report), content_type=XLSX_CONTENT_TYPE)
+    response['Content-Disposition'] = f'attachment; filename="vendas-recebido-{params.start:%Y-%m}-{params.end:%Y-%m}.xlsx"'
+    return response

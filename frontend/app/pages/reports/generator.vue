@@ -15,6 +15,7 @@ const KINDS = [
   { label: 'Análise', value: 'analysis', module: 'reports' },
   { label: 'Lançamentos', value: 'transactions', module: 'transactions' },
   { label: 'Comissões', value: 'commissions', module: 'sales' },
+  { label: 'Vendas × recebido', value: 'sales', module: 'sales' },
   { label: 'Investimentos', value: 'investments', module: 'investments' },
 ].filter(k => auth.can(k.module))
 const kindLabel = (v: string) => KINDS.find(k => k.value === v)?.label ?? v
@@ -51,11 +52,12 @@ const QUERIES: Record<string, () => Record<string, unknown>> = {
   analysis: () => ({ month: `${f.month}-01`, ...picked(), ...common() }),
   transactions: () => ({ date_from: f.start, date_to: f.end, ...picked(), ...common(), type: f.type, contact_id: f.contact_id ?? undefined, ordering: 'date' }),
   commissions: () => ({ month: `${f.month}-01`, salesperson_id: f.salesperson_id, company_id: f.company_id, status: f.commission_status }),
+  sales: () => ({ start: f.start, end: f.end, company_id: f.company_id, salesperson_id: f.salesperson_id }),
   investments: () => ({ holder: f.holder, company_id: f.company_id, as_of: f.as_of || undefined }),
 }
 const EXCEL: Record<string, string> = {
   dre: '/api/reports/dre/export', cash_flow: '/api/reports/cash-flow/export', analysis: '/api/reports/analysis/export',
-  transactions: '/api/transaction/export', commissions: '/api/commission/export', investments: '/api/investment/export',
+  transactions: '/api/transaction/export', commissions: '/api/commission/export', sales: '/api/reports/sales/export', investments: '/api/investment/export',
 }
 const qs = () => toSearchParams(QUERIES[f.kind]!())
 const get = async (path: string) => (await raw(`${path}?${qs()}`)).json()
@@ -120,6 +122,16 @@ async function buildSheet(): Promise<Omit<Sheet, 'subtitle'>> {
         ...list.map((c: any) => ({ cells: [c.salesperson_name, LABELS.commissionKind[c.kind] ?? c.kind, c.contact_name ?? `Venda #${c.sale_id}`,
           m(c.sale_amount), m(c.amount), c.payment_id ? `Paga ${formatDate(c.paid_on)}` : c.first_payment ? 'A pagar' : 'Prevista'] })),
         { strong: true, cells: ['Total', '', '', '', m(list.reduce((s: number, c: any) => s + Number(c.amount), 0)), ''] },
+      ],
+    }
+  }
+  if (kind === 'sales') {
+    const r = await get('/api/reports/sales')
+    return {
+      title: `Vendas × recebido ${formatDate(f.start)} a ${formatDate(f.end)}`, columns: ['Mês', 'Vendas', 'Vendido', 'Recebido'],
+      rows: [
+        ...r.periods.map((p: any) => ({ cells: [label(p.period), String(p.sales_count), m(p.sold), m(p.received)] })),
+        { strong: true, cells: ['Total', String(r.sales_count), m(r.total_sold), m(r.total_received)] },
       ],
     }
   }
@@ -211,7 +223,7 @@ async function removeSaved(s: Saved) {
           <UFormField v-if="has('analysis', 'commissions') || (has('dre') && f.view === 'month')" :label="has('commissions') ? 'Mês de pagamento' : 'Mês de referência'">
             <USelect v-model="f.month" :items="monthItems" class="w-full" />
           </UFormField>
-          <template v-if="has('cash_flow', 'transactions')">
+          <template v-if="has('cash_flow', 'transactions', 'sales')">
             <UFormField label="De">
               <UInput v-model="f.start" type="date" class="w-full" />
             </UFormField>
@@ -240,10 +252,10 @@ async function removeSaved(s: Saved) {
               <AppContactSelect v-model="f.contact_id" placeholder="Todos" />
             </UFormField>
           </template>
+          <UFormField v-if="has('commissions', 'sales')" label="Profissionais">
+            <USelectMenu v-model="f.salesperson_id" :items="lookups.options.salespeople.value" value-key="value" multiple placeholder="Todos" class="w-full" />
+          </UFormField>
           <template v-if="has('commissions')">
-            <UFormField label="Profissionais">
-              <USelectMenu v-model="f.salesperson_id" :items="lookups.options.salespeople.value" value-key="value" multiple placeholder="Todos" class="w-full" />
-            </UFormField>
             <UFormField label="Situação">
               <USelect v-model="f.commission_status" :items="[{ label: 'Previstas', value: 'planned' }, { label: 'A pagar', value: 'pending' }, { label: 'Pagas', value: 'paid' }]"
                        placeholder="Liberadas" class="w-full" />

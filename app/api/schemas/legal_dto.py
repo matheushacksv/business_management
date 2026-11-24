@@ -90,7 +90,7 @@ class CommentOut(ModelSchema):
         return (obj.author.name or obj.author.email) if obj.author else None  # type:ignore
 
 
-class StageOut(Schema):
+class CaseStageOut(Schema):
     value: str
     label: str
 

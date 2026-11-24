@@ -1279,6 +1279,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/sales/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Sales Report Endpoint */
+        get: operations["api_endpoints_sales_export_sales_report_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/import": {
         parameters: {
             query?: never;
@@ -3142,7 +3159,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "dre" | "cash_flow" | "analysis" | "transactions" | "commissions" | "investments";
+            kind: "dre" | "cash_flow" | "analysis" | "transactions" | "commissions" | "investments" | "sales";
             /**
              * Params
              * @default {}
@@ -4098,7 +4115,7 @@ export interface components {
             /** User Id */
             user_id?: number | null;
             /** Target */
-            target?: ("transaction" | "contact" | "invoice" | "sale" | "company" | "subgroup" | "account" | "product" | "salesperson" | "user") | null;
+            target?: ("transaction" | "contact" | "invoice" | "sale" | "company" | "subgroup" | "account" | "product" | "salesperson" | "user" | "investment" | "movement" | "commission") | null;
             /** Date From */
             date_from?: string | null;
             /** Date To */
@@ -4116,19 +4133,12 @@ export interface components {
             /** Items */
             items: components["schemas"]["HistoryEventOut"][];
         };
-        /** StageOut */
-        StageOut: {
-            /** Name */
-            name: string;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
-            /** @default attention */
-            severity: components["schemas"]["Severity"];
-            /** Id */
-            id: number;
+        /** CaseStageOut */
+        CaseStageOut: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
         };
         /** CaseFilters */
         CaseFilters: {
@@ -4805,6 +4815,20 @@ export interface components {
          * @enum {string}
          */
         Severity: "attention" | "critical";
+        /** StageOut */
+        StageOut: {
+            /** Name */
+            name: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /** @default attention */
+            severity: components["schemas"]["Severity"];
+            /** Id */
+            id: number;
+        };
         /** StageIn */
         StageIn: {
             /** Name */
@@ -7692,6 +7716,37 @@ export interface operations {
             };
         };
     };
+    api_endpoints_sales_export_sales_report_endpoint: {
+        parameters: {
+            query: {
+                start: string;
+                end: string;
+                company_id?: number[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                status?: components["schemas"]["SaleStatus"][] | null;
+                product_id?: number[] | null;
+                salesperson_id?: number[] | null;
+                delivery_responsible_id?: number[] | null;
+                contact_id?: number[] | null;
+                search?: string | null;
+                ordering?: ("date" | "-date" | "amount" | "-amount" | "created_at" | "-created_at") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_endpoints_imports_import_endpoint: {
         parameters: {
             query?: never;
@@ -7737,7 +7792,7 @@ export interface operations {
     api_endpoints_history_object_history_endpoint: {
         parameters: {
             query: {
-                target: "transaction" | "contact" | "invoice" | "sale" | "company" | "subgroup" | "account" | "product" | "salesperson" | "user";
+                target: "transaction" | "contact" | "invoice" | "sale" | "company" | "subgroup" | "account" | "product" | "salesperson" | "user" | "investment" | "movement" | "commission";
                 target_id: number;
             };
             header?: never;
@@ -7761,7 +7816,7 @@ export interface operations {
         parameters: {
             query?: {
                 user_id?: number | null;
-                target?: ("transaction" | "contact" | "invoice" | "sale" | "company" | "subgroup" | "account" | "product" | "salesperson" | "user") | null;
+                target?: ("transaction" | "contact" | "invoice" | "sale" | "company" | "subgroup" | "account" | "product" | "salesperson" | "user" | "investment" | "movement" | "commission") | null;
                 date_from?: string | null;
                 date_to?: string | null;
                 page?: number;
@@ -7798,7 +7853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StageOut"][];
+                    "application/json": components["schemas"]["CaseStageOut"][];
                 };
             };
         };

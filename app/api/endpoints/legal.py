@@ -2,8 +2,8 @@ from django.db.models import Q
 from ninja import Query, Router
 
 from api.schemas.legal_dto import (
-    CaseFilters, CaseOut, CheckOut, ChecklistItemIn, ChecklistItemOut, CommentOut, CreateCase, CreateComment, PatchCase,
-    PrefillOut, ResponsibleOut, SetCheck, StageOut,
+    CaseFilters, CaseOut, CaseStageOut, CheckOut, ChecklistItemIn, ChecklistItemOut, CommentOut, CreateCase, CreateComment,
+    PatchCase, PrefillOut, ResponsibleOut, SetCheck,
 )
 from api.schemas.transactions_dto import TransactionOut
 from apps.legal import services
@@ -23,7 +23,7 @@ def _clean(data) -> dict:
     return fields
 
 
-@router.get('/collection-case/stages', response=list[StageOut])
+@router.get('/collection-case/stages', response=list[CaseStageOut])
 @require_permission('legal', VIEW)
 def list_stages_endpoint(request):
     return [{'value': s.value, 'label': s.label} for s in CaseStage]

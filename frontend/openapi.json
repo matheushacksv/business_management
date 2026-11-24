@@ -6764,6 +6764,235 @@
     ]
    }
   },
+  "/api/reports/sales/export": {
+   "get": {
+    "operationId": "api_endpoints_sales_export_sales_report_endpoint",
+    "summary": "Export Sales Report Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "start",
+      "schema": {
+       "format": "date",
+       "title": "Start",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "end",
+      "schema": {
+       "format": "date",
+       "title": "End",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_from",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "date_to",
+      "schema": {
+       "anyOf": [
+        {
+         "format": "date",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "$ref": "#/components/schemas/SaleStatus"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "product_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Product Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "salesperson_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Salesperson Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "delivery_responsible_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Delivery Responsible Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "contact_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Contact Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "search",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Search"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "ordering",
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "date",
+          "-date",
+          "amount",
+          "-amount",
+          "created_at",
+          "-created_at"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ordering"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/import": {
    "post": {
     "operationId": "api_endpoints_imports_import_endpoint",
@@ -6847,7 +7076,10 @@
         "account",
         "product",
         "salesperson",
-        "user"
+        "user",
+        "investment",
+        "movement",
+        "commission"
        ],
        "title": "Target",
        "type": "string"
@@ -6928,7 +7160,10 @@
           "account",
           "product",
           "salesperson",
-          "user"
+          "user",
+          "investment",
+          "movement",
+          "commission"
          ],
          "type": "string"
         },
@@ -7021,7 +7256,7 @@
        "application/json": {
         "schema": {
          "items": {
-          "$ref": "#/components/schemas/StageOut"
+          "$ref": "#/components/schemas/CaseStageOut"
          },
          "title": "Response",
          "type": "array"
@@ -13140,7 +13375,8 @@
        "analysis",
        "transactions",
        "commissions",
-       "investments"
+       "investments",
+       "sales"
       ],
       "title": "Kind",
       "type": "string"
@@ -16054,7 +16290,10 @@
          "account",
          "product",
          "salesperson",
-         "user"
+         "user",
+         "investment",
+         "movement",
+         "commission"
         ],
         "type": "string"
        },
@@ -16119,38 +16358,22 @@
     "title": "FeedOut",
     "type": "object"
    },
-   "StageOut": {
+   "CaseStageOut": {
     "properties": {
-     "name": {
-      "maxLength": 60,
-      "minLength": 1,
-      "title": "Name",
+     "value": {
+      "title": "Value",
       "type": "string"
      },
-     "position": {
-      "default": 0,
-      "minimum": 0,
-      "title": "Position",
-      "type": "integer"
-     },
-     "severity": {
-      "allOf": [
-       {
-        "$ref": "#/components/schemas/Severity"
-       }
-      ],
-      "default": "attention"
-     },
-     "id": {
-      "title": "Id",
-      "type": "integer"
+     "label": {
+      "title": "Label",
+      "type": "string"
      }
     },
     "required": [
-     "name",
-     "id"
+     "value",
+     "label"
     ],
-    "title": "StageOut",
+    "title": "CaseStageOut",
     "type": "object"
    },
    "CaseFilters": {
@@ -18265,6 +18488,40 @@
     ],
     "title": "Severity",
     "type": "string"
+   },
+   "StageOut": {
+    "properties": {
+     "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "position": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "severity": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/Severity"
+       }
+      ],
+      "default": "attention"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "name",
+     "id"
+    ],
+    "title": "StageOut",
+    "type": "object"
    },
    "StageIn": {
     "properties": {

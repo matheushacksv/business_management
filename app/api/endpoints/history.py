@@ -10,7 +10,7 @@ router = Router(tags=['History'])
 
 TargetName = Literal[
     'transaction', 'contact', 'invoice', 'sale', 'company', 'subgroup', 'account',
-    'product', 'salesperson', 'user',
+    'product', 'salesperson', 'user', 'investment', 'movement', 'commission',
 ]  # attachment events show up in the feed (unfiltered)
 FEED_PAGE_SIZE = 50
 

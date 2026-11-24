@@ -113,7 +113,7 @@ class AnalysisOut(Schema):
 
 class SavedReportIn(Schema):
     name: str = Field(min_length=1, max_length=80)
-    kind: Literal['dre', 'cash_flow', 'analysis', 'transactions', 'commissions', 'investments']
+    kind: Literal['dre', 'cash_flow', 'analysis', 'transactions', 'commissions', 'investments', 'sales']
     params: dict = {}
 
 

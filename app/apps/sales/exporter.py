@@ -5,6 +5,7 @@ from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from apps.finance.exporter import MONEY_FORMAT, _report_sheet, _save
 from apps.sales.services import commission_amount, tax_rate_for
 
 HEADERS = ['Profissional', 'Tipo', 'Cliente', 'Empresa', 'Data da venda', 'Valor da venda', 'Imposto %',
@@ -33,3 +34,17 @@ def commissions_xlsx(queryset) -> bytes:
     out = BytesIO()
     wb.save(out)
     return out.getvalue()
+
+
+def sales_report_xlsx(report: dict) -> bytes:
+    """`report` from sales_report_selector."""
+    wb, ws = _report_sheet('Vendas × recebido', f"{report['start']:%d/%m/%Y} a {report['end']:%d/%m/%Y}",
+                           ['Mês', 'Vendas', 'Vendido', 'Recebido'])
+    ws.column_dimensions['A'].width = 16
+    rows = [(p['period'], p['sales_count'], p['sold'], p['received']) for p in report['periods']]
+    for row, values in enumerate(rows + [('Total', report['sales_count'], report['total_sold'], report['total_received'])], start=5):
+        for col, value in enumerate(values, start=1):
+            cell = ws.cell(row=row, column=col, value=value)
+            cell.number_format = 'MM/YYYY' if col == 1 else MONEY_FORMAT if col > 2 else '0'
+            cell.font = Font(bold=values[0] == 'Total')
+    return _save(wb)

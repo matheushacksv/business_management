@@ -11,8 +11,10 @@ await lookups.ensure('users')
 const TARGETS: Record<string, string> = {
   transaction: 'Lançamento', invoice: 'Nota fiscal', sale: 'Venda', contact: 'Contato', company: 'Empresa',
   subgroup: 'Subgrupo', account: 'Conta', product: 'Produto', salesperson: 'Equipe', user: 'Usuário', attachment: 'Anexo',
+  investment: 'Investimento', movement: 'Movimento de investimento', commission: 'Comissão', collectioncase: 'Processo jurídico',
 }
-const targetOptions = Object.entries(TARGETS).filter(([k]) => k !== 'attachment').map(([value, label]) => ({ value, label }))
+const UNFILTERED = new Set(['attachment', 'collectioncase'])
+const targetOptions = Object.entries(TARGETS).filter(([k]) => !UNFILTERED.has(k)).map(([value, label]) => ({ value, label }))
 
 const filters = reactive({ user_id: undefined as number | undefined, target: undefined as string | undefined, date_from: '', date_to: '' })
 const page = ref(1)

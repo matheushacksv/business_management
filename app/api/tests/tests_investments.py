@@ -71,6 +71,14 @@ class InvestmentTests(TestCase):
         self.assertEqual(self.api('get', '/investment', user=manager).json(), [])
         self.assertEqual(self.api('post', '/investment', {'company_id': self.other.pk, 'institution': 'X'}, user=manager).status_code, 403)
 
+    def test_audit_targets(self):
+        inv = self.create()
+        self.move(inv, 'application', '100', '2026-01-10')
+        feed = self.api('get', '/history/feed?target=movement').json()
+        self.assertEqual([e['target'] for e in feed['items']], ['movement'])
+        self.assertEqual(len(self.api('get', f'/history?target=investment&target_id={inv["id"]}').json()), 1)
+        self.assertEqual(self.api('get', '/history/feed?target=commission').status_code, 200)
+
     def test_export(self):
         self.create()
         r = self.api('get', '/investment/export')
@@ -94,5 +102,10 @@ class ReportGeneratorTests(TestCase):
 
     def test_analysis_export(self):
         r = self.client.get('/api/reports/analysis/export?month=2026-11-01&group=operating_revenue', headers=auth_for(self.admin))
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertTrue(r.content.startswith(b'PK'))
+
+    def test_sales_report_export(self):
+        r = self.client.get('/api/reports/sales/export?start=2026-01-01&end=2026-06-30', headers=auth_for(self.admin))
         self.assertEqual(r.status_code, 200, r.content)
         self.assertTrue(r.content.startswith(b'PK'))
