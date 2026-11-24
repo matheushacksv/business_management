@@ -35,6 +35,7 @@ class CardFilters(Schema):
     outcome: Outcome = Outcome.OPEN
     assignee_id: int | None = None
     company_id: list[int] | None = None
+    contact_id: int | None = None
     search: str | None = None
 
 

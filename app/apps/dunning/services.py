@@ -139,7 +139,8 @@ def _cards_for(user: User, today: dt.date):
             ))
 
 
-def list_cards_service(*, user: User, outcome: str = Outcome.OPEN, assignee_id=None, company_id=None, search: str | None = None):
+def list_cards_service(*, user: User, outcome: str = Outcome.OPEN, assignee_id=None, company_id=None, contact_id=None,
+                       search: str | None = None):
     """Open cards (the board) or the closed ones of an outcome, latest first."""
     sync_cards_service()
     qs = _cards_for(user, timezone.localdate()).filter(outcome=outcome)
@@ -149,6 +150,8 @@ def list_cards_service(*, user: User, outcome: str = Outcome.OPEN, assignee_id=N
         qs = qs.filter(assignee_id=assignee_id)
     if company_id:
         qs = qs.filter(company_id__in=company_id)
+    if contact_id:
+        qs = qs.filter(contact_id=contact_id)
     if search:
         qs = qs.filter(Q(contact__name__icontains=search) | Q(contact__company_name__icontains=search))
     return qs

@@ -6,13 +6,29 @@ import type { components } from '~/types/api'
 type Transaction = components['schemas']['TransactionOut']
 definePageMeta({ permission: ['transactions', 'view'] })
 
-const { api, unwrap, download, notifyError } = useApi()
+const { api, unwrap, download, notifyError, notifySuccess } = useApi()
 const auth = useAuth()
 const lookups = useLookups()
 lookups.ensure('companies', 'subgroups', 'groups').catch(notifyError)
 
 const SMoney = resolveComponent('SMoney')
 const SStatusBadge = resolveComponent('SStatusBadge')
+const UButton = resolveComponent('UButton')
+
+// One click settles a planned transaction (transfer legs go through the drawer: both sides change together)
+const realizing = ref<number | null>(null)
+async function realize(t: Transaction) {
+  realizing.value = t.id!
+  try {
+    await unwrap(api.PATCH('/api/transaction/{transaction_id}', { params: { path: { transaction_id: t.id! } }, body: { status: 'realized' } }))
+    notifySuccess('Marcado como realizado')
+    await load()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    realizing.value = null
+  }
+}
 
 // Filters (all server-side, same names as the API)
 const filters = reactive({
@@ -105,6 +121,18 @@ const columns: TableColumn<Transaction>[] = [
       h(SMoney, { value: row.original.amount, type: row.original.type }),
       row.original.series_index ? h('p', { class: 'text-xs text-dimmed' }, `parcela ${row.original.series_index}`) : null,
     ]),
+  },
+  {
+    id: 'realize',
+    header: '',
+    meta: { class: { td: 'w-px' } },
+    cell: ({ row }) => auth.can('transactions', 'change') && row.original.status === 'planned' && !row.original.transfer_id
+      ? h(UButton, {
+          icon: 'i-lucide-check', color: 'success', variant: 'ghost', size: 'sm', title: 'Marcar realizado', 'aria-label': 'Marcar realizado',
+          loading: realizing.value === row.original.id,
+          onClick: (e: Event) => { e.stopPropagation(); realize(row.original) },
+        })
+      : null,
   },
 ]
 

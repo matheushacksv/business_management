@@ -4563,6 +4563,8 @@ export interface components {
             assignee_id?: number | null;
             /** Company Id */
             company_id?: number[] | null;
+            /** Contact Id */
+            contact_id?: number | null;
             /** Search */
             search?: string | null;
         };
@@ -8443,6 +8445,7 @@ export interface operations {
                 outcome?: "open" | "resolved" | "legal" | "dismissed";
                 assignee_id?: number | null;
                 company_id?: number[] | null;
+                contact_id?: number | null;
                 search?: string | null;
             };
             header?: never;

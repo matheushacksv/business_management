@@ -7,6 +7,8 @@ type Summary = components['schemas']['ContactSummaryOut']
 type Sale = components['schemas']['SaleOut']
 type Transaction = components['schemas']['TransactionOut']
 type Pending = components['schemas']['PendingInvoiceOut']
+type Card = components['schemas']['CardOut']
+type Case = components['schemas']['CaseOut']
 
 // Customer/supplier page: everything about one contact in one place (PDF §9)
 definePageMeta({ permission: ['contacts', 'view'] })
@@ -19,6 +21,8 @@ const auth = useAuth()
 const canSales = computed(() => auth.can('sales', 'view'))
 const canMoney = computed(() => auth.can('transactions', 'view'))
 const canEdit = computed(() => auth.can('contacts', 'change'))
+const canDunning = computed(() => auth.can('dunning', 'view'))
+const canLegal = computed(() => auth.can('legal', 'view'))
 const collectionOpen = ref(false)
 
 const UProgress = resolveComponent('UProgress')
@@ -47,6 +51,8 @@ const tabs = computed(() => [
   canSales.value && { label: 'Vendas', value: 'sales', icon: 'i-lucide-handshake' },
   canMoney.value && { label: 'Lançamentos', value: 'transactions', icon: 'i-lucide-arrow-left-right' },
   canMoney.value && { label: 'Notas pendentes', value: 'invoices', icon: 'i-lucide-receipt-text' },
+  canDunning.value && { label: 'Cobrança', value: 'dunning', icon: 'i-lucide-phone-call' },
+  canLegal.value && { label: 'Jurídico', value: 'legal', icon: 'i-lucide-scale' },
   { label: 'Anexos', value: 'attachments', icon: 'i-lucide-paperclip' },
   { label: 'Observações', value: 'notes', icon: 'i-lucide-notebook-pen' },
   { label: 'Histórico', value: 'history', icon: 'i-lucide-history' },
@@ -141,6 +147,53 @@ const invoiceColumns: TableColumn<Pending>[] = [
     cell: ({ row }) => h('div', { class: 'text-right' }, h(SMoney, { value: row.original.transaction_amount })) },
 ]
 
+// Dunning cards (open ones, the funnel) and legal cases of this contact; a click opens them on their screen
+const cards = ref<Card[]>([])
+const stageNames = ref<Record<number, string>>({})
+const cases = ref<Case[]>([])
+const followLoading = ref(false)
+async function loadFollowUp() {
+  followLoading.value = true
+  try {
+    await Promise.all([
+      canDunning.value && Promise.all([
+        unwrap(api.GET('/api/dunning/card', { params: { query: { contact_id: id.value } } })),
+        unwrap(api.GET('/api/dunning/stage')),
+      ]).then(([c, s]) => {
+        cards.value = c
+        stageNames.value = Object.fromEntries(s.map(x => [x.id, x.name]))
+      }),
+      canLegal.value && unwrap(api.GET('/api/collection-case', { params: { query: { contact_id: id.value } } })).then(c => (cases.value = c)),
+    ])
+  } catch (e) { notifyError(e) } finally { followLoading.value = false }
+}
+const cardColumns: TableColumn<Card>[] = [
+  { accessorKey: 'company_name', header: 'Empresa', meta: { class: { td: 'text-muted' } } },
+  { accessorKey: 'stage_id', header: 'Etapa', cell: ({ row }) => h('span', { class: row.original.critical ? 'text-error font-medium' : '' },
+    stageNames.value[row.original.stage_id] ?? '—') },
+  { accessorKey: 'oldest_overdue', header: 'Atraso desde', cell: ({ row }) => formatDate(row.original.oldest_overdue) },
+  { accessorKey: 'next_activity', header: 'Próxima atividade', cell: ({ row }) => h('span', { class: row.original.late_activities ? 'text-error' : '' },
+    formatDate(row.original.next_activity) || '—') },
+  { accessorKey: 'assignee_name', header: 'Responsável', cell: ({ row }) => row.original.assignee_name ?? '—' },
+  { accessorKey: 'overdue_amount', header: () => h('span', { class: 'block text-right' }, 'Em atraso'), cell: ({ row }) => h('div', { class: 'text-right' }, [
+    h('p', { class: 'tabular text-highlighted' }, formatMoney(row.original.overdue_amount)),
+    h('p', { class: 'text-xs text-dimmed' }, plural(row.original.overdue_count, 'parcela', 'parcelas')),
+  ]) },
+]
+const caseColumns: TableColumn<Case>[] = [
+  { accessorKey: 'created_at', header: 'Aberto em', cell: ({ row }) => formatDate(row.original.created_at) },
+  { accessorKey: 'company_name', header: 'Empresa', meta: { class: { td: 'text-muted' } } },
+  { accessorKey: 'stage', header: 'Etapa', cell: ({ row }) => h('div', [
+    h('p', LABELS.caseStage[row.original.stage] ?? row.original.stage),
+    row.original.unrecoverable_at ? h('p', { class: 'text-xs text-error' }, 'Irrecuperável') : null,
+  ]) },
+  { accessorKey: 'responsible_name', header: 'Responsável', cell: ({ row }) => row.original.responsible_name ?? '—' },
+  { accessorKey: 'open_amount', header: () => h('span', { class: 'block text-right' }, 'Em aberto / recebido'), cell: ({ row }) => h('div', { class: 'text-right' }, [
+    h('p', { class: 'tabular text-highlighted' }, formatMoney(row.original.open_amount)),
+    h('p', { class: 'text-xs text-dimmed tabular' }, `${formatMoney(row.original.received_amount)} recebido`),
+  ]) },
+]
+
 // Notes
 const notes = ref('')
 const savingNotes = ref(false)
@@ -166,7 +219,7 @@ async function remove() {
 
 // Anything changed in a drawer can move the totals
 async function refreshAll() {
-  await Promise.all([loadContact(), canSales.value && loadSales(), canMoney.value && loadTransactions(), canMoney.value && loadInvoices()])
+  await Promise.all([loadContact(), canSales.value && loadSales(), canMoney.value && loadTransactions(), canMoney.value && loadInvoices(), loadFollowUp()])
 }
 watch(id, refreshAll, { immediate: true })
 
@@ -303,6 +356,16 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     <div v-else-if="tab === 'invoices'" class="s-panel overflow-hidden">
       <UTable :data="invoices" :columns="invoiceColumns" :loading="invoicesLoading" empty="Nenhuma nota pendente 🎉"
               @select="(_: Event, row: any) => { txId = row.original.transaction_id; txOpen = true }" />
+    </div>
+
+    <div v-else-if="tab === 'dunning'" class="s-panel overflow-hidden">
+      <UTable :data="cards" :columns="cardColumns" :loading="followLoading" empty="Sem cobrança em aberto"
+              @select="(_: Event, row: any) => navigateTo({ path: '/dunning', query: { card: row.original.id } })" />
+    </div>
+
+    <div v-else-if="tab === 'legal'" class="s-panel overflow-hidden">
+      <UTable :data="cases" :columns="caseColumns" :loading="followLoading" empty="Nenhuma ação no jurídico"
+              @select="(_: Event, row: any) => navigateTo({ path: '/legal', query: { case: row.original.id } })" />
     </div>
 
     <SPanel v-else-if="tab === 'attachments'">

@@ -208,6 +208,8 @@ class DunningTests(TestCase):
         self.assertEqual(situation(), 'critical')
         listed = {c['id']: c['situation'] for c in self.api('get', '/contact').json()}
         self.assertEqual(listed[self.client_.pk], 'critical')
+        self.assertEqual(len(self.api('get', f'/dunning/card?contact_id={self.client_.pk}').json()), 1)
+        self.assertEqual(self.api('get', f'/dunning/card?contact_id={self.client_.pk + 999}').json(), [])
         body = {'start_date': None, 'critical_days': 30, 'attention_days': 5, 'legal_critical': False}
         self.assertEqual(self.api('put', '/dunning/config', body).status_code, 200)
         self.assertEqual(situation(), 'attention')  # legal case now yellow
