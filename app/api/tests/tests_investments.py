@@ -76,3 +76,23 @@ class InvestmentTests(TestCase):
         r = self.api('get', '/investment/export')
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.content.startswith(b'PK'))
+
+
+class ReportGeneratorTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
+        self.other = User.objects.create_user(email='o@test.com', password='Str@ngPassw8rd2026', role=Role.MANAGER)
+        Company.objects.create(name='A', cnpj='81585365000127')
+
+    def test_saved_reports_are_per_user(self):
+        body = {'name': 'Plataformas', 'kind': 'analysis', 'params': {'group': ['fixed_costs']}}
+        r = self.client.post('/api/reports/saved', data=body, content_type='application/json', headers=auth_for(self.admin))
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(self.client.get('/api/reports/saved', headers=auth_for(self.other)).json(), [])
+        self.assertEqual(self.client.delete(f'/api/reports/saved/{r.json()["id"]}', headers=auth_for(self.other)).status_code, 404)
+        self.assertEqual([s['name'] for s in self.client.get('/api/reports/saved', headers=auth_for(self.admin)).json()], ['Plataformas'])
+
+    def test_analysis_export(self):
+        r = self.client.get('/api/reports/analysis/export?month=2026-11-01&group=operating_revenue', headers=auth_for(self.admin))
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertTrue(r.content.startswith(b'PK'))

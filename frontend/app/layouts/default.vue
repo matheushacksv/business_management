@@ -35,6 +35,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
         can('reports') && { label: 'DRE', to: '/reports/dre' },
         can('reports') && { label: 'Fluxo de caixa', to: '/reports/cash-flow' },
         can('reports') && { label: 'Análise', to: '/reports/analysis' },
+        can('reports') && { label: 'Gerar relatório', to: '/reports/generator' },
         can('reports') && can('sales') && { label: 'Vendido × recebido', to: '/sales/report' },
       ]),
     ]),

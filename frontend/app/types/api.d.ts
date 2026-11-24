@@ -644,6 +644,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/analysis/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analysis Export Endpoint */
+        get: operations["api_endpoints_reports_analysis_export_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Reports Endpoint */
+        get: operations["api_endpoints_reports_list_saved_reports_endpoint"];
+        put?: never;
+        /** Create Saved Report Endpoint */
+        post: operations["api_endpoints_reports_create_saved_report_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/saved/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Saved Report Endpoint */
+        delete: operations["api_endpoints_reports_delete_saved_report_endpoint"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/delinquency": {
         parameters: {
             query?: never;
@@ -2958,6 +3010,36 @@ export interface components {
             previous: string[];
             /** Companies */
             companies: components["schemas"]["AnalysisCompany"][];
+        };
+        /** SavedReportOut */
+        SavedReportOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+        };
+        /** SavedReportIn */
+        SavedReportIn: {
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "dre" | "cash_flow" | "analysis" | "transactions" | "commissions" | "investments";
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: unknown;
+            };
         };
         /** DelinquencyMonth */
         DelinquencyMonth: {
@@ -6069,6 +6151,94 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AnalysisOut"];
                 };
+            };
+        };
+    };
+    api_endpoints_reports_analysis_export_endpoint: {
+        parameters: {
+            query: {
+                month: string;
+                group?: string[] | null;
+                subgroup_id?: number[] | null;
+                company_id?: number[] | null;
+                status?: ("planned" | "realized")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_reports_list_saved_reports_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedReportOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_reports_create_saved_report_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedReportIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedReportOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_reports_delete_saved_report_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

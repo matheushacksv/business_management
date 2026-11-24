@@ -249,3 +249,17 @@ class StatementRule(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['key', 'type'], name='unique_statement_rule')]
+
+
+
+class SavedReport(models.Model):
+    """A report generator setup (type + filters) saved by a user to run again."""
+
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='saved_reports')
+    name = models.CharField(max_length=80)
+    kind = models.CharField(max_length=20)
+    params = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name', 'id']

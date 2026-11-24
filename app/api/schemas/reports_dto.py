@@ -109,3 +109,16 @@ class AnalysisOut(Schema):
     current: list[Decimal]  # totals of those months
     previous: list[Decimal]  # the 12 months before (same months, previous year)
     companies: list[AnalysisCompany]
+
+
+class SavedReportIn(Schema):
+    name: str = Field(min_length=1, max_length=80)
+    kind: Literal['dre', 'cash_flow', 'analysis', 'transactions', 'commissions', 'investments']
+    params: dict = {}
+
+
+class SavedReportOut(Schema):
+    id: int
+    name: str
+    kind: str
+    params: dict

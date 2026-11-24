@@ -2923,6 +2923,213 @@
     ]
    }
   },
+  "/api/reports/analysis/export": {
+   "get": {
+    "operationId": "api_endpoints_reports_analysis_export_endpoint",
+    "summary": "Analysis Export Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "month",
+      "schema": {
+       "format": "date",
+       "title": "Month",
+       "type": "string"
+      },
+      "required": true
+     },
+     {
+      "in": "query",
+      "name": "group",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Group"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "subgroup_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Subgroup Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "company_id",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "integer"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Company Id"
+      },
+      "required": false
+     },
+     {
+      "in": "query",
+      "name": "status",
+      "schema": {
+       "anyOf": [
+        {
+         "items": {
+          "enum": [
+           "planned",
+           "realized"
+          ],
+          "type": "string"
+         },
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/saved": {
+   "get": {
+    "operationId": "api_endpoints_reports_list_saved_reports_endpoint",
+    "summary": "List Saved Reports Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/SavedReportOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_reports_create_saved_report_endpoint",
+    "summary": "Create Saved Report Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SavedReportOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SavedReportIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/reports/saved/{report_id}": {
+   "delete": {
+    "operationId": "api_endpoints_reports_delete_saved_report_endpoint",
+    "summary": "Delete Saved Report Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "report_id",
+      "schema": {
+       "title": "Report Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/delinquency": {
    "get": {
     "operationId": "api_endpoints_reports_delinquency_endpoint",
@@ -12566,6 +12773,69 @@
      "companies"
     ],
     "title": "AnalysisOut",
+    "type": "object"
+   },
+   "SavedReportOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": true,
+      "title": "Params",
+      "type": "object"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "kind",
+     "params"
+    ],
+    "title": "SavedReportOut",
+    "type": "object"
+   },
+   "SavedReportIn": {
+    "properties": {
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "dre",
+       "cash_flow",
+       "analysis",
+       "transactions",
+       "commissions",
+       "investments"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Params",
+      "type": "object"
+     }
+    },
+    "required": [
+     "name",
+     "kind"
+    ],
+    "title": "SavedReportIn",
     "type": "object"
    },
    "DelinquencyMonth": {

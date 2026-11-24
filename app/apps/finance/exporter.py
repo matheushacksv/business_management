@@ -130,3 +130,19 @@ def cash_flow_xlsx(flow: dict, subtitle: str) -> bytes:
         for col, key in enumerate(('opening', 'inflow', 'outflow', 'closing'), start=2):
             ws.cell(row=row, column=col, value=period[key]).number_format = MONEY_FORMAT
     return _save(wb)
+
+
+def analysis_xlsx(data: dict, subtitle: str) -> bytes:
+    companies = data['companies']
+    wb, ws = _report_sheet('Análise', subtitle, ['Mês', 'Total', 'Ano anterior', 'Variação'] + [c['name'] for c in companies])
+    ws.column_dimensions['A'].width = 12
+    for i, month in enumerate(data['months']):
+        row = 5 + i
+        cell = ws.cell(row=row, column=1, value=month)
+        cell.number_format = 'MM/YYYY'
+        cell.alignment = Alignment(horizontal='left')
+        values = [data['current'][i], data['previous'][i], data['current'][i] - data['previous'][i]]
+        values += [c['months'][i] for c in companies]
+        for col, value in enumerate(values, start=2):
+            ws.cell(row=row, column=col, value=value).number_format = MONEY_FORMAT
+    return _save(wb)

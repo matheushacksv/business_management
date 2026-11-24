@@ -2,12 +2,12 @@ from django.http import HttpResponse
 from django.utils import timezone
 from ninja import Query, Router
 
-from api.schemas.reports_dto import AnalysisOut, AnalysisParams, CashFlowOut, CashFlowParams, DelinquencyOut, DREOut, DREParams, DRETableOut, DRETableParams
+from api.schemas.reports_dto import AnalysisOut, AnalysisParams, SavedReportIn, SavedReportOut, CashFlowOut, CashFlowParams, DelinquencyOut, DREOut, DREParams, DRETableOut, DRETableParams
 from api.schemas.transactions_dto import ReportFilters
 from apps.companies.services import list_companies_service
 from apps.finance import selectors
-from apps.finance.exporter import XLSX_CONTENT_TYPE, cash_flow_xlsx, dre_xlsx
-from apps.finance.models import TransactionStatus
+from apps.finance.exporter import XLSX_CONTENT_TYPE, analysis_xlsx, cash_flow_xlsx, dre_xlsx
+from apps.finance.models import SavedReport, TransactionStatus
 from apps.users.permissions import VIEW, require_permission
 
 router = Router(tags=['Reports'])
@@ -24,6 +24,32 @@ def dre_endpoint(request, params: Query[DREParams], filters: Query[ReportFilters
 def analysis_endpoint(request, params: Query[AnalysisParams]):
     return selectors.analysis_selector(user=request.user, month=params.month, groups=params.group,
                                        subgroup_ids=params.subgroup_id, company_id=params.company_id, status=params.status)
+
+
+@router.get('/reports/analysis/export')
+@require_permission('reports', VIEW)
+def analysis_export_endpoint(request, params: Query[AnalysisParams]):
+    data = analysis_endpoint(request, params)
+    filters = ReportFilters(company_id=params.company_id, status=params.status)
+    return _xlsx_response(analysis_xlsx(data, _filters_subtitle(request, filters)), f'analise-{params.month:%Y-%m}.xlsx')
+
+
+# Report generator: setups saved per user (each one only sees and deletes their own)
+
+@router.get('/reports/saved', response=list[SavedReportOut])
+def list_saved_reports_endpoint(request):
+    return SavedReport.objects.filter(user=request.user)
+
+
+@router.post('/reports/saved', response={201: SavedReportOut})
+def create_saved_report_endpoint(request, data: SavedReportIn):
+    return 201, SavedReport.objects.create(user=request.user, name=data.name.strip(), kind=data.kind, params=data.params)
+
+
+@router.delete('/reports/saved/{report_id}', response={204: None})
+def delete_saved_report_endpoint(request, report_id: int):
+    SavedReport.objects.get(pk=report_id, user=request.user).delete()
+    return 204, None
 
 
 @router.get('/reports/delinquency', response=DelinquencyOut)

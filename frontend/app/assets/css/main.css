@@ -137,4 +137,13 @@ body {
   .s-print .total td { font-weight: 700; font-size: 12.5pt; border-bottom: none; padding-top: 8pt; }
   .s-print .text { white-space: pre-line; }
   .s-print footer { margin-top: 24pt; color: #888; font-size: 8.5pt; }
+  /* Report generator: wide tables, landscape */
+  .s-print:has(table.grid) { page: wide; }
+  .s-print .sub { color: #666; font-size: 9pt; margin: -6pt 0 12pt; }
+  .s-print table.grid { font-size: 8.5pt; }
+  .s-print table.grid th { text-align: left; font-weight: 600; border-bottom: 1px solid #999; padding: 3pt 5pt; }
+  .s-print table.grid td { padding: 2pt 5pt; white-space: normal; text-align: left; }
+  .s-print table.grid .num { text-align: right; white-space: nowrap; }
+  .s-print table.grid tr.strong td { font-weight: 700; }
 }
+@page wide { size: A4 landscape; margin: 12mm; }
