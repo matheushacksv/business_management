@@ -143,9 +143,13 @@ def list_cards_service(*, user: User, outcome: str = Outcome.OPEN, assignee_id=N
                        search: str | None = None):
     """Open cards (the board) or the closed ones of an outcome, latest first."""
     sync_cards_service()
-    qs = _cards_for(user, timezone.localdate()).filter(outcome=outcome)
-    if outcome != Outcome.OPEN:
-        qs = qs.order_by('-closed_at', '-id')
+    qs = _cards_for(user, timezone.localdate())
+    if outcome == 'all':
+        qs = qs.order_by(F('closed_at').desc(nulls_first=True), '-id')
+    else:
+        qs = qs.filter(outcome=outcome)
+        if outcome != Outcome.OPEN:
+            qs = qs.order_by('-closed_at', '-id')
     if assignee_id:
         qs = qs.filter(assignee_id=assignee_id)
     if company_id:

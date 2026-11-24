@@ -32,7 +32,7 @@ class StepOut(StepIn):
 
 
 class CardFilters(Schema):
-    outcome: Outcome = Outcome.OPEN
+    outcome: Outcome | Literal['all'] = Outcome.OPEN  # all = open first, then the closed ones (contact history)
     assignee_id: int | None = None
     company_id: list[int] | None = None
     contact_id: int | None = None

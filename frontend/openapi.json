@@ -2581,6 +2581,34 @@
     ]
    }
   },
+  "/api/home/today": {
+   "get": {
+    "operationId": "api_endpoints_reports_today_endpoint",
+    "summary": "Today Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TodayOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Home to-do counts; each block only for the modules the user can see.",
+    "tags": [
+     "Reports"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/reports/dre": {
    "get": {
     "operationId": "api_endpoints_reports_dre_endpoint",
@@ -8459,20 +8487,17 @@
       "in": "query",
       "name": "outcome",
       "schema": {
-       "allOf": [
+       "anyOf": [
         {
-         "description": "Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.",
-         "enum": [
-          "open",
-          "resolved",
-          "legal",
-          "dismissed"
-         ],
-         "title": "Outcome",
+         "$ref": "#/components/schemas/Outcome"
+        },
+        {
+         "const": "all",
          "type": "string"
         }
        ],
-       "default": "open"
+       "default": "open",
+       "title": "Outcome"
       },
       "required": false
      },
@@ -12942,6 +12967,116 @@
      "action"
     ],
     "title": "StatementLineIn",
+    "type": "object"
+   },
+   "TodayItem": {
+    "properties": {
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     }
+    },
+    "required": [
+     "count",
+     "amount"
+    ],
+    "title": "TodayItem",
+    "type": "object"
+   },
+   "TodayOut": {
+    "properties": {
+     "payables_week": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "receivables_week": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "overdue_payables": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "overdue_receivables": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "invoices": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "commissions": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "activities": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/TodayItem"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "payables_week",
+     "receivables_week",
+     "overdue_payables",
+     "overdue_receivables",
+     "invoices",
+     "commissions",
+     "activities"
+    ],
+    "title": "TodayOut",
     "type": "object"
    },
    "DREParams": {
@@ -17701,20 +17836,17 @@
    "CardFilters": {
     "properties": {
      "outcome": {
-      "allOf": [
+      "anyOf": [
        {
-        "description": "Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.",
-        "enum": [
-         "open",
-         "resolved",
-         "legal",
-         "dismissed"
-        ],
-        "title": "Outcome",
+        "$ref": "#/components/schemas/Outcome"
+       },
+       {
+        "const": "all",
         "type": "string"
        }
       ],
-      "default": "open"
+      "default": "open",
+      "title": "Outcome"
      },
      "assignee_id": {
       "anyOf": [

@@ -147,7 +147,7 @@ const invoiceColumns: TableColumn<Pending>[] = [
     cell: ({ row }) => h('div', { class: 'text-right' }, h(SMoney, { value: row.original.transaction_amount })) },
 ]
 
-// Dunning cards (open ones, the funnel) and legal cases of this contact; a click opens them on their screen
+// Dunning cards (open first, then the closed ones: history) and legal cases of this contact; a click opens them on their screen
 const cards = ref<Card[]>([])
 const stageNames = ref<Record<number, string>>({})
 const cases = ref<Case[]>([])
@@ -157,7 +157,7 @@ async function loadFollowUp() {
   try {
     await Promise.all([
       canDunning.value && Promise.all([
-        unwrap(api.GET('/api/dunning/card', { params: { query: { contact_id: id.value } } })),
+        unwrap(api.GET('/api/dunning/card', { params: { query: { contact_id: id.value, outcome: 'all' } } })),
         unwrap(api.GET('/api/dunning/stage')),
       ]).then(([c, s]) => {
         cards.value = c
@@ -169,8 +169,9 @@ async function loadFollowUp() {
 }
 const cardColumns: TableColumn<Card>[] = [
   { accessorKey: 'company_name', header: 'Empresa', meta: { class: { td: 'text-muted' } } },
-  { accessorKey: 'stage_id', header: 'Etapa', cell: ({ row }) => h('span', { class: row.original.critical ? 'text-error font-medium' : '' },
-    stageNames.value[row.original.stage_id] ?? '—') },
+  { accessorKey: 'stage_id', header: 'Etapa', cell: ({ row }) => row.original.closed_at
+    ? h('div', [h('p', DUNNING_LABELS.outcome[row.original.outcome] ?? row.original.outcome), h('p', { class: 'text-xs text-dimmed' }, formatDate(row.original.closed_at))])
+    : h('span', { class: row.original.critical ? 'text-error font-medium' : '' }, stageNames.value[row.original.stage_id] ?? '—') },
   { accessorKey: 'oldest_overdue', header: 'Atraso desde', cell: ({ row }) => formatDate(row.original.oldest_overdue) },
   { accessorKey: 'next_activity', header: 'Próxima atividade', cell: ({ row }) => h('span', { class: row.original.late_activities ? 'text-error' : '' },
     formatDate(row.original.next_activity) || '—') },
@@ -359,7 +360,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     </div>
 
     <div v-else-if="tab === 'dunning'" class="s-panel overflow-hidden">
-      <UTable :data="cards" :columns="cardColumns" :loading="followLoading" empty="Sem cobrança em aberto"
+      <UTable :data="cards" :columns="cardColumns" :loading="followLoading" empty="Nenhuma cobrança"
               @select="(_: Event, row: any) => navigateTo({ path: '/dunning', query: { card: row.original.id } })" />
     </div>
 

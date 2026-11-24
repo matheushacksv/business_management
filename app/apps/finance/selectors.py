@@ -397,3 +397,35 @@ def contact_summary_selector(*, user: User, contact_id: int, sales: bool, money:
             'pending_invoices': pending_invoices_service(user=user, contact_id=contact.pk).count(),
         }
     return result
+
+
+# Home "today": what needs action, only for the modules the user can see
+
+def today_selector(*, user: User) -> dict:
+    from apps.dunning.models import Activity
+    from apps.sales.services import commission_amount, list_commissions_service
+    from apps.users.permissions import VIEW, has_permission
+
+    today = timezone.localdate()
+    week = today + timedelta(days=7)
+    out: dict[str, dict | None] = dict.fromkeys(
+        ['payables_week', 'receivables_week', 'overdue_receivables', 'overdue_payables', 'invoices', 'commissions', 'activities'])
+    if has_permission(user, 'transactions', VIEW):
+        planned = list_transactions_service(user=user, status=[TransactionStatus.PLANNED]).order_by()
+        windows = {
+            'payables_week': (TransactionType.OUTFLOW, Q(date__range=(today, week))),
+            'receivables_week': (TransactionType.INFLOW, Q(date__range=(today, week))),
+            'overdue_payables': (TransactionType.OUTFLOW, Q(date__lt=today)),
+            'overdue_receivables': (TransactionType.INFLOW, Q(date__lt=today)),
+        }
+        for key, (type_, when) in windows.items():
+            out[key] = planned.filter(when, type=type_).aggregate(count=Count('id'), amount=_sum())
+        out['invoices'] = {'count': pending_invoices_service(user=user, reason='pending', date_to=today).count(), 'amount': None}
+    if has_permission(user, 'sales', VIEW):
+        due = list(list_commissions_service(user=user, month=today, status='pending'))
+        out['commissions'] = {'count': len(due), 'amount': sum((commission_amount(c) for c in due), ZERO)}
+    if has_permission(user, 'dunning', VIEW):
+        out['activities'] = {'count': Activity.objects.filter(
+            done_at__isnull=True, card__closed_at__isnull=True, due_date__lte=today,
+            card__company__in=list_companies_service(user=user)).count(), 'amount': None}
+    return out

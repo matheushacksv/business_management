@@ -6,7 +6,8 @@ import type { components } from '~/types/api'
 type Pending = components['schemas']['PendingInvoiceOut']
 definePageMeta({ permission: ['transactions', 'view'] })
 
-const { api, unwrap, notifyError } = useApi()
+const { api, unwrap, notifyError, notifySuccess } = useApi()
+const auth = useAuth()
 const lookups = useLookups()
 lookups.ensure('companies').catch(notifyError)
 const SStatusBadge = resolveComponent('SStatusBadge')
@@ -57,6 +58,22 @@ const columns: TableColumn<Pending>[] = [
     cell: ({ row }) => h('div', { class: 'text-right' }, h(SMoney, { value: row.original.transaction_amount })) },
 ]
 
+// Bulk: one PATCH per note (each one validates on its own: an issued NF still needs its number)
+const selection = useSelection<Pending>(() => items.value)
+const tableColumns = computed(() => auth.can('transactions', 'change') ? [selection.column, ...columns] : columns)
+const bulk = reactive({ date: today(), busy: false })
+async function bulkPatch(body: (n: Pending) => components['schemas']['PatchInvoice']) {
+  bulk.busy = true
+  const results = await Promise.allSettled(selection.rows.value.map(n =>
+    unwrap(api.PATCH('/api/invoice/{invoice_id}', { params: { path: { invoice_id: n.id! } }, body: body(n) }))))
+  const failed = results.filter(r => r.status === 'rejected')
+  if (results.length > failed.length) notifySuccess(`${results.length - failed.length} nota(s) alterada(s)`)
+  if (failed.length) notifyError((failed[0] as PromiseRejectedResult).reason, `${failed.length} nota(s) não alterada(s)`)
+  selection.clear()
+  bulk.busy = false
+  load()
+}
+
 const REASONS = [
   { label: 'Todas', value: 'all' }, { label: 'Pendentes', value: 'pending' }, { label: 'Sem nota', value: 'missing_invoice' },
   { label: 'Sem arquivo', value: 'missing_attachment' }, { label: 'Completas', value: 'done' },
@@ -79,7 +96,7 @@ const drawerOpen = ref(false)
     </template>
 
     <div class="s-panel overflow-hidden" :class="{ 'opacity-70': loading }">
-      <UTable :data="items" :columns="columns" :loading="loading" sticky empty="Nenhuma nota"
+      <UTable :data="items" :columns="tableColumns" :loading="loading" sticky empty="Nenhuma nota"
               class="max-h-[calc(100dvh-16rem)]"
               @select="(_: Event, row: any) => { selected = row.original.transaction_id; drawerOpen = true }" />
     </div>
@@ -88,6 +105,13 @@ const drawerOpen = ref(false)
       <UPagination v-if="count > 50" v-model:page="page" :total="count" :items-per-page="50" />
     </div>
 
+    <AppBulkBar :count="selection.rows.value.length" @clear="selection.clear">
+      <UInput v-model="bulk.date" type="date" size="sm" class="w-36" aria-label="Data de emissão" />
+      <UButton label="Concluída" icon="i-lucide-check-check" size="sm" variant="soft" :loading="bulk.busy" :disabled="!bulk.date"
+               @click="bulkPatch(n => ({ done: true, issue_date: n.issue_date ?? bulk.date }))" />
+      <UButton label="Serviço" size="sm" color="neutral" variant="soft" :loading="bulk.busy" @click="bulkPatch(() => ({ kind: 'service' }))" />
+      <UButton label="Produto" size="sm" color="neutral" variant="soft" :loading="bulk.busy" @click="bulkPatch(() => ({ kind: 'product' }))" />
+    </AppBulkBar>
     <TransactionsDrawer v-model:open="drawerOpen" :transaction-id="selected" @changed="load" />
   </AppPage>
 </template>

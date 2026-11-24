@@ -50,6 +50,11 @@ export function today(): string {
   return iso(new Date())
 }
 
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  return iso(new Date(y, m - 1, d + days))
+}
+
 // Same day next month, clamped to its last day (31/01 -> 28/02)
 export function nextMonth(date: string): string {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number]

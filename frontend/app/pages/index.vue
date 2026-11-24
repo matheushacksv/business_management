@@ -2,6 +2,7 @@
 import type { components } from '~/types/api'
 
 type Dre = components['schemas']['DREOut']
+type Today = components['schemas']['TodayOut']
 const { api, unwrap, notifyError } = useApi()
 const auth = useAuth()
 
@@ -16,7 +17,7 @@ const chartYear = ref(year)
 const chartLoading = ref(false)
 const yearOptions = Array.from({ length: 5 }, (_, i) => ({ label: String(year - i), value: year - i }))
 const cash = ref<{ opening: string; closing: string } | null>(null)
-const pendingInvoices = ref<number | null>(null)
+const todo = ref<Today | null>(null)
 const invested = ref<number | null>(null)  // company money in investments today
 const loading = ref(true)
 
@@ -28,8 +29,7 @@ onMounted(async () => {
       auth.can('reports') && unwrap(api.GET('/api/reports/cash-flow', {
         params: { query: { start: monthStart, end: today(), granularity: 'month', status: ['realized'] } as any },
       })).then(c => (cash.value = c)),
-      auth.can('transactions') && unwrap(api.GET('/api/invoice/pending', { params: { query: { date_to: today() } as any } }))
-        .then(p => (pendingInvoices.value = p.count)),
+      unwrap(api.GET('/api/home/today')).then(t => (todo.value = t)),
       auth.can('investments') && unwrap(api.GET('/api/investment', { params: { query: { holder: 'company' } } }))
         .then(list => (invested.value = list.reduce((s, i) => s + Number(i.balance), 0))),
     ])
@@ -55,6 +55,24 @@ watch(chartYear, async (value) => {
     chartLoading.value = false
   }
 })
+
+// "Para hoje": each row opens its screen already filtered (filters live in the URL)
+const day = today()
+const planned = (type: string, from: string | undefined, to: string) =>
+  ({ path: '/transactions', query: { type, status: 'planned', ...(from ? { date_from: from } : {}), date_to: to } })
+const TODO = [
+  { key: 'overdue_receivables', label: 'Recebimentos em atraso', icon: 'i-lucide-alarm-clock', tone: 'text-error', to: planned('inflow', undefined, addDays(day, -1)) },
+  { key: 'overdue_payables', label: 'Pagamentos em atraso', icon: 'i-lucide-alarm-clock', tone: 'text-error', to: planned('outflow', undefined, addDays(day, -1)) },
+  { key: 'payables_week', label: 'A pagar nos próximos 7 dias', icon: 'i-lucide-arrow-up-right', tone: 'text-warning', to: planned('outflow', day, addDays(day, 7)) },
+  { key: 'receivables_week', label: 'A receber nos próximos 7 dias', icon: 'i-lucide-arrow-down-left', tone: 'text-primary', to: planned('inflow', day, addDays(day, 7)) },
+  { key: 'activities', label: 'Atividades de cobrança para hoje', icon: 'i-lucide-phone-call', tone: 'text-warning', to: '/dunning/agenda' },
+  { key: 'invoices', label: 'Notas fiscais pendentes', icon: 'i-lucide-receipt-text', tone: 'text-warning', to: { path: '/invoices', query: { reason: 'pending' } } },
+  { key: 'commissions', label: 'Comissões a pagar no mês', icon: 'i-lucide-hand-coins', tone: 'text-primary', to: { path: '/sales/commissions', query: { status: 'pending' } } },
+] as const
+const todoRows = computed(() => TODO.flatMap(r => {
+  const item = todo.value?.[r.key]
+  return item ? [{ ...r, ...item }] : []
+}))
 
 const line = (key: string) => dre.value?.lines.find(l => l.key === key)
 const chartLine = (key: string) => chartDre.value?.lines.find(l => l.key === key)
@@ -84,6 +102,19 @@ const greeting = computed(() => {
       <p class="mt-1 text-sm text-muted">{{ MONTHS[month] }}/{{ year }} · consolidado de todas as empresas que você acessa</p>
     </div>
 
+    <SPanel v-if="todoRows.length" title="Para hoje">
+      <div class="grid gap-x-6 sm:grid-cols-2">
+        <NuxtLink v-for="r in todoRows" :key="r.key" :to="r.to"
+                  class="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-elevated/60 transition" :class="{ 'opacity-50': !r.count }">
+          <UIcon :name="r.icon" class="size-5 shrink-0" :class="r.count ? r.tone : 'text-dimmed'" />
+          <span class="flex-1 text-sm text-toned">{{ r.label }}</span>
+          <span class="tabular text-sm font-semibold text-highlighted">{{ r.count }}</span>
+          <span v-if="r.amount != null" class="tabular w-32 text-right text-sm text-muted">{{ formatMoney(r.amount) }}</span>
+          <UIcon name="i-lucide-chevron-right" class="size-4 text-dimmed" />
+        </NuxtLink>
+      </div>
+    </SPanel>
+
     <template v-if="auth.can('reports')">
       <div class="grid gap-4 sm:grid-cols-2" :class="auth.can('investments') ? 'xl:grid-cols-5' : 'xl:grid-cols-4'">
         <SStat label="Receitas operacionais no mês" :value="formatMoney(at('group:operating_revenue'))" tone="primary"
@@ -110,16 +141,6 @@ const greeting = computed(() => {
     </template>
 
     <div class="grid gap-4 sm:grid-cols-2">
-      <NuxtLink v-if="auth.can('transactions')" to="/invoices" class="s-panel p-5 flex items-center gap-4 hover:ring-1 hover:ring-primary/30 transition">
-        <span class="size-10 rounded-xl bg-amber-500/10 ring ring-amber-500/20 grid place-items-center">
-          <UIcon name="i-lucide-receipt-text" class="size-5 text-amber-400" />
-        </span>
-        <div class="flex-1">
-          <p class="text-sm text-muted">Notas fiscais pendentes até hoje</p>
-          <p class="font-display text-2xl font-semibold">{{ pendingInvoices ?? '—' }}</p>
-        </div>
-        <UIcon name="i-lucide-chevron-right" class="size-5 text-dimmed" />
-      </NuxtLink>
       <NuxtLink v-if="auth.can('transactions', 'create')" to="/transactions" class="s-panel p-5 flex items-center gap-4 hover:ring-1 hover:ring-primary/30 transition">
         <span class="size-10 rounded-xl bg-primary/10 ring ring-primary/20 grid place-items-center">
           <UIcon name="i-lucide-arrow-left-right" class="size-5 text-primary" />

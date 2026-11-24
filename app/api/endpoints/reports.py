@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from ninja import Query, Router
 
-from api.schemas.reports_dto import AnalysisOut, AnalysisParams, SavedReportIn, SavedReportOut, CashFlowOut, CashFlowParams, DelinquencyOut, DREOut, DREParams, DRETableOut, DRETableParams
+from api.schemas.reports_dto import AnalysisOut, AnalysisParams, SavedReportIn, SavedReportOut, CashFlowOut, CashFlowParams, DelinquencyOut, DREOut, DREParams, DRETableOut, DRETableParams, TodayOut
 from api.schemas.transactions_dto import ReportFilters
 from apps.companies.services import list_companies_service
 from apps.finance import selectors
@@ -11,6 +11,12 @@ from apps.finance.models import SavedReport, TransactionStatus
 from apps.users.permissions import VIEW, require_permission
 
 router = Router(tags=['Reports'])
+
+
+@router.get('/home/today', response=TodayOut)
+def today_endpoint(request):
+    """Home to-do counts; each block only for the modules the user can see."""
+    return selectors.today_selector(user=request.user)
 
 
 @router.get('/reports/dre', response=DREOut)

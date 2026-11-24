@@ -610,6 +610,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/home/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today Endpoint
+         * @description Home to-do counts; each block only for the modules the user can see.
+         */
+        get: operations["api_endpoints_reports_today_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/dre": {
         parameters: {
             query?: never;
@@ -3037,6 +3057,23 @@ export interface components {
             /** Company Id */
             company_id?: number | null;
         };
+        /** TodayItem */
+        TodayItem: {
+            /** Count */
+            count: number;
+            /** Amount */
+            amount: string | null;
+        };
+        /** TodayOut */
+        TodayOut: {
+            payables_week: components["schemas"]["TodayItem"] | null;
+            receivables_week: components["schemas"]["TodayItem"] | null;
+            overdue_payables: components["schemas"]["TodayItem"] | null;
+            overdue_receivables: components["schemas"]["TodayItem"] | null;
+            invoices: components["schemas"]["TodayItem"] | null;
+            commissions: components["schemas"]["TodayItem"] | null;
+            activities: components["schemas"]["TodayItem"] | null;
+        };
         /** DREParams */
         DREParams: {
             /** Year */
@@ -4557,8 +4594,11 @@ export interface components {
         MovementKind: "application" | "redemption" | "balance";
         /** CardFilters */
         CardFilters: {
-            /** @default open */
-            outcome: "open" | "resolved" | "legal" | "dismissed";
+            /**
+             * Outcome
+             * @default open
+             */
+            outcome: components["schemas"]["Outcome"] | "all";
             /** Assignee Id */
             assignee_id?: number | null;
             /** Company Id */
@@ -6349,6 +6389,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatementResultOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_reports_today_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodayOut"];
                 };
             };
         };
@@ -8442,7 +8502,7 @@ export interface operations {
     api_endpoints_dunning_list_cards_endpoint: {
         parameters: {
             query?: {
-                outcome?: "open" | "resolved" | "legal" | "dismissed";
+                outcome?: components["schemas"]["Outcome"] | "all";
                 assignee_id?: number | null;
                 company_id?: number[] | null;
                 contact_id?: number | null;

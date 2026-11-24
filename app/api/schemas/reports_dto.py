@@ -83,6 +83,22 @@ class DelinquencyMonth(Schema):
     rate: Decimal | None  # overdue / due
 
 
+class TodayItem(Schema):
+    count: int
+    amount: Decimal | None
+
+
+class TodayOut(Schema):
+    # None = module the user can't see
+    payables_week: TodayItem | None
+    receivables_week: TodayItem | None
+    overdue_payables: TodayItem | None
+    overdue_receivables: TodayItem | None
+    invoices: TodayItem | None
+    commissions: TodayItem | None
+    activities: TodayItem | None
+
+
 class DelinquencyOut(Schema):
     months: list[DelinquencyMonth]
     total: DelinquencyMonth

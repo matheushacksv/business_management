@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
@@ -109,3 +109,21 @@ class ReportGeneratorTests(TestCase):
         r = self.client.get('/api/reports/sales/export?start=2026-01-01&end=2026-06-30', headers=auth_for(self.admin))
         self.assertEqual(r.status_code, 200, r.content)
         self.assertTrue(r.content.startswith(b'PK'))
+
+
+class TodayTests(TestCase):
+    def test_counts_and_hidden_modules(self):
+        from django.utils import timezone
+        admin = User.objects.create_superuser(email='admin@test.com', password='Str@ngPassw8rd2026')
+        company = Company.objects.create(name='A', cnpj='81585365000127')
+        sub = finance.create_subgroup_service(name='Aluguel', group=Group.FIXED_COSTS)
+        today = timezone.localdate()
+        for days, amount in ((-3, '100'), (2, '50'), (30, '999')):
+            finance.create_transaction_service(user=admin, company_id=company.pk, subgroup_id=sub.pk, type='outflow',
+                                               amount=Decimal(amount), date=today + timedelta(days=days))
+        got = self.client.get('/api/home/today', headers=auth_for(admin)).json()
+        self.assertEqual((got['overdue_payables']['count'], Decimal(got['overdue_payables']['amount'])), (1, Decimal('100')))
+        self.assertEqual((got['payables_week']['count'], Decimal(got['payables_week']['amount'])), (1, Decimal('50')))
+        legal = User.objects.create_user(email='j@test.com', password='Str@ngPassw8rd2026', role=Role.LEGAL)
+        got = self.client.get('/api/home/today', headers=auth_for(legal)).json()
+        self.assertIsNone(got['payables_week'])
