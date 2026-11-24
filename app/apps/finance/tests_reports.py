@@ -233,3 +233,21 @@ class CashFlowSelectorTest(ReportsBase):
     def test_query_count(self):
         with self.assertNumQueries(3):  # initial balances + before-period + periods
             self.flow(user=self.member, company_id=None, search='x')
+
+
+class AnalysisSelectorTest(ReportsBase):
+    def test_months_previous_year_and_companies(self):
+        self.tx(self.sales, '100', IN, date(2026, 11, 5))
+        self.tx(self.sales, '30', OUT, date(2026, 11, 6))  # reversal
+        self.tx(self.sales, '50', IN, date(2026, 11, 7), company=self.other)
+        self.tx(self.sales, '80', IN, date(2025, 11, 9))
+        self.tx(self.sales, '999', IN, date(2026, 12, 1))  # after the reference
+        self.tx(self.rent, '40', OUT, date(2026, 10, 1))
+        r = selectors.analysis_selector(user=self.admin, month=date(2026, 11, 20), subgroup_ids=[self.sales.pk])
+        self.assertEqual((r['kind'], r['months'][0], r['months'][-1]), ('revenue', date(2025, 12, 1), date(2026, 11, 1)))
+        self.assertEqual((r['current'][-1], r['previous'][-1]), (D('120'), D('80')))
+        self.assertEqual([(c['name'], c['months'][-1]) for c in r['companies']], [('A', D('70')), ('B', D('50'))])
+        r = selectors.analysis_selector(user=self.member, month=date(2026, 11, 1), groups=[Group.FIXED_COSTS])
+        self.assertEqual((r['kind'], r['current'][-2]), ('cost', D('40')))
+        with self.assertRaises(ValidationError):
+            selectors.analysis_selector(user=self.admin, month=date(2026, 11, 1))

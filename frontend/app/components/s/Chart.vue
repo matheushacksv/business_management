@@ -14,7 +14,7 @@ ChartJS.defaults.font.family = 'Inter, system-ui, sans-serif'
 
 export interface Series { label: string; data: number[]; color: string; fill?: boolean; type?: 'bar' | 'line' }
 
-const props = defineProps<{ type: 'bar' | 'line'; labels: string[]; series: Series[]; money?: boolean; height?: number }>()
+const props = defineProps<{ type: 'bar' | 'line'; labels: string[]; series: Series[]; money?: boolean; height?: number; stacked?: boolean }>()
 
 // Axis/grid/legend colors follow the theme (canvas can't read CSS classes)
 const colorMode = useColorMode()
@@ -54,6 +54,7 @@ const options = computed(() => ({
   },
   scales: {
     y: {
+      stacked: !!props.stacked,
       grid: { color: ink.value.grid },
       border: { color: ink.value.grid },
       ticks: {
@@ -63,7 +64,7 @@ const options = computed(() => ({
           : {}),
       },
     },
-    x: { grid: { display: false }, border: { color: ink.value.grid }, ticks: { color: ink.value.text } },
+    x: { stacked: !!props.stacked, grid: { display: false }, border: { color: ink.value.grid }, ticks: { color: ink.value.text } },
   },
 }))
 </script>

@@ -64,7 +64,7 @@ const costs = computed(() => Number(at('group:variable_costs') ?? 0) + Number(at
 const chart = computed(() => ({
   labels: MONTHS,
   series: [
-    { label: 'Receitas operacionais', data: (chartLine('group:operating_revenue')?.months ?? []).map(Number), color: '#38bdf8', type: 'bar' as const },
+    { label: 'Receitas operacionais', data: (chartLine('group:operating_revenue')?.months ?? []).map(Number), color: '#2f9a53', type: 'bar' as const },
     { label: 'Custos', data: MONTHS.map((_, i) => Number(chartLine('group:variable_costs')?.months[i] ?? 0) + Number(chartLine('group:fixed_costs')?.months[i] ?? 0)),
       color: '#f87171', type: 'bar' as const },
     { label: 'Resultado líquido', data: (chartLine('net_result')?.months ?? []).map(Number), color: '#34d399', type: 'line' as const },

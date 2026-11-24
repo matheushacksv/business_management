@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from ninja import Query, Router
 
-from api.schemas.reports_dto import CashFlowOut, CashFlowParams, DelinquencyOut, DREOut, DREParams, DRETableOut, DRETableParams
+from api.schemas.reports_dto import AnalysisOut, AnalysisParams, CashFlowOut, CashFlowParams, DelinquencyOut, DREOut, DREParams, DRETableOut, DRETableParams
 from api.schemas.transactions_dto import ReportFilters
 from apps.companies.services import list_companies_service
 from apps.finance import selectors
@@ -17,6 +17,13 @@ router = Router(tags=['Reports'])
 @require_permission('reports', VIEW)
 def dre_endpoint(request, params: Query[DREParams], filters: Query[ReportFilters]):
     return selectors.dre_selector(user=request.user, year=params.year, **filters.dict())
+
+
+@router.get('/reports/analysis', response=AnalysisOut)
+@require_permission('reports', VIEW)
+def analysis_endpoint(request, params: Query[AnalysisParams]):
+    return selectors.analysis_selector(user=request.user, month=params.month, groups=params.group,
+                                       subgroup_ids=params.subgroup_id, company_id=params.company_id, status=params.status)
 
 
 @router.get('/reports/delinquency', response=DelinquencyOut)

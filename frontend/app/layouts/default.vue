@@ -34,6 +34,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
       parent({ label: 'Relatórios', icon: 'i-lucide-chart-column' }, ['/reports', '/sales/report'], [
         can('reports') && { label: 'DRE', to: '/reports/dre' },
         can('reports') && { label: 'Fluxo de caixa', to: '/reports/cash-flow' },
+        can('reports') && { label: 'Análise', to: '/reports/analysis' },
         can('reports') && can('sales') && { label: 'Vendido × recebido', to: '/sales/report' },
       ]),
     ]),

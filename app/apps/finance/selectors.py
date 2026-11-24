@@ -311,6 +311,50 @@ def cash_flow_selector(
     }
 
 
+# Analysis of any groups/subgroups (PDF 6.2): 12 months up to the reference + the 12 before, per company
+
+def _shift(month: date, n: int) -> date:
+    y, m = divmod(month.year * 12 + month.month - 1 + n, 12)
+    return date(y, m + 1, 1)
+
+
+def analysis_selector(
+    *, user: User, month: date, groups: list | None = None, subgroup_ids: list | None = None,
+    company_id=None, status=None,
+) -> dict:
+    groups, subgroup_ids = groups or [], subgroup_ids or []
+    if not groups and not subgroup_ids:
+        raise ValidationError('Choose at least one group or subgroup')
+    if Group.TRANSFER in groups:
+        raise ValidationError('Transfers are not part of the analysis')
+    ref = month.replace(day=1)
+    start, end = _shift(ref, -23), _shift(ref, 1) - timedelta(days=1)
+    rows = (
+        list_transactions_service(user=user, company_id=company_id, status=status, date_from=start, date_to=end)
+        .exclude(IN_COLLECTION).exclude(subgroup__group=Group.TRANSFER)
+        .filter(Q(subgroup__group__in=groups) | Q(subgroup_id__in=subgroup_ids))
+        .order_by()
+        .values('company_id', 'company__name', period=TruncMonth('date'))
+        .annotate(total=Sum(SIGNED_AMOUNT))
+    )
+    periods = [_shift(ref, i) for i in range(-23, 1)]
+    index = {p: i for i, p in enumerate(periods)}
+    totals = [ZERO] * 24
+    companies: dict[int, dict] = {}
+    for row in rows:
+        i = index[row['period']]
+        totals[i] += row['total']
+        c = companies.setdefault(row['company_id'], {'id': row['company_id'], 'name': row['company__name'], 'months': [ZERO] * 12})
+        if i >= 12:
+            c['months'][i - 12] += row['total']
+    chosen = set(groups) | set(SubGroup.objects.filter(pk__in=subgroup_ids).values_list('group', flat=True))
+    kind = 'revenue' if chosen <= set(INFLOW_GROUPS) else 'cost' if not chosen & set(INFLOW_GROUPS) else 'mixed'
+    return {
+        'month': ref, 'kind': kind, 'months': periods[12:], 'current': totals[12:], 'previous': totals[:12],
+        'companies': sorted(companies.values(), key=lambda c: -abs(sum(c['months']))),
+    }
+
+
 # Contact page
 
 def contact_summary_selector(*, user: User, contact_id: int, sales: bool, money: bool) -> dict:

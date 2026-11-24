@@ -627,6 +627,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analysis Endpoint */
+        get: operations["api_endpoints_reports_analysis_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/delinquency": {
         parameters: {
             query?: never;
@@ -2895,6 +2912,52 @@ export interface components {
             year: number;
             /** Lines */
             lines: components["schemas"]["DRELine"][];
+        };
+        /** AnalysisParams */
+        AnalysisParams: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Group */
+            group?: string[] | null;
+            /** Subgroup Id */
+            subgroup_id?: number[] | null;
+            /** Company Id */
+            company_id?: number[] | null;
+            /** Status */
+            status?: ("planned" | "realized")[] | null;
+        };
+        /** AnalysisCompany */
+        AnalysisCompany: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Months */
+            months: string[];
+        };
+        /** AnalysisOut */
+        AnalysisOut: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "revenue" | "cost" | "mixed";
+            /** Months */
+            months: string[];
+            /** Current */
+            current: string[];
+            /** Previous */
+            previous: string[];
+            /** Companies */
+            companies: components["schemas"]["AnalysisCompany"][];
         };
         /** DelinquencyMonth */
         DelinquencyMonth: {
@@ -5979,6 +6042,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DREOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_reports_analysis_endpoint: {
+        parameters: {
+            query: {
+                month: string;
+                group?: string[] | null;
+                subgroup_id?: number[] | null;
+                company_id?: number[] | null;
+                status?: ("planned" | "realized")[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisOut"];
                 };
             };
         };

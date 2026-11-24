@@ -44,7 +44,7 @@ const chart = computed(() => {
     series: [
       { label: 'Entradas', data: periods.map(p => Number(p.inflow)), color: '#34d399', type: 'bar' as const },
       { label: 'Saídas', data: periods.map(p => Number(p.outflow)), color: '#f87171', type: 'bar' as const },
-      { label: 'Saldo final', data: periods.map(p => Number(p.closing)), color: '#38bdf8', type: 'line' as const },
+      { label: 'Saldo final', data: periods.map(p => Number(p.closing)), color: '#2f9a53', type: 'line' as const },
     ],
   }
 })

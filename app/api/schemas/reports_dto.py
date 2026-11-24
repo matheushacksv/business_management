@@ -86,3 +86,26 @@ class DelinquencyMonth(Schema):
 class DelinquencyOut(Schema):
     months: list[DelinquencyMonth]
     total: DelinquencyMonth
+
+
+class AnalysisParams(Schema):
+    month: dt.date  # reference month (any day)
+    group: list[str] | None = None
+    subgroup_id: list[int] | None = None
+    company_id: list[int] | None = None
+    status: list[Literal['planned', 'realized']] | None = None
+
+
+class AnalysisCompany(Schema):
+    id: int
+    name: str
+    months: list[Decimal]  # same 12 months as AnalysisOut.months
+
+
+class AnalysisOut(Schema):
+    month: dt.date
+    kind: Literal['revenue', 'cost', 'mixed']  # cost: going up is worse
+    months: list[dt.date]   # 12 months up to the reference
+    current: list[Decimal]  # totals of those months
+    previous: list[Decimal]  # the 12 months before (same months, previous year)
+    companies: list[AnalysisCompany]
