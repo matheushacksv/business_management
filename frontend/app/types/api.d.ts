@@ -3162,6 +3162,8 @@ export interface components {
              * @default 0
              */
             monthly_salary: string;
+            /** Crm Amount */
+            crm_amount?: string | null;
         };
         /** SalespersonCreate */
         SalespersonCreate: {
@@ -3174,6 +3176,8 @@ export interface components {
              * @default 0
              */
             monthly_salary: number | string;
+            /** Crm Amount */
+            crm_amount?: number | string | null;
         };
         /** SalespersonPatch */
         SalespersonPatch: {
@@ -3185,6 +3189,8 @@ export interface components {
             user_id?: number | null;
             /** Monthly Salary */
             monthly_salary?: number | string | null;
+            /** Crm Amount */
+            crm_amount?: number | string | null;
         };
         /** SaleOut */
         SaleOut: {

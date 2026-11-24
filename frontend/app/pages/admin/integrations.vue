@@ -48,7 +48,7 @@ async function generate() {
 
 const BODY_TEMPLATE = JSON.stringify({
   deal_id: 0, person_id: 0, person_name: '', person_email: '', person_phone: '', client_document: '', client_postal_code: '', client_address_number: '',
-  client_address_complement: '', client_district: '',
+  client_address_complement: '', client_district: '', advisor_name: '', advisor_percent: '', scheduler_name: '', scheduler_amount: '', crm: '',
   company_document: '', proposal_value: '', product: '', owner_name: '', installments: '', payment_method: '',
   notes: '', signed_date: '', down_payment: '', down_payment_date: '', first_installment_date: '',
 }, null, 2)

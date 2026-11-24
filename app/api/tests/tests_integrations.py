@@ -45,6 +45,18 @@ class PipedriveWebhookTests(TestCase):
         self.assertIn('bairro', r['message'])
         self.assertFalse(Sale.objects.exists())
 
+    def test_optional_extra_commissions(self):
+        advisor, scheduler = Salesperson.objects.create(name='Amanda'), Salesperson.objects.create(name='Wagner', crm_amount=250)
+        matheus = Salesperson.objects.create(name='Matheus', crm_amount=500)
+        r = self.post({**DEAL, 'advisor_name': 'amanda', 'advisor_percent': '5', 'scheduler_name': 'Ninguém',
+                       'scheduler_amount': 'R$ 150,00', 'crm': 'Equipe Grupo Enriquecedor'})
+        sale = Sale.objects.get()
+        self.assertEqual(sale.delivery_responsible, advisor)
+        self.assertEqual(sorted(sale.commissions.values_list('salesperson', 'kind', 'percent', 'fixed_amount')),
+                         sorted([(self.renato.pk, 'seller', Decimal('10'), None), (advisor.pk, 'advisor', Decimal('5'), None),
+                                 (scheduler.pk, 'crm', None, Decimal('250')), (matheus.pk, 'crm', None, Decimal('500'))]))
+        self.assertIn('Ninguém', WebhookEvent.objects.get().message, r.content)
+
     def test_rejects_without_credentials(self):
         self.assertEqual(self.post(DEAL, auth='Basic ' + base64.b64encode(b'x:y').decode()).status_code, 401)
         self.assertEqual(self.client.post('/api/webhooks/pipedrive/deal', data=DEAL, content_type='application/json').status_code, 401)

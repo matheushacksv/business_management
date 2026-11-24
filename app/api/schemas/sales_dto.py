@@ -20,11 +20,13 @@ class ProductPatch(Schema):
 class SalespersonCreate(NamedCreate):
     user_id: int | None = None
     monthly_salary: Decimal = Field(Decimal('0'), ge=0, max_digits=14, decimal_places=2)
+    crm_amount: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
 
 
 class SalespersonPatch(ProductPatch):
     user_id: int | None = None
     monthly_salary: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
+    crm_amount: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
 
 
 class ProductOut(ModelSchema):
@@ -38,7 +40,7 @@ class SalespersonOut(ModelSchema):
 
     class Meta:
         model = Salesperson
-        fields = ['id', 'name', 'active', 'monthly_salary']
+        fields = ['id', 'name', 'active', 'monthly_salary', 'crm_amount']
 
 
 class CreateSale(Schema):

@@ -32,6 +32,7 @@ class Salesperson(models.Model):
     )
     active = models.BooleanField(default=True)
     monthly_salary = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0'))
+    crm_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)  # CRM commission of each deal with CRM
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

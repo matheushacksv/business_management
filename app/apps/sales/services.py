@@ -72,8 +72,8 @@ def delete_product_service(*, product_id: int) -> None:
     _delete_protected(Product.objects.get(pk=product_id))
 
 
-def create_salesperson_service(*, name: str, user_id: int | None = None, monthly_salary=Decimal('0')) -> Salesperson:
-    return _create_named(Salesperson, name=name, user_id=user_id, monthly_salary=monthly_salary)
+def create_salesperson_service(*, name: str, user_id: int | None = None, monthly_salary=Decimal('0'), crm_amount=None) -> Salesperson:
+    return _create_named(Salesperson, name=name, user_id=user_id, monthly_salary=monthly_salary, crm_amount=crm_amount)
 
 
 def list_salespeople_service(*, active: bool | None = None):

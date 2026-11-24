@@ -12799,6 +12799,17 @@
       "default": "0",
       "title": "Monthly Salary",
       "type": "string"
+     },
+     "crm_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Crm Amount"
      }
     },
     "required": [
@@ -12838,6 +12849,21 @@
       ],
       "default": "0",
       "title": "Monthly Salary"
+     },
+     "crm_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Crm Amount"
      }
     },
     "required": [
@@ -12896,6 +12922,21 @@
        }
       ],
       "title": "Monthly Salary"
+     },
+     "crm_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Crm Amount"
      }
     },
     "title": "SalespersonPatch",

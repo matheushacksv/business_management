@@ -72,12 +72,19 @@ class DealPayload(BaseModel):
     down_payment: Decimal = Decimal('0')
     down_payment_date: dt.date | None = None
     first_installment_date: dt.date | None = None
+    # optional extra commissions: name as in Equipe + value (advisor: % after tax; scheduler: fixed R$).
+    # crm: any text (e.g. "Equipe Grupo Enriquecedor") = CRM done: each one in Equipe with a CRM value gets it
+    advisor_name: str = ''
+    advisor_percent: Decimal | None = None
+    scheduler_name: str = ''
+    scheduler_amount: Decimal | None = None
+    crm: str = ''
 
-    @field_validator('proposal_value', 'down_payment', mode='before')
+    @field_validator('proposal_value', 'down_payment', 'advisor_percent', 'scheduler_amount', mode='before')
     @classmethod
-    def money(cls, v):
-        if v in (None, ''):
-            return Decimal('0')
+    def money(cls, v, info):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return Decimal('0') if info.field_name in ('proposal_value', 'down_payment') else None
         if isinstance(v, (int, float, Decimal)):
             return Decimal(str(v))
         value = parse_amount(str(v))
@@ -97,7 +104,8 @@ class DealPayload(BaseModel):
 
     @field_validator('person_name', 'person_email', 'person_phone', 'client_document', 'company_document',
                      'client_postal_code', 'client_address_number', 'client_address_complement', 'client_district',
-                     'product', 'owner_name', 'payment_method', 'notes', mode='before')
+                     'product', 'owner_name', 'payment_method', 'notes', 'advisor_name', 'scheduler_name', 'crm',
+                     mode='before')
     @classmethod
     def text(cls, v):
         return '' if v is None else str(v).strip()
@@ -164,6 +172,7 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
         if seller:
             create_commission_service(user=user, sale_id=sale.pk, salesperson_id=seller.pk,
                                       kind=CommissionKind.SELLER, percent=SELLER_PERCENT)
+        warnings += _extra_commissions(user, sale, data)
         if data.first_installment_date:
             warnings += _receivables(user, sale, data, config)
     # outside the DB transaction: charges created on Asaas must not point to rolled-back receivables
@@ -175,6 +184,41 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
         except ValidationError as e:
             warnings.append(f'Cobranças no Asaas não geradas: {"; ".join(e.messages)}')
     return sale, warnings
+
+
+EXTRA_COMMISSIONS = [  # (payload prefix, kind, value field, label)
+    ('advisor', CommissionKind.ADVISOR, 'advisor_percent', 'Assessor'),
+    ('scheduler', CommissionKind.SCHEDULING, 'scheduler_amount', 'Agendamento'),
+]
+
+
+def _extra_commissions(user: User, sale: Sale, data: DealPayload) -> list[str]:
+    """Optional: a name not in Equipe or without a value is a warning, never an error."""
+    warnings = []
+    for prefix, kind, field, label in EXTRA_COMMISSIONS:
+        name, value = getattr(data, f'{prefix}_name'), getattr(data, field)
+        if not name:
+            continue
+        person = Salesperson.objects.filter(name__iexact=name).first()
+        if person is None:
+            warnings.append(f'{label} "{name}" não encontrado na Equipe: sem comissão')
+            continue
+        if kind == CommissionKind.ADVISOR and sale.delivery_responsible_id is None:  # type:ignore
+            sale.delivery_responsible = person
+            sale.save(update_fields=['delivery_responsible'])
+        if value is None:
+            warnings.append(f'{label} "{name}" sem valor: comissão não criada')
+            continue
+        values = {'percent': value} if kind == CommissionKind.ADVISOR else {'fixed_amount': value}
+        create_commission_service(user=user, sale_id=sale.pk, salesperson_id=person.pk, kind=kind, **values)
+    if data.crm:
+        crm_team = Salesperson.objects.filter(active=True, crm_amount__gt=0)
+        if not crm_team:
+            warnings.append('CRM informado, mas ninguém na Equipe tem valor de CRM: sem comissão')
+        for person in crm_team:
+            create_commission_service(user=user, sale_id=sale.pk, salesperson_id=person.pk, kind=CommissionKind.CRM,
+                                      fixed_amount=person.crm_amount)
+    return warnings
 
 
 def _contact(data: DealPayload) -> Contact:
