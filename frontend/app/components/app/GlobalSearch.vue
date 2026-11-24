@@ -46,12 +46,14 @@ watch(term, (value) => {
   const search = value.trim()
   if (search.length < 2) {
     found.value = []
+    loading.value = false
     return
   }
   timer = setTimeout(async () => {
     loading.value = true
     const groups = await lookup(search)
-    if (term.value.trim() === search) found.value = groups  // drop answers to an older term
+    if (term.value.trim() !== search) return  // an older term: the newer request owns the results
+    found.value = groups
     loading.value = false
   }, 300)
 })

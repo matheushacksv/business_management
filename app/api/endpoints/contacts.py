@@ -19,7 +19,7 @@ def create_contact_endpoint(request, data: CreateContact):
 def list_contacts_endpoint(request, search: str | None = None):
     contacts = list(services.list_contacts_service(search=search))
     if has_permission(request.user, 'transactions', VIEW):  # the situation comes from the money
-        situations = situations_service(user=request.user)
+        situations = situations_service(user=request.user, contact_ids=[c.pk for c in contacts] if search else None)
         for c in contacts:
             c.situation = situations.get(c.pk)  # type:ignore
     return contacts

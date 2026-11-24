@@ -74,7 +74,8 @@ function resetForNext() {
   Object.assign(state, { amount: undefined, contact_id: null, reference: '', notes: '' })
 }
 
-async function submit() {
+async function submit(event?: Event) {
+  if (event) again.value = false  // form submit (Enter / "Criar")
   if (!state.company_id || !state.subgroup_id || !state.amount || state.amount <= 0) {
     notifyError('Preencha empresa, subgrupo e um valor maior que zero.', 'Dados incompletos')
     return
@@ -121,7 +122,7 @@ async function submit() {
 </script>
 
 <template>
-  <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit">
+  <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submit($event)">
     <UFormField v-if="!isEdit" label="Tipo de lançamento" class="sm:col-span-2">
       <UTabs v-model="mode" :items="modes" :content="false" size="sm" />
     </UFormField>
@@ -174,9 +175,10 @@ async function submit() {
 
     <div class="flex justify-end gap-2 sm:col-span-2">
       <UButton label="Cancelar" color="neutral" variant="ghost" @click="emit('cancel')" />
-      <UButton v-if="!isEdit" type="submit" label="Criar e novo" color="neutral" variant="outline" :loading="saving && again"
-               @click="again = true" />
-      <UButton type="submit" :label="isEdit ? 'Salvar' : 'Criar'" :loading="saving && !again" @click="again = false" />
+      <!-- type=button: Enter in a field submits with the default "Criar" -->
+      <UButton v-if="!isEdit" label="Criar e novo" color="neutral" variant="outline" :loading="saving && again"
+               @click="again = true; submit()" />
+      <UButton type="submit" :label="isEdit ? 'Salvar' : 'Criar'" :loading="saving && !again" />
     </div>
   </form>
 </template>

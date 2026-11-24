@@ -21,6 +21,7 @@ const isLeg = computed(() => !!tx.value?.transfer_id)
 const canChange = computed(() => auth.can('transactions', 'change') && (!isLeg.value || !!transfer.value))
 // Transfer and investment legs are created through their own screens
 const lookups = useLookups()
+lookups.ensure('subgroups').catch(notifyError)
 const canDuplicate = computed(() => auth.can('transactions', 'create') && !isLeg.value
   && lookups.cache.value.subgroups?.find(s => s.id === tx.value?.subgroup)?.group !== 'transfer')
 const canDelete = computed(() => auth.can('transactions', 'delete') && (!isLeg.value || !!transfer.value))
