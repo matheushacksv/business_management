@@ -145,11 +145,19 @@ useQueryOpen('transaction', openTransaction, drawerOpen)
 function onSelect(_: Event, row: { original: Transaction }) {
   openTransaction(row.original.id!)
 }
-function onCreated(id: number | null) {
-  createOpen.value = false
+function onCreated(id: number | null, again?: boolean) {
   load()
+  if (again) return  // "Criar e novo": modal stays open
+  createOpen.value = false
   if (id) { selected.value = id; drawerOpen.value = true }
 }
+// Duplicate = new transaction prefilled from the one in the drawer
+const copy = ref<Transaction | null>(null)
+function duplicate(tx: Transaction) {
+  copy.value = tx
+  createOpen.value = true
+}
+watch(createOpen, (value) => { if (!value) copy.value = null })
 </script>
 
 <template>
@@ -193,11 +201,11 @@ function onCreated(id: number | null) {
     </div>
 
     <TransactionsBulkActions :rows="selection.rows.value" @done="afterBulk" @clear="selection.clear" />
-    <TransactionsDrawer v-model:open="drawerOpen" :transaction-id="selected" @changed="load" />
+    <TransactionsDrawer v-model:open="drawerOpen" :transaction-id="selected" @changed="load" @duplicate="duplicate" />
 
-    <UModal v-model:open="createOpen" title="Novo lançamento" :ui="{ content: 'max-w-2xl' }">
+    <UModal v-model:open="createOpen" :title="copy ? 'Duplicar lançamento' : 'Novo lançamento'" :ui="{ content: 'max-w-2xl' }">
       <template #body>
-        <TransactionsForm @saved="onCreated" @cancel="createOpen = false" />
+        <TransactionsForm :key="copy?.id ?? 0" :copy="copy" @saved="onCreated" @cancel="createOpen = false" />
       </template>
     </UModal>
 

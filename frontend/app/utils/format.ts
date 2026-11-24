@@ -44,9 +44,16 @@ export function formatMonth(value: string): string {
   return `${MONTHS[Number(m) - 1]}/${y}`
 }
 
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 export function today(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return iso(new Date())
+}
+
+// Same day next month, clamped to its last day (31/01 -> 28/02)
+export function nextMonth(date: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  return iso(new Date(y, m, Math.min(d, new Date(y, m + 1, 0).getDate())))
 }
 
 export const LABELS = {

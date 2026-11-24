@@ -2,8 +2,9 @@
 import type { components } from '~/types/api'
 
 type Transaction = components['schemas']['TransactionOut']
-const props = defineProps<{ transaction?: Transaction | null }>()
-const emit = defineEmits<{ saved: [id: number | null]; cancel: [] }>()
+// `copy`: new transaction prefilled from another one (duplicate), dated the next month
+const props = defineProps<{ transaction?: Transaction | null, copy?: Transaction | null }>()
+const emit = defineEmits<{ saved: [id: number | null, again?: boolean]; cancel: [] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const lookups = useLookups()
@@ -13,14 +14,14 @@ const isEdit = computed(() => !!props.transaction)
 const mode = ref<'single' | 'installment' | 'recurring'>('single')
 const saving = ref(false)
 
-const t = props.transaction
+const t = props.transaction ?? props.copy
 const state = reactive({
   company_id: t?.company ?? (lookups.options.companies.value[0]?.value as number | undefined),
-  date: t?.date ?? today(),
+  date: props.copy ? nextMonth(props.copy.date) : t?.date ?? today(),
   type: t?.type ?? 'outflow',
   subgroup_id: t?.subgroup as number | undefined,
   amount: t ? Number(t.amount) : (undefined as number | undefined),
-  status: t?.status ?? 'planned',
+  status: props.transaction?.status ?? 'planned',
   account_id: (t?.account ?? undefined) as number | undefined,
   contact_id: (t?.contact ?? null) as number | null,
   reference: t?.reference ?? '',
@@ -67,6 +68,12 @@ const preview = computed(() => {
     : `${state.count} meses · total ${formatMoney(state.amount * state.count)}`
 })
 
+// "Criar e novo": keeps company, date, type, status, subgroup and account for the next one
+const again = ref(false)
+function resetForNext() {
+  Object.assign(state, { amount: undefined, contact_id: null, reference: '', notes: '' })
+}
+
 async function submit() {
   if (!state.company_id || !state.subgroup_id || !state.amount || state.amount <= 0) {
     notifyError('Preencha empresa, subgrupo e um valor maior que zero.', 'Dados incompletos')
@@ -91,7 +98,8 @@ async function submit() {
         body: { ...common, company_id: state.company_id, date: state.date, amount },
       }))
       notifySuccess('Lançamento criado')
-      emit('saved', created.id!)
+      if (again.value) resetForNext()
+      emit('saved', created.id!, again.value)
     } else {
       await unwrap(api.POST('/api/transaction-series', {
         body: {
@@ -101,7 +109,8 @@ async function submit() {
         },
       }))
       notifySuccess(`${state.count} lançamentos criados`)
-      emit('saved', null)
+      if (again.value) resetForNext()
+      emit('saved', null, again.value)
     }
   } catch (e) {
     notifyError(e)
@@ -165,7 +174,9 @@ async function submit() {
 
     <div class="flex justify-end gap-2 sm:col-span-2">
       <UButton label="Cancelar" color="neutral" variant="ghost" @click="emit('cancel')" />
-      <UButton type="submit" :label="isEdit ? 'Salvar' : 'Criar'" :loading="saving" />
+      <UButton v-if="!isEdit" type="submit" label="Criar e novo" color="neutral" variant="outline" :loading="saving && again"
+               @click="again = true" />
+      <UButton type="submit" :label="isEdit ? 'Salvar' : 'Criar'" :loading="saving && !again" @click="again = false" />
     </div>
   </form>
 </template>

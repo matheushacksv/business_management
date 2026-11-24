@@ -5,7 +5,7 @@ type Transaction = components['schemas']['TransactionOut']
 type Transfer = components['schemas']['TransferOut']
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{ transactionId: number | null }>()
-const emit = defineEmits<{ changed: [] }>()
+const emit = defineEmits<{ changed: [], duplicate: [tx: Transaction] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const confirm = useConfirm()
@@ -19,6 +19,10 @@ const tab = ref('details')
 const isLeg = computed(() => !!tx.value?.transfer_id)
 // A leg the user can't manage as a transfer (other company not visible) stays read-only
 const canChange = computed(() => auth.can('transactions', 'change') && (!isLeg.value || !!transfer.value))
+// Transfer and investment legs are created through their own screens
+const lookups = useLookups()
+const canDuplicate = computed(() => auth.can('transactions', 'create') && !isLeg.value
+  && lookups.cache.value.subgroups?.find(s => s.id === tx.value?.subgroup)?.group !== 'transfer')
 const canDelete = computed(() => auth.can('transactions', 'delete') && (!isLeg.value || !!transfer.value))
 
 const tabs = [
@@ -174,6 +178,8 @@ const fields = computed(() => {
                     description="Só quem tem acesso às duas empresas pode alterar ou excluir." />
             <div class="flex flex-wrap gap-2 pt-2">
               <UButton v-if="canChange" :label="transfer ? 'Editar transferência' : 'Editar'" icon="i-lucide-pencil" @click="editing = true" />
+              <UButton v-if="canDuplicate" label="Duplicar" icon="i-lucide-copy" color="neutral" variant="outline"
+                       @click="emit('duplicate', tx); open = false" />
               <UButton v-if="tx.series_id && auth.can('transactions', 'delete')" label="Cancelar desta em diante"
                        icon="i-lucide-calendar-x" color="warning" variant="soft" @click="cancelFollowing" />
               <UButton v-if="canDelete" :label="transfer ? 'Excluir transferência' : 'Excluir'" icon="i-lucide-trash-2" color="error"
