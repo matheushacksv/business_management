@@ -88,7 +88,7 @@ class PipedriveWebhookTests(TestCase):
         self.post({**DEAL, 'plan': 'starter'})
         self.post({**DEAL, 'deal_id': 1235, 'plan': 'Plano PRO (04 Assessorias)'})
         self.assertEqual(Sale.objects.get(pipedrive_id=1234).plan, plan)
-        self.assertEqual(Sale.objects.get(pipedrive_id=1235).plan.name, 'Plano PRO (04 Assessorias)')
+        self.assertEqual(Sale.objects.get(pipedrive_id=1235).plan.name, 'Plano PRO')
 
     def test_receivables_when_dates_come(self):
         PipedriveConfig.objects.update(subgroup=self.subgroup)

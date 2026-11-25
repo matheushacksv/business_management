@@ -162,8 +162,9 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
             product = Product.objects.filter(name__iexact=data.product).first() \
                 or Product.objects.create(name=data.product)
         plan = None
-        if data.plan:  # its NF-e items are set up later on the Plans screen
-            plan = Plan.objects.filter(name__iexact=data.plan).first() or Plan.objects.create(name=data.plan)
+        name = re.sub(r'\s*\(.*?\)', '', data.plan).strip()  # "Plano PRO (04 Assessorias)" -> "Plano PRO"
+        if name:  # its NF-e items are set up later on the Plans screen
+            plan = Plan.objects.filter(name__iexact=name).first() or Plan.objects.create(name=name)
         seller = Salesperson.objects.filter(name__iexact=data.owner_name).first() if data.owner_name else None
         if data.owner_name and seller is None:
             warnings.append(f'Vendedor "{data.owner_name}" não encontrado na Equipe: venda sem vendedor e sem comissão')
