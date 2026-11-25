@@ -4,13 +4,13 @@ from ninja import Router
 from ninja.pagination import PageNumberPagination, paginate
 
 from api.schemas.integrations_dto import (
-    AsaasConfigIn, AsaasConfigOut, ChargesOut, CredentialsOut, EventOut, PipedriveConfigIn, PipedriveConfigOut,
-    WebhookResult,
+    AsaasConfigIn, AsaasConfigOut, CallOut, ChargesOut, CredentialsOut, EventOut, PhoneLineIn, PhoneLineOut,
+    PipedriveConfigIn, PipedriveConfigOut, WebhookResult,
 )
 from apps.companies.models import Company
 from apps.finance.models import SubGroup
-from apps.integrations import asaas, services
-from apps.integrations.models import AsaasConfig, PipedriveConfig, WebhookEvent
+from apps.integrations import api4com, asaas, services
+from apps.integrations.models import AsaasConfig, Call, PhoneLine, PipedriveConfig, WebhookEvent
 from apps.users.permissions import CHANGE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Integrations'])
@@ -120,3 +120,68 @@ def update_asaas_config(request, company_id: int, data: AsaasConfigIn):
 def create_asaas_charges(request, sale_id: int):
     check_permission(request.user, 'transactions', CHANGE)
     return {'created': asaas.create_charges_service(user=request.user, sale_id=sale_id)}
+
+
+# API4COM (telephony)
+
+@router.post('/webhooks/api4com/{secret}', auth=None, response={200: WebhookResult, 400: dict, 401: dict})
+def api4com_webhook(request, secret: str):
+    line = api4com.line_for(secret)
+    if line is None:
+        return 401, {'detail': 'Invalid token'}
+    try:
+        payload = json.loads(request.body or b'{}')
+    except ValueError:
+        return 400, {'detail': 'Body must be JSON'}
+    if not isinstance(payload, dict):
+        return 400, {'detail': 'Body must be a JSON object'}
+    return api4com.receive_event_service(line=line, payload=payload)
+
+
+def _line_out(line: PhoneLine) -> dict:
+    return {'user_id': line.user_id, 'name': line.user.name or line.user.email, 'email': line.email,  # type:ignore
+            'extension': line.extension, 'valid': line.valid, 'updated_at': line.updated_at}
+
+
+@router.get('/integrations/api4com', response=list[PhoneLineOut])
+@require_permission('users', VIEW)
+def list_phone_lines(request):
+    return [_line_out(x) for x in PhoneLine.objects.select_related('user').order_by('user__name', 'user__email')]
+
+
+@router.put('/integrations/api4com/{user_id}', response=PhoneLineOut)
+@require_permission('users', CHANGE)
+def connect_phone_line(request, user_id: int, data: PhoneLineIn):
+    base = request.build_absolute_uri('/api/webhooks/api4com/')
+    return _line_out(api4com.connect_line_service(user_id=user_id, webhook_base=base, **data.dict()))
+
+
+@router.delete('/integrations/api4com/{user_id}', response={204: None})
+@require_permission('users', CHANGE)
+def disconnect_phone_line(request, user_id: int):
+    PhoneLine.objects.filter(user_id=user_id).delete()
+    return 204, None
+
+
+@router.post('/dunning/activity/{activity_id}/call', response={201: CallOut}, tags=['Dunning'])
+@require_permission('dunning', CHANGE)
+def place_activity_call(request, activity_id: int):
+    return 201, api4com.place_call_service(user=request.user, activity_id=activity_id)
+
+
+@router.post('/contact/{contact_id}/call', response={201: CallOut}, tags=['Contacts'])
+@require_permission('contacts', VIEW)
+def place_contact_call(request, contact_id: int):
+    return 201, api4com.place_call_service(user=request.user, contact_id=contact_id)
+
+
+@router.get('/contact/{contact_id}/calls', response=list[CallOut], tags=['Contacts'])
+@require_permission('contacts', VIEW)
+def list_contact_calls(request, contact_id: int):
+    return Call.objects.filter(contact_id=contact_id).select_related('activity', 'user')
+
+
+@router.get('/call/{call_id}', response=CallOut, tags=['Contacts'])
+def get_call(request, call_id: int):
+    """Own calls only: the "Ligar" button polls it until the call ends."""
+    return Call.objects.select_related('activity', 'user').get(pk=call_id, user=request.user)

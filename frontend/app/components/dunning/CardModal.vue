@@ -138,6 +138,15 @@ async function addActivity() {
   }
 }
 
+// API4COM: an answered call (real conversation) completes the activity; calls listed in the "Ligações" panel
+const { calling, call } = usePhoneCall()
+const callsList = ref<{ load: () => void } | null>(null)
+const callingId = ref<number | null>(null)
+function callFor(a: Activity) {
+  callingId.value = a.id
+  call({ activity_id: a.id }, () => { callsList.value?.load(); load(); emit('changed') })
+}
+
 const pending = computed(() => activities.value.filter(a => !a.done_at))
 const history = computed(() => activities.value.filter(a => a.done_at))
 const isOpen = computed(() => !!card.value && !card.value.closed_at)
@@ -222,6 +231,8 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
                     </p>
                   </div>
                   <div v-if="canChange && isOpen" class="flex gap-1">
+                    <UButton v-if="auth.me.value?.has_phone_line && card.contact_phone" icon="i-lucide-phone-outgoing" size="xs"
+                             color="neutral" variant="ghost" aria-label="Ligar" :loading="calling && callingId === a.id" @click="callFor(a)" />
                     <UButton v-if="a.message && whatsapp(a)" icon="i-lucide-send" size="xs" color="neutral" variant="ghost"
                              :to="whatsapp(a)" target="_blank" aria-label="Abrir no WhatsApp" />
                     <UButton v-if="a.message" icon="i-lucide-copy" size="xs" color="neutral" variant="ghost" aria-label="Copiar mensagem"
@@ -266,6 +277,9 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
           </SPanel>
 
           <div class="flex flex-col gap-4">
+          <SPanel title="Ligações">
+            <ContactsCalls ref="callsList" :contact-id="card.contact_id" :phone="card.contact_phone" />
+          </SPanel>
           <SPanel title="Observações">
             <form v-if="canChange" class="flex flex-col gap-2" @submit.prevent="addNote">
               <UTextarea v-model="note.text" :rows="2" autoresize class="w-full" />

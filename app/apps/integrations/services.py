@@ -267,4 +267,7 @@ def reprocess_event_service(*, event_id: int) -> WebhookEvent:
     if event.source == 'asaas':
         from apps.integrations import asaas
         return asaas.process_event_service(event=event)
+    if event.source == 'api4com':
+        from apps.integrations import api4com
+        return api4com.process_event_service(event=event)
     return process_event_service(event=event)

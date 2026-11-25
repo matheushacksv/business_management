@@ -53,7 +53,7 @@ const BODY_TEMPLATE = JSON.stringify({
   notes: '', signed_date: '', down_payment: '', down_payment_date: '', first_installment_date: '',
 }, null, 2)
 
-const TABS = [{ label: 'Pipedrive', value: 'pipedrive' }, { label: 'Asaas', value: 'asaas' }]
+const TABS = [{ label: 'Pipedrive', value: 'pipedrive' }, { label: 'Asaas', value: 'asaas' }, { label: 'API4COM', value: 'api4com' }]
 const tab = ref('pipedrive')
 
 // Event log of the current tab
@@ -96,8 +96,8 @@ const LABEL: Record<string, { label: string; color: 'success' | 'neutral' | 'err
 const columns: TableColumn<Event>[] = [
   { accessorKey: 'received_at', header: 'Recebido', cell: ({ row }) => formatDateTime(row.original.received_at) },
   { accessorKey: 'key', header: 'Origem', cell: ({ row }) => h('div', [
-    h('p', { class: 'text-highlighted' }, row.original.source === 'asaas'
-      ? `Asaas · ${row.original.payload.event ?? '—'}` : String(row.original.payload.person_name ?? '—')),
+    h('p', { class: 'text-highlighted' }, row.original.source === 'asaas' ? `Asaas · ${row.original.payload.event ?? '—'}`
+      : row.original.source === 'api4com' ? `API4COM · ${row.original.payload.called ?? '—'}` : String(row.original.payload.person_name ?? '—')),
     h('p', { class: 'text-xs text-dimmed' }, `#${row.original.key}`),
   ]) },
   { accessorKey: 'status', header: 'Status', cell: ({ row }) => h(UBadge, { ...LABEL[row.original.status], variant: 'subtle' }) },
@@ -143,7 +143,8 @@ const columns: TableColumn<Event>[] = [
       <UButton label="Copiar modelo do JSON" icon="i-lucide-braces" color="neutral" variant="outline" size="sm" class="mt-4"
                @click="copy(BODY_TEMPLATE)" />
     </SPanel>
-    <IntegrationsAsaas v-else />
+    <IntegrationsAsaas v-else-if="tab === 'asaas'" />
+    <IntegrationsApi4com v-else />
 
     <template #toolbar>
       <USelect v-model="status" :items="Object.entries(LABEL).map(([value, l]) => ({ label: l.label, value }))"

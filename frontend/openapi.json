@@ -9925,6 +9925,321 @@
      }
     ]
    }
+  },
+  "/api/webhooks/api4com/{secret}": {
+   "post": {
+    "operationId": "api_endpoints_integrations_api4com_webhook",
+    "summary": "Api4Com Webhook",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "secret",
+      "schema": {
+       "title": "Secret",
+       "type": "string"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WebhookResult"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ]
+   }
+  },
+  "/api/integrations/api4com": {
+   "get": {
+    "operationId": "api_endpoints_integrations_list_phone_lines",
+    "summary": "List Phone Lines",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PhoneLineOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/api4com/{user_id}": {
+   "put": {
+    "operationId": "api_endpoints_integrations_connect_phone_line",
+    "summary": "Connect Phone Line",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "user_id",
+      "schema": {
+       "title": "User Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PhoneLineOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PhoneLineIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_integrations_disconnect_phone_line",
+    "summary": "Disconnect Phone Line",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "user_id",
+      "schema": {
+       "title": "User Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/dunning/activity/{activity_id}/call": {
+   "post": {
+    "operationId": "api_endpoints_integrations_place_activity_call",
+    "summary": "Place Activity Call",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "activity_id",
+      "schema": {
+       "title": "Activity Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CallOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/contact/{contact_id}/call": {
+   "post": {
+    "operationId": "api_endpoints_integrations_place_contact_call",
+    "summary": "Place Contact Call",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CallOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/contact/{contact_id}/calls": {
+   "get": {
+    "operationId": "api_endpoints_integrations_list_contact_calls",
+    "summary": "List Contact Calls",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "contact_id",
+      "schema": {
+       "title": "Contact Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CallOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/call/{call_id}": {
+   "get": {
+    "operationId": "api_endpoints_integrations_get_call",
+    "summary": "Get Call",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "call_id",
+      "schema": {
+       "title": "Call Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CallOut"
+        }
+       }
+      }
+     }
+    },
+    "description": "Own calls only: the \"Ligar\" button polls it until the call ends.",
+    "tags": [
+     "Contacts"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
   }
  },
  "components": {
@@ -10031,6 +10346,10 @@
       },
       "title": "Permissions",
       "type": "object"
+     },
+     "has_phone_line": {
+      "title": "Has Phone Line",
+      "type": "boolean"
      }
     },
     "required": [
@@ -10038,7 +10357,8 @@
      "email",
      "joined_at",
      "is_admin",
-     "permissions"
+     "permissions",
+     "has_phone_line"
     ],
     "title": "MeOut",
     "type": "object"
@@ -19228,6 +19548,168 @@
      "created"
     ],
     "title": "ChargesOut",
+    "type": "object"
+   },
+   "PhoneLineOut": {
+    "properties": {
+     "user_id": {
+      "title": "User Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "email": {
+      "title": "Email",
+      "type": "string"
+     },
+     "extension": {
+      "title": "Extension",
+      "type": "string"
+     },
+     "valid": {
+      "title": "Valid",
+      "type": "boolean"
+     },
+     "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "user_id",
+     "name",
+     "email",
+     "extension",
+     "valid",
+     "updated_at"
+    ],
+    "title": "PhoneLineOut",
+    "type": "object"
+   },
+   "PhoneLineIn": {
+    "properties": {
+     "email": {
+      "maxLength": 254,
+      "minLength": 3,
+      "title": "Email",
+      "type": "string"
+     },
+     "password": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Password",
+      "type": "string"
+     }
+    },
+    "required": [
+     "email",
+     "password"
+    ],
+    "title": "PhoneLineIn",
+    "type": "object"
+   },
+   "CallOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "activity_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Activity Id"
+     },
+     "activity_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Activity Title"
+     },
+     "user_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Name"
+     },
+     "called": {
+      "title": "Called",
+      "type": "string"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "answered_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Answered At"
+     },
+     "ended_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ended At"
+     },
+     "duration": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duration"
+     },
+     "record_url": {
+      "title": "Record Url",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "activity_id",
+     "called",
+     "created_at",
+     "answered_at",
+     "ended_at",
+     "duration",
+     "record_url"
+    ],
+    "title": "CallOut",
     "type": "object"
    }
   },

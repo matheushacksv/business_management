@@ -60,3 +60,36 @@ class AsaasConfig(models.Model):
     service_name = models.CharField(max_length=200, blank=True)
     iss_rate = models.DecimalField(max_digits=5, decimal_places=2, default=3)
     description_template = models.TextField(default=DESCRIPTION_TEMPLATE)
+
+
+class PhoneLine(models.Model):
+    """API4COM user of a system user: calls go out through their Webphone (Chrome extension).
+    The token is created from their API4COM login (the password is not kept)."""
+
+    user = models.OneToOneField('users.User', on_delete=models.CASCADE, related_name='phone_line')
+    email = models.EmailField()  # API4COM login
+    # ponytail: plain text in the DB like the Asaas key, never returned by the API
+    token = models.CharField(max_length=300)
+    extension = models.CharField(max_length=20)
+    webhook_secret = models.CharField(max_length=60, unique=True)  # in the webhook URL: API4COM does not sign
+    valid = models.BooleanField(default=True)  # False after a 401 (password changed / token removed)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class Call(models.Model):
+    """Click-to-call to a contact, optionally for a dunning activity; the webhook fills in the outcome."""
+
+    contact = models.ForeignKey('finance.Contact', on_delete=models.SET_NULL, null=True, related_name='calls')
+    activity = models.ForeignKey('dunning.Activity', on_delete=models.SET_NULL, null=True, blank=True, related_name='calls')
+    user = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='+')
+    called = models.CharField(max_length=20)  # E.164
+    external_id = models.CharField(max_length=60, blank=True)  # API4COM call id (webhook)
+    answered_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    duration = models.PositiveIntegerField(null=True, blank=True)  # seconds of conversation
+    hangup_cause = models.CharField(max_length=40, blank=True)
+    record_url = models.URLField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']

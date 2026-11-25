@@ -3,6 +3,7 @@ from typing import Self
 from ninja import ModelSchema, Schema
 from pydantic import EmailStr, model_validator
 
+from apps.integrations.models import PhoneLine
 from apps.users.models import Role, User
 from apps.users.permissions import permissions_for
 
@@ -55,6 +56,11 @@ class UserOut(ModelSchema):
 class MeOut(UserOut):
     is_admin: bool
     permissions: dict[str, list[str]]  # module -> allowed actions, for the frontend to hide buttons
+    has_phone_line: bool  # API4COM connected: "Ligar" buttons
+
+    @staticmethod
+    def resolve_has_phone_line(obj: User) -> bool:
+        return PhoneLine.objects.filter(user=obj, valid=True).exists()
 
     @staticmethod
     def resolve_permissions(obj: User) -> dict[str, list[str]]:

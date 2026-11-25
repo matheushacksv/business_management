@@ -53,11 +53,19 @@ const tabs = computed(() => [
   canMoney.value && { label: 'Notas pendentes', value: 'invoices', icon: 'i-lucide-receipt-text' },
   canDunning.value && { label: 'Cobrança', value: 'dunning', icon: 'i-lucide-phone-call' },
   canLegal.value && { label: 'Jurídico', value: 'legal', icon: 'i-lucide-scale' },
+  { label: 'Ligações', value: 'calls', icon: 'i-lucide-phone' },
   { label: 'Anexos', value: 'attachments', icon: 'i-lucide-paperclip' },
   { label: 'Observações', value: 'notes', icon: 'i-lucide-notebook-pen' },
   { label: 'Histórico', value: 'history', icon: 'i-lucide-history' },
 ].filter(Boolean) as { label: string; value: string; icon: string }[])
 const tab = ref('')
+// Call anytime, with or without a dunning activity: the "Ligações" tab shows it
+const callsList = ref<{ dial: () => void } | null>(null)
+async function dial() {
+  tab.value = 'calls'
+  await nextTick()
+  callsList.value?.dial()
+}
 watch(tabs, t => { if (!t.some(x => x.value === tab.value)) tab.value = t[0]!.value }, { immediate: true })
 
 // Sales (ponytail: first 100 = the API max page size; paginate if a customer ever has more)
@@ -274,6 +282,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 <template>
   <AppPage :title="contact?.name ?? 'Cliente/fornecedor'">
     <template #actions>
+      <UButton v-if="auth.me.value?.has_phone_line && contact?.phone" label="Ligar" icon="i-lucide-phone-outgoing"
+               variant="soft" @click="dial" />
       <SStatusBadge v-if="summary?.situation" kind="situation" :value="summary.situation" class="self-center" />
       <UButton v-if="auth.can('dunning', 'change')" label="Enviar para cobrança" icon="i-lucide-phone-call" color="neutral" variant="outline"
                :disabled="!contact" :loading="sending" @click="sendToDunning" />
@@ -368,6 +378,10 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
       <UTable :data="cases" :columns="caseColumns" :loading="followLoading" empty="Nenhuma ação no jurídico"
               @select="(_: Event, row: any) => navigateTo({ path: '/legal', query: { case: row.original.id } })" />
     </div>
+
+    <SPanel v-else-if="tab === 'calls'">
+      <ContactsCalls ref="callsList" :contact-id="id" :button="false" />
+    </SPanel>
 
     <SPanel v-else-if="tab === 'attachments'">
       <AppAttachments target="contact" :target-id="id" :editable="canEdit" />

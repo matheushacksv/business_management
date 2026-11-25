@@ -75,3 +75,38 @@ class WebhookResult(Schema):
     status: EventStatus
     message: str
     sale_id: int | None
+
+
+class PhoneLineOut(Schema):
+    user_id: int
+    name: str
+    email: str  # API4COM login
+    extension: str
+    valid: bool
+    updated_at: dt.datetime
+
+
+class PhoneLineIn(Schema):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class CallOut(Schema):
+    id: int
+    activity_id: int | None
+    activity_title: str | None = None
+    user_name: str | None = None
+    called: str
+    created_at: dt.datetime
+    answered_at: dt.datetime | None
+    ended_at: dt.datetime | None
+    duration: int | None
+    record_url: str
+
+    @staticmethod
+    def resolve_activity_title(obj) -> str | None:
+        return obj.activity.title if obj.activity else None
+
+    @staticmethod
+    def resolve_user_name(obj) -> str | None:
+        return (obj.user.name or obj.user.email) if obj.user else None

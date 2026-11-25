@@ -2086,6 +2086,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/webhooks/api4com/{secret}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Api4Com Webhook */
+        post: operations["api_endpoints_integrations_api4com_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/api4com": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Phone Lines */
+        get: operations["api_endpoints_integrations_list_phone_lines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/api4com/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Connect Phone Line */
+        put: operations["api_endpoints_integrations_connect_phone_line"];
+        post?: never;
+        /** Disconnect Phone Line */
+        delete: operations["api_endpoints_integrations_disconnect_phone_line"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dunning/activity/{activity_id}/call": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Place Activity Call */
+        post: operations["api_endpoints_integrations_place_activity_call"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contact/{contact_id}/call": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Place Contact Call */
+        post: operations["api_endpoints_integrations_place_contact_call"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contact/{contact_id}/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Contact Calls */
+        get: operations["api_endpoints_integrations_list_contact_calls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/call/{call_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Call
+         * @description Own calls only: the "Ligar" button polls it until the call ends.
+         */
+        get: operations["api_endpoints_integrations_get_call"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2136,6 +2259,8 @@ export interface components {
             permissions: {
                 [key: string]: string[];
             };
+            /** Has Phone Line */
+            has_phone_line: boolean;
         };
         /** ChangePasswordDTO */
         ChangePasswordDTO: {
@@ -5063,6 +5188,57 @@ export interface components {
         ChargesOut: {
             /** Created */
             created: number;
+        };
+        /** PhoneLineOut */
+        PhoneLineOut: {
+            /** User Id */
+            user_id: number;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Extension */
+            extension: string;
+            /** Valid */
+            valid: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PhoneLineIn */
+        PhoneLineIn: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** CallOut */
+        CallOut: {
+            /** Id */
+            id: number;
+            /** Activity Id */
+            activity_id: number | null;
+            /** Activity Title */
+            activity_title?: string | null;
+            /** User Name */
+            user_name?: string | null;
+            /** Called */
+            called: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Answered At */
+            answered_at: string | null;
+            /** Ended At */
+            ended_at: string | null;
+            /** Duration */
+            duration: number | null;
+            /** Record Url */
+            record_url: string;
         };
     };
     responses: never;
@@ -9327,6 +9503,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChargesOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_api4com_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                secret: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_list_phone_lines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneLineOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_connect_phone_line: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneLineIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneLineOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_disconnect_phone_line: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_integrations_place_activity_call: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_place_contact_call: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_list_contact_calls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contact_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_get_call: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOut"];
                 };
             };
         };
