@@ -140,7 +140,7 @@ async function saved() {
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="font-display text-2xl font-semibold tracking-tight">{{ formatMoney(sale.amount) }}</p>
-              <p class="text-xs text-muted">{{ formatDate(sale.date) }} · {{ sale.product_name ?? 'Sem produto' }}</p>
+              <p class="text-xs text-muted">{{ formatDate(sale.date) }} · {{ sale.product_name ?? 'Sem produto' }}{{ sale.plan_name ? ` · ${sale.plan_name}` : '' }}</p>
             </div>
             <SStatusBadge kind="sale" :value="sale.status" />
           </div>

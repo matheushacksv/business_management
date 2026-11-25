@@ -22,6 +22,9 @@ from api.schemas.sales_dto import (
     GenerateReceivables,
     NamedCreate,
     PatchSale,
+    PlanCreate,
+    PlanOut,
+    PlanPatch,
     ProductOut,
     ProductPatch,
     SaleFilters,
@@ -70,6 +73,33 @@ def update_product_endpoint(request, product_id: int, data: ProductPatch):
 @require_permission('sales', DELETE)
 def delete_product_endpoint(request, product_id: int):
     services.delete_product_service(product_id=product_id)
+    return 204, None
+
+
+# Plans (Pipedrive "plano"): the product NF-e items
+
+@router.get('/plan', response=list[PlanOut])
+@require_permission('sales', VIEW)
+def list_plans_endpoint(request, active: bool | None = None):
+    return services.list_plans_service(active=active)
+
+
+@router.post('/plan', response={201: PlanOut})
+@require_permission('sales', CREATE)
+def create_plan_endpoint(request, data: PlanCreate):
+    return 201, services.create_plan_service(**data.dict())
+
+
+@router.patch('/plan/{plan_id}', response=PlanOut)
+@require_permission('sales', CHANGE)
+def update_plan_endpoint(request, plan_id: int, data: PlanPatch):
+    return services.update_plan_service(plan_id=plan_id, **data.dict(exclude_unset=True, exclude_none=True))
+
+
+@router.delete('/plan/{plan_id}', response={204: None})
+@require_permission('sales', DELETE)
+def delete_plan_endpoint(request, plan_id: int):
+    services.delete_plan_service(plan_id=plan_id)
     return 204, None
 
 

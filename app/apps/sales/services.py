@@ -14,7 +14,7 @@ from apps.companies.models import MonthlyTax
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, SubGroup, Transaction, TransactionSeries, TransactionStatus, TransactionType
 from apps.finance.services import create_contact_service, create_series_service, create_transaction_service
-from apps.sales.models import PERCENT_KINDS, Adjustment, Commission, CommissionDue, Product, SalaryPayment, Sale, Salesperson, SaleStatus, SalesConfig, StatementShare
+from apps.sales.models import PERCENT_KINDS, Adjustment, Commission, CommissionDue, Plan, Product, SalaryPayment, Sale, Salesperson, SaleStatus, SalesConfig, StatementShare
 from apps.users.models import User
 
 ZERO = Decimal('0')
@@ -72,6 +72,29 @@ def delete_product_service(*, product_id: int) -> None:
     _delete_protected(Product.objects.get(pk=product_id))
 
 
+def _skus(skus: list[str]) -> list[str]:
+    return [s.strip() for s in skus if s.strip()]
+
+
+def create_plan_service(*, name: str, nfe_skus: list[str] | None = None) -> Plan:
+    return _create_named(Plan, name=name, nfe_skus=_skus(nfe_skus or []))
+
+
+def list_plans_service(*, active: bool | None = None):
+    qs = Plan.objects.all()
+    return qs if active is None else qs.filter(active=active)
+
+
+def update_plan_service(*, plan_id: int, **fields) -> Plan:
+    if 'nfe_skus' in fields:
+        fields['nfe_skus'] = _skus(fields['nfe_skus'])
+    return _update_named(Plan.objects.get(pk=plan_id), **fields)
+
+
+def delete_plan_service(*, plan_id: int) -> None:
+    _delete_protected(Plan.objects.get(pk=plan_id))
+
+
 def create_salesperson_service(*, name: str, user_id: int | None = None, monthly_salary=Decimal('0'), crm_amount=None) -> Salesperson:
     return _create_named(Salesperson, name=name, user_id=user_id, monthly_salary=monthly_salary, crm_amount=crm_amount)
 
@@ -109,12 +132,12 @@ def _with_totals(qs):
     return qs.annotate(
         received_amount=_received(TransactionStatus.REALIZED),
         scheduled_amount=_received(TransactionStatus.PLANNED),
-    ).select_related('company', 'contact', 'product', 'salesperson', 'delivery_responsible')
+    ).select_related('company', 'contact', 'product', 'plan', 'salesperson', 'delivery_responsible')
 
 
-def _check_sale_refs(*, contact_id=None, product_id=None, salesperson_id=None, delivery_responsible_id=None):
+def _check_sale_refs(*, contact_id=None, product_id=None, plan_id=None, salesperson_id=None, delivery_responsible_id=None):
     for model, pk, label in (
-        (Contact, contact_id, 'Contact'), (Product, product_id, 'Product'),
+        (Contact, contact_id, 'Contact'), (Product, product_id, 'Product'), (Plan, plan_id, 'Plan'),
         (Salesperson, salesperson_id, 'Salesperson'), (Salesperson, delivery_responsible_id, 'Delivery responsible'),
     ):
         if pk is not None and not model.objects.filter(pk=pk).exists():
@@ -124,7 +147,7 @@ def _check_sale_refs(*, contact_id=None, product_id=None, salesperson_id=None, d
 def create_sale_service(*, user: User, company_id: int, date: dt.date, amount: Decimal, **fields) -> Sale:
     company = list_companies_service(user=user).get(pk=company_id)
     _check_sale_refs(**{k: fields.get(k) for k in (
-        'contact_id', 'product_id', 'salesperson_id', 'delivery_responsible_id')})
+        'contact_id', 'product_id', 'plan_id', 'salesperson_id', 'delivery_responsible_id')})
     for field in ('payment_method', 'payment_terms', 'notes'):
         if field in fields:
             fields[field] = fields[field].strip()
@@ -180,7 +203,7 @@ def update_sale_service(*, user: User, sale_id: int, **fields) -> Sale:
     # ponytail: company is immutable, like transactions (receivables belong to it)
     sale = _sales_for(user).get(pk=sale_id)
     _check_sale_refs(**{k: fields.get(k) for k in (
-        'contact_id', 'product_id', 'salesperson_id', 'delivery_responsible_id')})
+        'contact_id', 'product_id', 'plan_id', 'salesperson_id', 'delivery_responsible_id')})
     for field in ('payment_method', 'payment_terms', 'notes'):
         if field in fields:
             fields[field] = fields[field].strip()

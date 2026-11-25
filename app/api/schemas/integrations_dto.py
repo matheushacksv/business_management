@@ -110,3 +110,31 @@ class CallOut(Schema):
     @staticmethod
     def resolve_user_name(obj) -> str | None:
         return (obj.user.name or obj.user.email) if obj.user else None
+
+
+class BlingConfigOut(Schema):
+    company_id: int
+    company_name: str
+    client_id: str
+    has_secret: bool
+    connected: bool
+    nature_id: int | None
+    nature_name: str
+    percent: Decimal
+
+
+class BlingConfigIn(Schema):
+    client_id: str = Field(max_length=100)
+    client_secret: str | None = Field(None, max_length=200)  # empty = keep
+    nature_id: int | None = None
+    nature_name: str = Field('', max_length=200)
+    percent: Decimal = Field(50, gt=0, le=100, max_digits=5, decimal_places=2)
+
+
+class BlingNatureOut(Schema):
+    id: int
+    name: str
+
+
+class UrlOut(Schema):
+    url: str

@@ -50,11 +50,12 @@ const BODY_TEMPLATE = JSON.stringify({
   deal_id: 0, person_id: 0, person_name: '', person_email: '', person_phone: '', client_document: '', client_postal_code: '', client_address_number: '',
   client_address_complement: '', client_district: '', advisor_name: '', advisor_percent: '', scheduler_name: '', scheduler_amount: '', crm: '',
   company_document: '', proposal_value: '', product: '', owner_name: '', installments: '', payment_method: '',
-  notes: '', signed_date: '', down_payment: '', down_payment_date: '', first_installment_date: '',
+  plan: '', notes: '', signed_date: '', down_payment: '', down_payment_date: '', first_installment_date: '',
 }, null, 2)
 
-const TABS = [{ label: 'Pipedrive', value: 'pipedrive' }, { label: 'Asaas', value: 'asaas' }, { label: 'API4COM', value: 'api4com' }]
-const tab = ref('pipedrive')
+const TABS = [{ label: 'Pipedrive', value: 'pipedrive' }, { label: 'Asaas', value: 'asaas' }, { label: 'Bling', value: 'bling' }, { label: 'API4COM', value: 'api4com' }]
+const route = useRoute()
+const tab = ref(String(route.query.tab ?? 'pipedrive'))  // ?tab=bling: back from the Bling authorization
 
 // Event log of the current tab
 const status = ref<string>()
@@ -97,7 +98,8 @@ const columns: TableColumn<Event>[] = [
   { accessorKey: 'received_at', header: 'Recebido', cell: ({ row }) => formatDateTime(row.original.received_at) },
   { accessorKey: 'key', header: 'Origem', cell: ({ row }) => h('div', [
     h('p', { class: 'text-highlighted' }, row.original.source === 'asaas' ? `Asaas · ${row.original.payload.event ?? '—'}`
-      : row.original.source === 'api4com' ? `API4COM · ${row.original.payload.called ?? '—'}` : String(row.original.payload.person_name ?? '—')),
+      : row.original.source === 'api4com' ? `API4COM · ${row.original.payload.called ?? '—'}`
+      : row.original.source === 'bling' ? `Bling · ${row.original.payload.event ?? '—'}` : String(row.original.payload.person_name ?? '—')),
     h('p', { class: 'text-xs text-dimmed' }, `#${row.original.key}`),
   ]) },
   { accessorKey: 'status', header: 'Status', cell: ({ row }) => h(UBadge, { ...LABEL[row.original.status], variant: 'subtle' }) },
@@ -144,6 +146,7 @@ const columns: TableColumn<Event>[] = [
                @click="copy(BODY_TEMPLATE)" />
     </SPanel>
     <IntegrationsAsaas v-else-if="tab === 'asaas'" />
+    <IntegrationsBling v-else-if="tab === 'bling'" />
     <IntegrationsApi4com v-else />
 
     <template #toolbar>

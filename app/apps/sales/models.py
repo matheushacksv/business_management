@@ -23,6 +23,24 @@ class Product(models.Model):
 
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class Plan(models.Model):
+    """Plan sold (Pipedrive "plano", e.g. Starter, Plano PRO). `nfe_skus`: Bling SKUs of the product NF-e items
+    (the handouts); the NF-e value is split equally among them."""
+
+    name = models.CharField(max_length=120)
+    active = models.BooleanField(default=True)
+    nfe_skus = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [models.UniqueConstraint(Lower('name'), name='unique_plan_name_ci')]
+
+    def __str__(self):
+        return self.name
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
 class Salesperson(models.Model):
     """Seller or delivery/advisory professional. May or may not have a login (user)."""
 
@@ -58,6 +76,7 @@ class Sale(models.Model):
         'finance.Contact', on_delete=models.PROTECT, null=True, blank=True, related_name='sales'
     )
     product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True, related_name='sales')
+    plan = models.ForeignKey(Plan, on_delete=models.PROTECT, null=True, blank=True, related_name='sales')
     salesperson = models.ForeignKey(
         Salesperson, on_delete=models.PROTECT, null=True, blank=True, related_name='sales'
     )

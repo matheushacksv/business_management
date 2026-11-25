@@ -215,6 +215,7 @@ class Invoice(models.Model):
     issue_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     asaas_id = models.CharField(max_length=40, blank=True, db_index=True)  # NFS-e issued by Asaas (inv_...)
+    bling_id = models.CharField(max_length=40, blank=True, db_index=True)  # product NF-e issued by Bling
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

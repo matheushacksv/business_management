@@ -1,16 +1,20 @@
 import json
+from urllib.parse import urlencode
 
+from django.core.exceptions import ValidationError
+from django.shortcuts import redirect
 from ninja import Router
 from ninja.pagination import PageNumberPagination, paginate
 
 from api.schemas.integrations_dto import (
-    AsaasConfigIn, AsaasConfigOut, CallOut, ChargesOut, CredentialsOut, EventOut, PhoneLineIn, PhoneLineOut,
-    PipedriveConfigIn, PipedriveConfigOut, WebhookResult,
+    AsaasConfigIn, AsaasConfigOut, BlingConfigIn, BlingConfigOut, BlingNatureOut, CallOut, ChargesOut, CredentialsOut,
+    EventOut, PhoneLineIn, PhoneLineOut, PipedriveConfigIn, PipedriveConfigOut, UrlOut, WebhookResult,
 )
 from apps.companies.models import Company
-from apps.finance.models import SubGroup
-from apps.integrations import api4com, asaas, services
-from apps.integrations.models import AsaasConfig, Call, PhoneLine, PipedriveConfig, WebhookEvent
+from apps.companies.services import list_companies_service
+from apps.finance.models import Invoice, SubGroup
+from apps.integrations import api4com, asaas, bling, services
+from apps.integrations.models import AsaasConfig, BlingConfig, Call, PhoneLine, PipedriveConfig, WebhookEvent
 from apps.users.permissions import CHANGE, VIEW, check_permission, require_permission
 
 router = Router(tags=['Integrations'])
@@ -185,3 +189,71 @@ def list_contact_calls(request, contact_id: int):
 def get_call(request, call_id: int):
     """Own calls only: the "Ligar" button polls it until the call ends."""
     return Call.objects.select_related('activity', 'user').get(pk=call_id, user=request.user)
+
+
+# Bling (product NF-e)
+
+@router.post('/webhooks/bling/{company_id}', auth=None, response={200: WebhookResult, 400: dict, 401: dict})
+def bling_webhook(request, company_id: int):
+    if not bling.authenticate(company_id, request.body, request.headers.get('X-Bling-Signature-256')):
+        return 401, {'detail': 'Invalid signature'}
+    try:
+        payload = json.loads(request.body or b'{}')
+    except ValueError:
+        return 400, {'detail': 'Body must be JSON'}
+    if not isinstance(payload, dict):
+        return 400, {'detail': 'Body must be a JSON object'}
+    # ponytail: synced inline; Bling wants a 2xx within 5 s, queue it if the NF-e download gets slow
+    return bling.receive_event_service(company_id=company_id, payload=payload)
+
+
+@router.get('/integrations/bling/callback', auth=None, include_in_schema=False)
+def bling_callback(request, code: str = '', state: str = ''):
+    """Bling's redirect after the user authorizes the app: back to the settings screen."""
+    try:
+        bling.callback_service(code=code, state=state)
+        result = 'ok'
+    except ValidationError as e:
+        result = '; '.join(e.messages)
+    return redirect('/admin/integrations?' + urlencode({'tab': 'bling', 'bling': result}))
+
+
+def _bling_out(company: Company) -> dict:
+    c = BlingConfig.objects.filter(company=company).first() or BlingConfig(company=company)
+    return {'company_id': company.pk, 'company_name': company.name, 'client_id': c.client_id, 'has_secret': bool(c.client_secret),
+            'connected': bool(c.refresh_token), 'nature_id': c.nature_id, 'nature_name': c.nature_name, 'percent': c.percent}
+
+
+@router.get('/integrations/bling', response=list[BlingConfigOut])
+@require_permission('users', VIEW)
+def list_bling_configs(request):
+    return [_bling_out(c) for c in Company.objects.order_by('name')]
+
+
+@router.put('/integrations/bling/{company_id}', response=BlingConfigOut)
+@require_permission('users', CHANGE)
+def update_bling_config(request, company_id: int, data: BlingConfigIn):
+    return _bling_out(bling.save_config_service(company_id=company_id, **data.dict()).company)
+
+
+@router.post('/integrations/bling/{company_id}/authorize', response=UrlOut)
+@require_permission('users', CHANGE)
+def authorize_bling(request, company_id: int):
+    return {'url': bling.authorize_url_service(company_id=company_id)}
+
+
+@router.get('/integrations/bling/{company_id}/natures', response=list[BlingNatureOut])
+@require_permission('users', VIEW)
+def bling_natures(request, company_id: int):
+    return bling.natures_service(company_id=company_id)
+
+
+@router.post('/invoice/{invoice_id}/bling', response=WebhookResult, tags=['Invoices'])
+@require_permission('transactions', CHANGE)
+def issue_bling_invoice(request, invoice_id: int):
+    """Product NF-e via Bling (also re-sends a rejected one after it was fixed in Bling)."""
+    companies = list_companies_service(user=request.user)
+    Invoice.objects.get(pk=invoice_id, transaction__company__in=companies)
+    invoice = bling.issue_service(invoice_id=invoice_id)
+    return {'status': 'processed' if invoice.done else 'ignored', 'message': invoice.notes or f'NF-e {invoice.number} autorizada',
+            'sale_id': invoice.transaction.sale_id}

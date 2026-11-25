@@ -5109,6 +5109,164 @@
     ]
    }
   },
+  "/api/plan": {
+   "get": {
+    "operationId": "api_endpoints_sales_list_plans_endpoint",
+    "summary": "List Plans Endpoint",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "active",
+      "schema": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Active"
+      },
+      "required": false
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PlanOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_sales_create_plan_endpoint",
+    "summary": "Create Plan Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PlanOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PlanCreate"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/plan/{plan_id}": {
+   "patch": {
+    "operationId": "api_endpoints_sales_update_plan_endpoint",
+    "summary": "Update Plan Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "plan_id",
+      "schema": {
+       "title": "Plan Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PlanOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PlanPatch"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_sales_delete_plan_endpoint",
+    "summary": "Delete Plan Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "plan_id",
+      "schema": {
+       "title": "Plan Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
+     }
+    },
+    "tags": [
+     "Sales"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/salesperson": {
    "get": {
     "operationId": "api_endpoints_sales_list_salespeople_endpoint",
@@ -10240,6 +10398,256 @@
      }
     ]
    }
+  },
+  "/api/webhooks/bling/{company_id}": {
+   "post": {
+    "operationId": "api_endpoints_integrations_bling_webhook",
+    "summary": "Bling Webhook",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WebhookResult"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     },
+     "401": {
+      "description": "Unauthorized",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response",
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ]
+   }
+  },
+  "/api/integrations/bling": {
+   "get": {
+    "operationId": "api_endpoints_integrations_list_bling_configs",
+    "summary": "List Bling Configs",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/BlingConfigOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/bling/{company_id}": {
+   "put": {
+    "operationId": "api_endpoints_integrations_update_bling_config",
+    "summary": "Update Bling Config",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/BlingConfigOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BlingConfigIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/bling/{company_id}/authorize": {
+   "post": {
+    "operationId": "api_endpoints_integrations_authorize_bling",
+    "summary": "Authorize Bling",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UrlOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/integrations/bling/{company_id}/natures": {
+   "get": {
+    "operationId": "api_endpoints_integrations_bling_natures",
+    "summary": "Bling Natures",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "schema": {
+       "title": "Company Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/BlingNatureOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Integrations"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/invoice/{invoice_id}/bling": {
+   "post": {
+    "operationId": "api_endpoints_integrations_issue_bling_invoice",
+    "summary": "Issue Bling Invoice",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "invoice_id",
+      "schema": {
+       "title": "Invoice Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WebhookResult"
+        }
+       }
+      }
+     }
+    },
+    "description": "Product NF-e via Bling (also re-sends a rejected one after it was fixed in Bling).",
+    "tags": [
+     "Invoices"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
   }
  },
  "components": {
@@ -14814,6 +15222,112 @@
     "title": "ProductPatch",
     "type": "object"
    },
+   "PlanOut": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "ID"
+     },
+     "name": {
+      "maxLength": 120,
+      "title": "Name",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "nfe_skus": {
+      "anyOf": [
+       {
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nfe Skus"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "PlanOut",
+    "type": "object"
+   },
+   "PlanCreate": {
+    "properties": {
+     "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "nfe_skus": {
+      "default": [],
+      "items": {
+       "type": "string"
+      },
+      "title": "Nfe Skus",
+      "type": "array"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "PlanCreate",
+    "type": "object"
+   },
+   "PlanPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "active": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Active"
+     },
+     "nfe_skus": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nfe Skus"
+     }
+    },
+    "title": "PlanPatch",
+    "type": "object"
+   },
    "SalespersonOut": {
     "properties": {
      "user_id": {
@@ -15045,6 +15559,28 @@
       ],
       "title": "Product Name"
      },
+     "plan_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Id"
+     },
+     "plan_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Name"
+     },
      "salesperson_id": {
       "anyOf": [
        {
@@ -15177,6 +15713,7 @@
      "company_id",
      "contact_id",
      "product_id",
+     "plan_id",
      "salesperson_id",
      "delivery_responsible_id",
      "received_amount",
@@ -15234,6 +15771,17 @@
        }
       ],
       "title": "Product Id"
+     },
+     "plan_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Id"
      },
      "salesperson_id": {
       "anyOf": [
@@ -15525,6 +16073,17 @@
        }
       ],
       "title": "Product Id"
+     },
+     "plan_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Plan Id"
      },
      "salesperson_id": {
       "anyOf": [
@@ -19710,6 +20269,149 @@
      "record_url"
     ],
     "title": "CallOut",
+    "type": "object"
+   },
+   "BlingConfigOut": {
+    "properties": {
+     "company_id": {
+      "title": "Company Id",
+      "type": "integer"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "client_id": {
+      "title": "Client Id",
+      "type": "string"
+     },
+     "has_secret": {
+      "title": "Has Secret",
+      "type": "boolean"
+     },
+     "connected": {
+      "title": "Connected",
+      "type": "boolean"
+     },
+     "nature_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nature Id"
+     },
+     "nature_name": {
+      "title": "Nature Name",
+      "type": "string"
+     },
+     "percent": {
+      "title": "Percent",
+      "type": "string"
+     }
+    },
+    "required": [
+     "company_id",
+     "company_name",
+     "client_id",
+     "has_secret",
+     "connected",
+     "nature_id",
+     "nature_name",
+     "percent"
+    ],
+    "title": "BlingConfigOut",
+    "type": "object"
+   },
+   "BlingConfigIn": {
+    "properties": {
+     "client_id": {
+      "maxLength": 100,
+      "title": "Client Id",
+      "type": "string"
+     },
+     "client_secret": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Client Secret"
+     },
+     "nature_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nature Id"
+     },
+     "nature_name": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Nature Name",
+      "type": "string"
+     },
+     "percent": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "maximum": 100.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "default": 50,
+      "title": "Percent"
+     }
+    },
+    "required": [
+     "client_id"
+    ],
+    "title": "BlingConfigIn",
+    "type": "object"
+   },
+   "UrlOut": {
+    "properties": {
+     "url": {
+      "title": "Url",
+      "type": "string"
+     }
+    },
+    "required": [
+     "url"
+    ],
+    "title": "UrlOut",
+    "type": "object"
+   },
+   "BlingNatureOut": {
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name"
+    ],
+    "title": "BlingNatureOut",
     "type": "object"
    }
   },

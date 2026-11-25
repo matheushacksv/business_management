@@ -44,6 +44,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
   const sales = section('Comercial', [
     can('sales') && { label: 'Vendas e contratos', icon: 'i-lucide-handshake', to: '/sales', exact: true },
     can('sales') && { label: 'Produtos', icon: 'i-lucide-package', to: '/sales/products' },
+    can('sales') && { label: 'Planos', icon: 'i-lucide-book-open', to: '/sales/plans' },
     can('sales') && { label: 'Comissões', icon: 'i-lucide-hand-coins', to: '/sales/commissions' },
     can('sales') && { label: 'Equipe', icon: 'i-lucide-users-round', to: '/sales/salespeople' },
   ])

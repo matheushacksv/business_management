@@ -5,7 +5,7 @@ from typing import Literal
 from ninja import ModelSchema, Schema
 from pydantic import Field, model_validator
 
-from apps.sales.models import CommissionDue, CommissionKind, Product, Sale, Salesperson, SaleStatus
+from apps.sales.models import CommissionDue, CommissionKind, Plan, Product, Sale, Salesperson, SaleStatus
 
 
 class NamedCreate(Schema):
@@ -15,6 +15,14 @@ class NamedCreate(Schema):
 class ProductPatch(Schema):
     name: str | None = Field(None, min_length=1)
     active: bool | None = None
+
+
+class PlanCreate(NamedCreate):
+    nfe_skus: list[str] = []
+
+
+class PlanPatch(ProductPatch):
+    nfe_skus: list[str] | None = None
 
 
 class SalespersonCreate(NamedCreate):
@@ -35,6 +43,12 @@ class ProductOut(ModelSchema):
         fields = ['id', 'name', 'active']
 
 
+class PlanOut(ModelSchema):
+    class Meta:
+        model = Plan
+        fields = ['id', 'name', 'active', 'nfe_skus']
+
+
 class SalespersonOut(ModelSchema):
     user_id: int | None
 
@@ -49,6 +63,7 @@ class CreateSale(Schema):
     amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     contact_id: int | None = None
     product_id: int | None = None
+    plan_id: int | None = None
     salesperson_id: int | None = None
     delivery_responsible_id: int | None = None
     payment_method: str = ''
@@ -63,6 +78,7 @@ class PatchSale(Schema):
     amount: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
     contact_id: int | None = None
     product_id: int | None = None
+    plan_id: int | None = None
     salesperson_id: int | None = None
     delivery_responsible_id: int | None = None
     payment_method: str | None = None
@@ -85,6 +101,8 @@ class SaleOut(ModelSchema):
     contact_name: str | None = Field(None, alias='contact.name')
     product_id: int | None
     product_name: str | None = Field(None, alias='product.name')
+    plan_id: int | None
+    plan_name: str | None = Field(None, alias='plan.name')
     salesperson_id: int | None
     salesperson_name: str | None = Field(None, alias='salesperson.name')
     delivery_responsible_id: int | None

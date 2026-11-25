@@ -18,7 +18,7 @@ from apps.companies.services import normalize_cnpj
 from apps.finance.models import Contact, ContactKind
 from apps.finance.services import check_customer, parse_amount
 from apps.integrations.models import AsaasConfig, EventStatus, PipedriveConfig, WebhookEvent
-from apps.sales.models import CommissionKind, Product, Sale, Salesperson
+from apps.sales.models import CommissionKind, Plan, Product, Sale, Salesperson
 from apps.sales.services import create_commission_service, create_sale_service, generate_receivables_service
 from apps.users.models import User
 
@@ -63,6 +63,7 @@ class DealPayload(BaseModel):
     company_document: str
     proposal_value: Decimal
     product: str = ''
+    plan: str = ''
     owner_name: str = ''
     installments: int | None = None
     payment_method: str = ''
@@ -104,7 +105,7 @@ class DealPayload(BaseModel):
 
     @field_validator('person_name', 'person_email', 'person_phone', 'client_document', 'company_document',
                      'client_postal_code', 'client_address_number', 'client_address_complement', 'client_district',
-                     'product', 'owner_name', 'payment_method', 'notes', 'advisor_name', 'scheduler_name', 'crm',
+                     'product', 'plan', 'owner_name', 'payment_method', 'notes', 'advisor_name', 'scheduler_name', 'crm',
                      mode='before')
     @classmethod
     def text(cls, v):
@@ -160,12 +161,15 @@ def _import_deal(data: DealPayload) -> tuple[Sale, list[str]]:
         if data.product:
             product = Product.objects.filter(name__iexact=data.product).first() \
                 or Product.objects.create(name=data.product)
+        plan = None
+        if data.plan:  # its NF-e items are set up later on the Plans screen
+            plan = Plan.objects.filter(name__iexact=data.plan).first() or Plan.objects.create(name=data.plan)
         seller = Salesperson.objects.filter(name__iexact=data.owner_name).first() if data.owner_name else None
         if data.owner_name and seller is None:
             warnings.append(f'Vendedor "{data.owner_name}" não encontrado na Equipe: venda sem vendedor e sem comissão')
         sale = create_sale_service(
             user=user, company_id=company.pk, date=data.signed_date or timezone.localdate(), amount=data.proposal_value,
-            contact_id=contact.pk, product_id=product.pk if product else None,
+            contact_id=contact.pk, product_id=product.pk if product else None, plan_id=plan.pk if plan else None,
             salesperson_id=seller.pk if seller else None, payment_method=data.payment_method[:60],
             installments_count=data.installments, notes=data.notes, pipedrive_id=data.deal_id,
         )
@@ -267,6 +271,9 @@ def reprocess_event_service(*, event_id: int) -> WebhookEvent:
     if event.source == 'asaas':
         from apps.integrations import asaas
         return asaas.process_event_service(event=event)
+    if event.source == 'bling':
+        from apps.integrations import bling
+        return bling.process_event_service(event=event)
     if event.source == 'api4com':
         from apps.integrations import api4com
         return api4com.process_event_service(event=event)

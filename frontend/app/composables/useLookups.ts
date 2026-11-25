@@ -9,6 +9,7 @@ interface Lookups {
   groups?: { value: string; label: string }[]
   accounts?: S['AccountOut'][]
   products?: S['ProductOut'][]
+  plans?: S['PlanOut'][]
   salespeople?: S['SalespersonOut'][]
   users?: S['UserOut'][]
 }
@@ -28,6 +29,7 @@ export function useLookups() {
     groups: () => unwrap(api.GET('/api/groups')) as Promise<{ value: string; label: string }[]>,
     accounts: () => unwrap(api.GET('/api/account', { params: { query: {} } })),
     products: () => unwrap(api.GET('/api/product', { params: { query: {} } })),
+    plans: () => unwrap(api.GET('/api/plan', { params: { query: {} } })),
     salespeople: () => unwrap(api.GET('/api/salesperson', { params: { query: {} } })),
     users: () => unwrap(api.GET('/api/user')),
   }
@@ -54,6 +56,7 @@ export function useLookups() {
     groups: computed<Option[]>(() => cache.value.groups ?? []),
     accounts: computed<Option[]>(() => (cache.value.accounts ?? []).map(a => ({ label: a.name, value: a.id!, company: a.company }) as Option)),
     products: computed<Option[]>(() => (cache.value.products ?? []).map(p => ({ label: p.name, value: p.id! }))),
+    plans: computed<Option[]>(() => (cache.value.plans ?? []).map(p => ({ label: p.name, value: p.id! }))),
     salespeople: computed<Option[]>(() => (cache.value.salespeople ?? []).map(p => ({ label: p.name, value: p.id! }))),
     users: computed<Option[]>(() => (cache.value.users ?? []).map(u => ({ label: u.name || u.email, value: u.id! }))),
   }

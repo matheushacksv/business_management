@@ -93,3 +93,19 @@ class Call(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-id']
+
+
+class BlingConfig(models.Model):
+    """One Bling account (app + OAuth tokens) per company: issues the product NF-e of each paid receivable."""
+
+    company = models.OneToOneField('companies.Company', on_delete=models.CASCADE, related_name='bling')
+    client_id = models.CharField(max_length=100, blank=True)
+    # ponytail: secrets in plain text like the Asaas key, never returned by the API
+    client_secret = models.CharField(max_length=200, blank=True)
+    access_token = models.TextField(blank=True)
+    refresh_token = models.TextField(blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    state = models.CharField(max_length=60, blank=True)  # OAuth round trip
+    nature_id = models.PositiveBigIntegerField(null=True, blank=True)  # natureza de operação
+    nature_name = models.CharField(max_length=200, blank=True)
+    percent = models.DecimalField(max_digits=5, decimal_places=2, default=50)  # of each paid receivable

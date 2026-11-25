@@ -9,7 +9,7 @@ from apps.companies.models import Company
 from apps.finance import services as finance
 from apps.finance.models import Contact, Group, Transaction
 from apps.integrations.models import PipedriveConfig, WebhookEvent
-from apps.sales.models import Commission, Product, Sale, Salesperson
+from apps.sales.models import Commission, Plan, Product, Sale, Salesperson
 from apps.users.models import Role, User
 
 DEAL = {
@@ -82,6 +82,13 @@ class PipedriveWebhookTests(TestCase):
         self.post(DEAL)
         self.assertEqual((Contact.objects.count(), Product.objects.count()), (1, 1))
         self.assertEqual(Contact.objects.get().pipedrive_id, 567)
+
+    def test_plan_reused_by_name_or_created(self):
+        plan = Plan.objects.create(name='Starter', nfe_skus=['AP01'])
+        self.post({**DEAL, 'plan': 'starter'})
+        self.post({**DEAL, 'deal_id': 1235, 'plan': 'Plano PRO (04 Assessorias)'})
+        self.assertEqual(Sale.objects.get(pipedrive_id=1234).plan, plan)
+        self.assertEqual(Sale.objects.get(pipedrive_id=1235).plan.name, 'Plano PRO (04 Assessorias)')
 
     def test_receivables_when_dates_come(self):
         PipedriveConfig.objects.update(subgroup=self.subgroup)

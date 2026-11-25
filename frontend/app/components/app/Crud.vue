@@ -6,7 +6,7 @@ import type { Action } from '~/composables/useAuth'
 export interface CrudField {
   key: string
   label: string
-  type?: 'text' | 'email' | 'password' | 'money' | 'number' | 'select' | 'multiselect' | 'switch' | 'textarea'
+  type?: 'text' | 'email' | 'password' | 'money' | 'number' | 'select' | 'multiselect' | 'switch' | 'textarea' | 'tags'
   options?: { label: string; value: unknown }[]
   required?: boolean | ((state: Record<string, any>) => boolean)  // function: depends on other fields
   createOnly?: boolean      // hidden when editing
@@ -81,7 +81,7 @@ const visibleFields = computed(() => props.fields.filter(f => !(editingId.value 
 
 function blank(field: CrudField) {
   if (field.default !== undefined) return field.default
-  return field.type === 'multiselect' ? [] : field.type === 'switch' ? false : field.type === 'money' || field.type === 'number' ? 0 : field.type === 'select' ? undefined : ''
+  return field.type === 'multiselect' || field.type === 'tags' ? [] : field.type === 'switch' ? false : field.type === 'money' || field.type === 'number' ? 0 : field.type === 'select' ? undefined : ''
 }
 
 function openCreate() {
@@ -169,12 +169,13 @@ async function destroy() {
       <template #body>
         <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="save">
           <UFormField v-for="f in visibleFields" :key="f.key" :label="f.label" :required="isRequired(f)" :hint="f.hint"
-                      :class="f.span === 2 || f.type === 'textarea' ? 'sm:col-span-2' : ''">
+                      :class="f.span === 2 || f.type === 'textarea' || f.type === 'tags' ? 'sm:col-span-2' : ''">
             <USelect v-if="f.type === 'select'" v-model="state[f.key]" :items="(f.options as any)" :placeholder="f.placeholder"
                      :disabled="!!editingId && f.readonlyOnEdit" class="w-full" />
             <USelectMenu v-else-if="f.type === 'multiselect'" v-model="state[f.key]" :items="(f.options as any)" value-key="value"
                          multiple :placeholder="f.placeholder" class="w-full" />
             <USwitch v-else-if="f.type === 'switch'" v-model="state[f.key]" />
+            <UInputTags v-else-if="f.type === 'tags'" v-model="state[f.key]" :placeholder="f.placeholder" class="w-full" />
             <UTextarea v-else-if="f.type === 'textarea'" v-model="state[f.key]" :rows="3" class="w-full" />
             <UInputNumber v-else-if="f.type === 'money'" v-model="state[f.key]" :step="0.01" :increment="false" :decrement="false"
                           :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />

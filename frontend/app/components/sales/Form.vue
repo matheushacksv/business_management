@@ -7,7 +7,7 @@ const emit = defineEmits<{ saved: [id: number]; cancel: [] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const lookups = useLookups()
-lookups.ensure('companies', 'products', 'salespeople').catch(notifyError)
+lookups.ensure('companies', 'products', 'plans', 'salespeople').catch(notifyError)
 
 const s = props.sale
 const state = reactive({
@@ -16,6 +16,7 @@ const state = reactive({
   amount: s ? Number(s.amount) : (undefined as number | undefined),
   contact_id: s?.contact_id ?? null,
   product_id: s?.product_id ?? undefined,
+  plan_id: s?.plan_id ?? undefined,
   salesperson_id: s?.salesperson_id ?? undefined,
   delivery_responsible_id: s?.delivery_responsible_id ?? undefined,
   payment_method: s?.payment_method ?? '',
@@ -39,7 +40,7 @@ async function submit() {
   saving.value = true
   const body = {
     date: state.date, amount: state.amount.toFixed(2), contact_id: state.contact_id,
-    product_id: state.product_id ?? null, salesperson_id: state.salesperson_id ?? null,
+    product_id: state.product_id ?? null, plan_id: state.plan_id ?? null, salesperson_id: state.salesperson_id ?? null,
     delivery_responsible_id: state.delivery_responsible_id ?? null, payment_method: state.payment_method,
     payment_terms: state.payment_terms, installments_count: state.installments_count || null,
     status: state.status as any, notes: state.notes,
@@ -75,6 +76,9 @@ async function submit() {
     </UFormField>
     <UFormField label="Produto/serviço">
       <USelect v-model="state.product_id" :items="lookups.options.products.value" placeholder="Opcional" class="w-full" />
+    </UFormField>
+    <UFormField label="Plano">
+      <USelect v-model="state.plan_id" :items="lookups.options.plans.value" placeholder="Opcional" class="w-full" />
     </UFormField>
     <UFormField label="Vendedor">
       <USelect v-model="state.salesperson_id" :items="lookups.options.salespeople.value" placeholder="Opcional" class="w-full" />

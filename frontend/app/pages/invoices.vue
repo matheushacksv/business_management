@@ -53,7 +53,10 @@ const columns: TableColumn<Pending>[] = [
     h('p', row.original.number || '—'),
     row.original.issue_date && h('p', { class: 'text-xs text-dimmed' }, formatDate(row.original.issue_date)),
   ]) : '—' },
-  { accessorKey: 'pending_reason', header: 'Situação', cell: ({ row }) => h(SStatusBadge, { kind: 'invoice', value: row.original.pending_reason }) },
+  { accessorKey: 'pending_reason', header: 'Situação', cell: ({ row }) => h('div', [
+    h(SStatusBadge, { kind: 'invoice', value: row.original.pending_reason }),
+    row.original.notes && !row.original.done && h('p', { class: 'mt-1 max-w-xs text-xs text-warning' }, row.original.notes),
+  ]) },
   { accessorKey: 'transaction_amount', header: () => h('span', { class: 'block text-right' }, 'Valor'),
     cell: ({ row }) => h('div', { class: 'text-right' }, h(SMoney, { value: row.original.transaction_amount })) },
 ]
@@ -69,6 +72,25 @@ async function bulkPatch(body: (n: Pending) => components['schemas']['PatchInvoi
   const failed = results.filter(r => r.status === 'rejected')
   if (results.length > failed.length) notifySuccess(`${results.length - failed.length} nota(s) alterada(s)`)
   if (failed.length) notifyError((failed[0] as PromiseRejectedResult).reason, `${failed.length} nota(s) não alterada(s)`)
+  selection.clear()
+  bulk.busy = false
+  load()
+}
+
+// Product NF-e via Bling: one at a time (Bling allows ~3 requests/s); the reason of a failure stays on the note
+const issuable = computed(() => selection.rows.value.filter(n => n.kind === 'product' && n.direction === 'issue' && !n.done))
+async function issueBling() {
+  bulk.busy = true
+  let ok = 0
+  for (const n of issuable.value) {
+    try {
+      const r = await unwrap(api.POST('/api/invoice/{invoice_id}/bling', { params: { path: { invoice_id: n.id! } } }))
+      if (r.status === 'processed') ok++
+    } catch (e) {
+      notifyError(e, n.contact_name ?? undefined)
+    }
+  }
+  notifySuccess(`${ok} de ${issuable.value.length} NF-e autorizada(s)`)
   selection.clear()
   bulk.busy = false
   load()
@@ -109,6 +131,8 @@ const drawerOpen = ref(false)
       <UInput v-model="bulk.date" type="date" size="sm" class="w-36" aria-label="Data de emissão" />
       <UButton label="Concluída" icon="i-lucide-check-check" size="sm" variant="soft" :loading="bulk.busy" :disabled="!bulk.date"
                @click="bulkPatch(n => ({ done: true, issue_date: n.issue_date ?? bulk.date }))" />
+      <UButton v-if="issuable.length" label="Emitir no Bling" icon="i-lucide-send" size="sm" variant="soft" :loading="bulk.busy"
+               @click="issueBling" />
       <UButton label="Serviço" size="sm" color="neutral" variant="soft" :loading="bulk.busy" @click="bulkPatch(() => ({ kind: 'service' }))" />
       <UButton label="Produto" size="sm" color="neutral" variant="soft" :loading="bulk.busy" @click="bulkPatch(() => ({ kind: 'product' }))" />
     </AppBulkBar>

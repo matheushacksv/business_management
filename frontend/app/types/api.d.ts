@@ -949,6 +949,42 @@ export interface paths {
         patch: operations["api_endpoints_sales_update_product_endpoint"];
         trace?: never;
     };
+    "/api/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Plans Endpoint */
+        get: operations["api_endpoints_sales_list_plans_endpoint"];
+        put?: never;
+        /** Create Plan Endpoint */
+        post: operations["api_endpoints_sales_create_plan_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/{plan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Plan Endpoint */
+        delete: operations["api_endpoints_sales_delete_plan_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Plan Endpoint */
+        patch: operations["api_endpoints_sales_update_plan_endpoint"];
+        trace?: never;
+    };
     "/api/salesperson": {
         parameters: {
             query?: never;
@@ -2203,6 +2239,111 @@ export interface paths {
         get: operations["api_endpoints_integrations_get_call"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/webhooks/bling/{company_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bling Webhook */
+        post: operations["api_endpoints_integrations_bling_webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/bling": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Bling Configs */
+        get: operations["api_endpoints_integrations_list_bling_configs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/bling/{company_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Bling Config */
+        put: operations["api_endpoints_integrations_update_bling_config"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/bling/{company_id}/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authorize Bling */
+        post: operations["api_endpoints_integrations_authorize_bling"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/bling/{company_id}/natures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bling Natures */
+        get: operations["api_endpoints_integrations_bling_natures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/invoice/{invoice_id}/bling": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue Bling Invoice
+         * @description Product NF-e via Bling (also re-sends a rejected one after it was fixed in Bling).
+         */
+        post: operations["api_endpoints_integrations_issue_bling_invoice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3667,6 +3808,39 @@ export interface components {
             /** Active */
             active?: boolean | null;
         };
+        /** PlanOut */
+        PlanOut: {
+            /** ID */
+            id?: number | null;
+            /** Name */
+            name: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Nfe Skus */
+            nfe_skus?: Record<string, never> | null;
+        };
+        /** PlanCreate */
+        PlanCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Nfe Skus
+             * @default []
+             */
+            nfe_skus: string[];
+        };
+        /** PlanPatch */
+        PlanPatch: {
+            /** Name */
+            name?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Nfe Skus */
+            nfe_skus?: string[] | null;
+        };
         /** SalespersonOut */
         SalespersonOut: {
             /** User Id */
@@ -3727,6 +3901,10 @@ export interface components {
             product_id: number | null;
             /** Product Name */
             product_name?: string | null;
+            /** Plan Id */
+            plan_id: number | null;
+            /** Plan Name */
+            plan_name?: string | null;
             /** Salesperson Id */
             salesperson_id: number | null;
             /** Salesperson Name */
@@ -3787,6 +3965,8 @@ export interface components {
             contact_id?: number | null;
             /** Product Id */
             product_id?: number | null;
+            /** Plan Id */
+            plan_id?: number | null;
             /** Salesperson Id */
             salesperson_id?: number | null;
             /** Delivery Responsible Id */
@@ -3856,6 +4036,8 @@ export interface components {
             contact_id?: number | null;
             /** Product Id */
             product_id?: number | null;
+            /** Plan Id */
+            plan_id?: number | null;
             /** Salesperson Id */
             salesperson_id?: number | null;
             /** Delivery Responsible Id */
@@ -5239,6 +5421,56 @@ export interface components {
             duration: number | null;
             /** Record Url */
             record_url: string;
+        };
+        /** BlingConfigOut */
+        BlingConfigOut: {
+            /** Company Id */
+            company_id: number;
+            /** Company Name */
+            company_name: string;
+            /** Client Id */
+            client_id: string;
+            /** Has Secret */
+            has_secret: boolean;
+            /** Connected */
+            connected: boolean;
+            /** Nature Id */
+            nature_id: number | null;
+            /** Nature Name */
+            nature_name: string;
+            /** Percent */
+            percent: string;
+        };
+        /** BlingConfigIn */
+        BlingConfigIn: {
+            /** Client Id */
+            client_id: string;
+            /** Client Secret */
+            client_secret?: string | null;
+            /** Nature Id */
+            nature_id?: number | null;
+            /**
+             * Nature Name
+             * @default
+             */
+            nature_name: string;
+            /**
+             * Percent
+             * @default 50
+             */
+            percent: number | string;
+        };
+        /** UrlOut */
+        UrlOut: {
+            /** Url */
+            url: string;
+        };
+        /** BlingNatureOut */
+        BlingNatureOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
         };
     };
     responses: never;
@@ -7233,6 +7465,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_list_plans_endpoint: {
+        parameters: {
+            query?: {
+                active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_create_plan_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanCreate"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_sales_delete_plan_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_sales_update_plan_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
                 };
             };
         };
@@ -9701,6 +10025,162 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CallOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_bling_webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_list_bling_configs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlingConfigOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_update_bling_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlingConfigIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlingConfigOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_authorize_bling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UrlOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_bling_natures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlingNatureOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_integrations_issue_bling_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResult"];
                 };
             };
         };

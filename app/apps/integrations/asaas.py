@@ -209,8 +209,10 @@ def _paid(p: dict) -> tuple[str, str]:
             tx.date = dt.date.fromisoformat(p.get('clientPaymentDate') or p.get('paymentDate') or timezone.localdate().isoformat())
             tx.account_id = tx.account_id or config.account_id  # type:ignore
             tx.save(update_fields=['status', 'date', 'account', 'updated_at'])
-        # ponytail: Asaas only issues NFS-e; the product NF-e (other half) stays pending for manual issue + upload
-        Invoice.objects.get_or_create(transaction=tx, kind=InvoiceKind.PRODUCT)
+        # Asaas only issues NFS-e; the product NF-e (other half) goes to Bling when the company uses it, else stays pending
+        product, _ = Invoice.objects.get_or_create(transaction=tx, kind=InvoiceKind.PRODUCT)
+        from apps.integrations import bling
+        bling.issue_on_payment(product)
         invoice =Invoice.objects.filter(transaction=tx, kind=InvoiceKind.SERVICE).first()
         if invoice and (invoice.asaas_id or invoice.done):
             return EventStatus.PROCESSED, 'Parcela baixada; NFS-e já existia'
@@ -258,16 +260,16 @@ def _invoice_body(config: AsaasConfig, tx: Transaction, p: dict) -> dict:
     return body
 
 
-def _attach_files(invoice: Invoice, i: dict) -> list[str]:
-    """PDF + XML of the issued NFS-e as the invoice's attachments (public links on asaas.com)."""
+def attach_files(invoice: Invoice, files: list[tuple[str, str, str]], domain: str) -> list[str]:
+    """(url, ext, mime) as the invoice's attachments, only from `domain` (the URLs come from payloads)."""
     have, errors = {a.mime_type for a in invoice.attachments.all()}, []
-    for key, ext, mime in (('pdfUrl', 'pdf', 'application/pdf'), ('xmlUrl', 'xml', 'application/xml')):
+    for url, ext, mime in files:
         if mime in have:  # Reprocess / redelivery
             continue
-        url = i.get(key) or ''
+        url = url or ''
         host = urllib.parse.urlparse(url).hostname or ''
-        if not (url.startswith('https://') and (host == 'asaas.com' or host.endswith('.asaas.com'))):
-            continue  # only Asaas links: the URL comes from the payload
+        if not (url.startswith('https://') and (host == domain or host.endswith('.' + domain))):
+            continue
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'gestao-empresarial'})
             with urllib.request.urlopen(req, timeout=30) as r:
@@ -278,7 +280,7 @@ def _attach_files(invoice: Invoice, i: dict) -> list[str]:
         if not data or len(data) > MAX_SIZE:
             errors.append(f'{ext}: tamanho inválido')
             continue
-        name = f'NFS-e {invoice.number or invoice.asaas_id}.{ext}'
+        name = f'{"NFS-e" if invoice.kind == InvoiceKind.SERVICE else "NF-e"} {invoice.number or invoice.pk}.{ext}'
         Attachment.objects.create(content_type=ContentType.objects.get_for_model(Invoice), object_id=invoice.pk,
                                   file=ContentFile(data, name=name), name=name, mime_type=mime, size=len(data))
     return errors
@@ -294,7 +296,8 @@ def _invoice_update(i: dict) -> tuple[str, str]:
             invoice.done, invoice.number = True, str(i.get('number') or '')
             invoice.issue_date = dt.date.fromisoformat(i.get('effectiveDate') or timezone.localdate().isoformat())
             invoice.save()
-            errors = _attach_files(invoice, i)
+            errors = attach_files(invoice, [(i.get('pdfUrl'), 'pdf', 'application/pdf'),
+                                            (i.get('xmlUrl'), 'xml', 'application/xml')], 'asaas.com')
             if errors:  # NF already marked issued; Reprocess retries the download
                 return EventStatus.ERROR, 'NFS-e emitida, arquivo não baixado: ' + '; '.join(errors)
         elif status in ('ERROR', 'CANCELED'):
