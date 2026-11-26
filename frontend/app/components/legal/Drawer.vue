@@ -185,7 +185,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           :ui="{ content: 'sm:max-w-6xl' }">
     <template #actions>
       <USelect v-if="item" :model-value="item.responsible_id ?? undefined" :items="people" :disabled="!canChange"
-               placeholder="Responsável jurídico" aria-label="Responsável jurídico" icon="i-lucide-user-round" class="ms-auto w-72"
+               placeholder="Responsável jurídico" aria-label="Responsável jurídico" icon="i-lucide-user-round" class="ms-auto me-10 w-72"
                @update:model-value="(v: any) => setResponsible(v ?? null)" />
     </template>
     <template #body>
