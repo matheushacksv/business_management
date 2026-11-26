@@ -42,6 +42,7 @@ const status = ref<'open' | 'done'>('open')
 const visible = computed(() => items.value.filter(c => !!c.closed_at === (status.value === 'done')))
 const sum = (list: Case[]) => list.reduce((s, c) => s + Number(c.open_amount), 0)
 const totalOpen = computed(() => sum(visible.value))
+const totalReceived = computed(() => items.value.reduce((s, c) => s + Number(c.received_amount), 0))
 const stages = lookups.options.legalStages
 const needsAgreement = (id: number) => !!lookups.cache.value.legalStages?.find(s => s.id === id)?.requires_agreement
 const columnsByStage = computed(() => stages.value.map(s => {
@@ -160,6 +161,12 @@ function onCreated(id: number) {
         </UFieldGroup>
       </div>
     </template>
+
+    <div class="grid gap-3 sm:grid-cols-3">
+      <SStat label="Em aberto" :value="formatMoney(sum(items))" tone="error" icon="i-lucide-scale" />
+      <SStat label="Recebido" :value="formatMoney(totalReceived)" tone="success" icon="i-lucide-badge-dollar-sign" />
+      <SStat label="Honorários pagos" :value="formatMoney(totalReceived * LEGAL_FEE_RATE)" icon="i-lucide-hand-coins" />
+    </div>
 
     <div v-if="view === 'kanban' && status === 'open'" class="grid auto-cols-[minmax(11rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2" :class="{ 'opacity-70': loading }">
       <section v-for="col in columnsByStage" :key="col.value"

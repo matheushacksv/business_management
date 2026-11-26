@@ -133,6 +133,8 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           <div class="min-w-0"><p class="text-dimmed">Recebido (parcelas)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Valor da proposta</p><p class="text-sm text-highlighted tabular truncate">{{ item.proposal_amount != null ? formatMoney(item.proposal_amount) : '—' }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Pago pelo cliente</p><p class="text-sm text-highlighted tabular truncate">{{ item.paid_amount != null ? formatMoney(item.paid_amount) : '—' }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Honorários (20%)</p><p class="text-sm text-highlighted tabular truncate">{{ (formatMoney((Number(item.open_amount) + Number(item.received_amount)) * LEGAL_FEE_RATE)) }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Honorários pagos</p><p class="text-sm text-highlighted tabular truncate">{{ formatMoney(Number(item.received_amount) * LEGAL_FEE_RATE) }}</p></div>
         </div>
 
         <div v-if="item.unrecoverable_at || canChange" class="flex items-center justify-between gap-2">

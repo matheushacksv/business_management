@@ -104,6 +104,8 @@ export function fillTemplate(text: string, card: {
 }
 
 /** Sellers and advisors earn a % of the sale after tax; the other kinds a fixed value (same rule as the backend). */
+export const LEGAL_FEE_RATE = 0.2  // lawyer fees: always 20% of what the customer pays on an agreement
+
 export const PERCENT_COMMISSION_KINDS = ['seller', 'advisor']
 
 export const TYPE_OPTIONS = [
