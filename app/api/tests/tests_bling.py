@@ -113,6 +113,7 @@ class BlingTests(TestCase):
         body = json.dumps({'event': 'invoice.updated', 'data': {'id': 99}}).encode()
         sig = 'sha256=' + hmac.new(b'secret', body, hashlib.sha256).hexdigest()
         url = f'/api/webhooks/bling/{self.company.pk}'
+        self.assertEqual(self.client.get(url).status_code, 200)  # Bling probes the URL
         bad = self.client.post(url, data=body, content_type='application/json', headers={'X-Bling-Signature-256': 'sha256=x'})
         self.assertEqual(bad.status_code, 401)
         r = self.client.post(url, data=body, content_type='application/json', headers={'X-Bling-Signature-256': sig})

@@ -193,6 +193,11 @@ def get_call(request, call_id: int):
 
 # Bling (product NF-e)
 
+@router.api_operation(['GET', 'HEAD'], '/webhooks/bling/{company_id}', auth=None, include_in_schema=False)
+def bling_webhook_check(request, company_id: int):
+    return {}  # Bling probes the URL before saving the webhook; events come by POST
+
+
 @router.post('/webhooks/bling/{company_id}', auth=None, response={200: WebhookResult, 400: dict, 401: dict})
 def bling_webhook(request, company_id: int):
     if not bling.authenticate(company_id, request.body, request.headers.get('X-Bling-Signature-256')):
