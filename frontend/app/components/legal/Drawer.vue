@@ -137,7 +137,9 @@ async function remove() {
 const lookups = useLookups()
 lookups.ensure('legalStages').catch(notifyError)
 const stages = computed(() => lookups.cache.value.legalStages ?? [])
-const inAgreement = computed(() => !!stages.value.find(s => s.id === item.value?.stage_id)?.requires_agreement)
+// One agreement at a time: a new one only after the current is marked as broken
+const inAgreement = computed(() => !!item.value?.agreement?.trim()
+  || !!stages.value.find(s => s.id === item.value?.stage_id)?.requires_agreement)
 const agreementOpen = ref(false)
 async function agreementSaved() {
   agreementOpen.value = false
@@ -216,7 +218,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </dl>
             <div class="flex gap-2">
               <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
-              <UButton v-if="canChange && !item.closed_at" label="Registrar acordo" icon="i-lucide-handshake" color="neutral" variant="soft"
+              <UButton v-if="canChange && !item.closed_at && !inAgreement" label="Registrar acordo" icon="i-lucide-handshake" color="neutral" variant="soft"
                        @click="agreementOpen = true" />
               <UButton v-if="canChange && inAgreement" label="Acordo descumprido" icon="i-lucide-circle-x" color="warning" variant="soft"
                        @click="broken.open = true" />
