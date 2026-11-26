@@ -112,10 +112,9 @@ async function createCharges() {
   }
 }
 
-async function setDate(r: Transaction, date: string) {
-  if (!date || date === r.date) return
+async function patch(r: Transaction, body: { date?: string; status?: 'realized' }) {
   try {
-    await unwrap(api.PATCH('/api/transaction/{transaction_id}', { params: { path: { transaction_id: r.id! } }, body: { date } }))
+    await unwrap(api.PATCH('/api/transaction/{transaction_id}', { params: { path: { transaction_id: r.id! } }, body }))
     await load()
     emit('changed')
   } catch (e) {
@@ -181,7 +180,7 @@ async function saved() {
             <ul v-if="receivables.length" class="divide-y divide-muted rounded-xl ring ring-default">
               <li v-for="r in receivables" :key="r.id!" class="flex items-center gap-3 px-3 py-2 text-sm">
                 <UInput v-if="auth.can('transactions', 'change')" :model-value="r.date" type="date" size="xs" class="w-36"
-                        aria-label="Vencimento" @change="(e: Event) => setDate(r, (e.target as HTMLInputElement).value)" />
+                        aria-label="Vencimento" @change="(e: Event) => { const date = (e.target as HTMLInputElement).value; if (date && date !== r.date) patch(r, { date }) }" />
                 <span v-else class="w-24 text-muted tabular">{{ formatDate(r.date) }}</span>
                 <span class="flex-1 truncate">{{ r.reference || (r.series_index ? `Parcela ${r.series_index}` : 'Parcela') }}</span>
                 <UTooltip v-if="r.asaas_id" :text="`Asaas ${r.asaas_id}`">
@@ -189,6 +188,8 @@ async function saved() {
                 </UTooltip>
                 <SStatusBadge kind="status" :value="r.status" />
                 <SMoney :value="r.amount" class="w-28 text-right" />
+                <UButton v-if="auth.can('transactions', 'change') && r.status === 'planned'" icon="i-lucide-check" color="success"
+                         variant="ghost" size="xs" title="Marcar realizado" aria-label="Marcar realizado" @click="patch(r, { status: 'realized' })" />
               </li>
             </ul>
             <p v-else class="text-sm text-dimmed">Nenhuma parcela programada ainda.</p>
