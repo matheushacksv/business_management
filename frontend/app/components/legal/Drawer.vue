@@ -37,7 +37,7 @@ async function realize(t: Transaction) {
 const tabs = [
   { label: 'Resumo', value: 'summary', icon: 'i-lucide-file-text' },
   { label: 'Checklist', value: 'checklist', icon: 'i-lucide-list-checks' },
-  { label: 'Parcelas', value: 'installments', icon: 'i-lucide-calendar-range' },
+  { label: 'Acordo', value: 'installments', icon: 'i-lucide-calendar-range' },
   { label: 'Documentos', value: 'documents', icon: 'i-lucide-paperclip' },
 ]
 
@@ -243,7 +243,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
                        size="xs" aria-label="Marcar como realizado" :loading="realizing === t.id" @click="realize(t)" />
             </li>
           </ul>
-          <p v-else class="text-sm text-dimmed">Nenhuma parcela vinculada.</p>
+          <p v-else class="text-sm text-dimmed">Nenhum acordo registrado.</p>
         </template>
       </div>
 
