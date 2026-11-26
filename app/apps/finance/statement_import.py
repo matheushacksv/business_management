@@ -242,10 +242,13 @@ def commit_statement_service(*, user: User, account_id: int, lines: list[dict]) 
                 subgroup = SubGroup.objects.filter(pk=line.get('subgroup_id')).exclude(group=Group.TRANSFER).first()
                 if subgroup is None:
                     raise ValidationError(f'Escolha o subgrupo de "{line["description"]}" ({line["date"]:%d/%m})')
+                from apps.legal.services import agreement_case_for
+                contact = _contact(line.get('party', ''))
+                case_id = agreement_case_for(company.pk, contact.pk if contact else None, kind)
                 Transaction.objects.create(
-                    company=company, account=account, subgroup=subgroup, contact=_contact(line.get('party', '')),
+                    company=company, account=account, subgroup=subgroup, contact=contact,
                     date=line['date'], amount=line['amount'], type=kind, status=TransactionStatus.REALIZED,
-                    reference=line['description'][:120],
+                    reference=line['description'][:120], collection_case_id=case_id, agreement_installment=case_id is not None,
                 )
                 StatementRule.objects.update_or_create(key=norm(line['description']), type=kind,
                                                        defaults={'subgroup': subgroup})

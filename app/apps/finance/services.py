@@ -304,14 +304,18 @@ def create_transaction_service(
     status: str = TransactionStatus.PLANNED, account_id: int | None = None,
     contact_id: int | None = None, reference: str = '', notes: str = '',
 ) -> Transaction:
+    from apps.legal.services import agreement_case_for
+
     company = list_companies_service(user=user).get(pk=company_id)
     _check_refs(company_id=company.pk, subgroup_id=subgroup_id, account_id=account_id, contact_id=contact_id)
+    case_id = agreement_case_for(company.pk, contact_id, type)
     try:
         with transaction.atomic(), pghistory.context(user=user.pk):
             return Transaction.objects.create(
                 company=company, subgroup_id=subgroup_id, account_id=account_id,
                 contact_id=contact_id, date=date, amount=amount, type=type, status=status,
                 reference=reference.strip(), notes=notes.strip(),
+                collection_case_id=case_id, agreement_installment=case_id is not None,
             )
     except IntegrityError:
         raise ValidationError('Invalid transaction')
@@ -720,8 +724,11 @@ def create_series_service(
     if any(a <= 0 for a in amounts):
         raise ValidationError('Amounts must be positive')
 
+    from apps.legal.services import agreement_case_for
+
     company = list_companies_service(user=user).get(pk=company_id)
     _check_refs(company_id=company.pk, subgroup_id=subgroup_id, account_id=account_id, contact_id=contact_id)
+    case_id = agreement_case_for(company.pk, contact_id, type)
     with transaction.atomic(), pghistory.context(user=user.pk):
         series = TransactionSeries.objects.create(
             company=company, kind=kind, count=count, total_amount=sum(amounts), created_by=user,
@@ -731,6 +738,7 @@ def create_series_service(
                 company=company, subgroup_id=subgroup_id, account_id=account_id, contact_id=contact_id,
                 date=add_months(first_date, i), amount=value, type=type, status=status,
                 reference=reference.strip(), notes=notes.strip(), series=series, series_index=i + 1,
+                collection_case_id=case_id, agreement_installment=case_id is not None,
             )
             for i, value in enumerate(amounts)
         )

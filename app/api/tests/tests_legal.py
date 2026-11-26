@@ -166,6 +166,17 @@ class CollectionCaseTests(TestCase):
         self.assertEqual(Decimal(case['due_amount']), Decimal('6600.00'))
         self.assertIsNone(self.create(company_id=self.b.pk).json()['claimed_amount'])
 
+    def test_new_inflow_of_customer_under_agreement_joins_it(self):
+        case_id = self.create().json()['id']
+        new = lambda: services.create_transaction_service(  # noqa: E731
+            user=self.admin, company_id=self.a.pk, subgroup_id=self.open1.subgroup_id, contact_id=self.maria.pk,
+            date=dt.date(2026, 12, 5), amount=Decimal('400'), type=TransactionType.INFLOW, status=TransactionStatus.REALIZED)
+        self.assertIsNone(new().collection_case_id)  # no agreement yet
+        CollectionCase.objects.filter(pk=case_id).update(agreement='2x de 400')  # agreement registered
+        tx = new()
+        self.assertEqual((tx.collection_case_id, tx.agreement_installment), (case_id, True))
+        self.assertEqual(Decimal(self.client.get(f'/api/collection-case/{case_id}', headers=self.auth).json()['received_amount']), Decimal('400'))
+
     def test_register_and_break_agreement(self):
         case_id = self.create().json()['id']
         r = self.client.post(f'/api/collection-case/{case_id}/agreement', data={

@@ -331,3 +331,12 @@ def broken_agreement_service(*, user: User, case_id: int, stage_id: int) -> Coll
         _log(user, case, f'Acordo descumprido: {dropped} parcela(s) em aberto cancelada(s)\n'
                          f'Etapa: {old_stage.name} → {stage.name}' + (f'\nAcordo anterior: {previous}' if previous else ''))
     return get_case_service(user=user, case_id=case.pk)
+
+
+def agreement_case_for(company_id: int, contact_id: int | None, type: str) -> int | None:
+    """New inflow of a customer whose open case is under agreement: it is an agreement installment (auto-linked)."""
+    if type != TransactionType.INFLOW or not contact_id:
+        return None
+    return (CollectionCase.objects.filter(company_id=company_id, contact_id=contact_id, closed_at__isnull=True)
+            .filter(Q(stage__requires_agreement=True) | ~Q(agreement='')).order_by('-updated_at')
+            .values_list('pk', flat=True).first())
