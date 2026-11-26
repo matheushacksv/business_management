@@ -68,6 +68,20 @@ async function remove(invoice: Invoice) {
   }
 }
 
+const issuing = ref(false)
+async function issueBling(invoice: Invoice) {
+  issuing.value = true
+  try {
+    const r = await unwrap(api.POST('/api/invoice/{invoice_id}/bling', { params: { path: { invoice_id: invoice.id! } } }))
+    r.status === 'processed' ? notifySuccess(r.message) : notifyError(r.message)
+    await load()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    issuing.value = false
+  }
+}
+
 watch(() => props.transactionId, load, { immediate: true })
 </script>
 
@@ -84,6 +98,8 @@ watch(() => props.transactionId, load, { immediate: true })
           :label="invoice.done ? (invoice.direction === 'receive' ? 'Recebida' : 'Emitida') : (invoice.direction === 'receive' ? 'A receber' : 'A emitir')"
           :color="invoice.done ? 'success' : 'warning'" variant="subtle" size="sm" />
         <div class="ms-auto flex gap-1" v-if="editable && editing !== invoice.id">
+          <UButton v-if="invoice.kind === 'product' && invoice.direction === 'issue' && !invoice.done" label="Emitir no Bling"
+                   icon="i-lucide-send" size="sm" variant="soft" :loading="issuing" @click="issueBling(invoice)" />
           <UButton icon="i-lucide-pencil" color="neutral" variant="ghost" size="sm" aria-label="Editar" @click="edit(invoice)" />
           <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" aria-label="Remover" @click="remove(invoice)" />
         </div>
@@ -108,6 +124,7 @@ watch(() => props.transactionId, load, { immediate: true })
       <p v-else-if="invoice.number || invoice.issue_date" class="text-xs text-muted">
         Nº {{ invoice.number || '—' }} · {{ formatDate(invoice.issue_date) }}
       </p>
+      <p v-else-if="invoice.notes" class="text-xs text-muted">{{ invoice.notes }}</p>
 
       <AppAttachments target="invoice" :target-id="invoice.id!" :editable="editable" />
     </div>

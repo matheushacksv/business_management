@@ -401,6 +401,9 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
             tx.save(update_fields=[*fields, 'updated_at'])
     except IntegrityError:
         raise ValidationError('Invalid transaction')
+    if was_planned and tx.status == TransactionStatus.REALIZED:
+        from apps.integrations import bling
+        bling.issue_on_realized([tx.pk])
     return tx
 
 
@@ -446,6 +449,7 @@ def bulk_update_transactions_service(*, user: User, ids: list[int], shift_days: 
         if any(t.company_id != sale.company_id or t.type != TransactionType.INFLOW for t in txs):  # type:ignore
             raise ValidationError('Only inflows of the sale company can be linked to it')
     now = timezone.now()
+    realized = [t.pk for t in txs if t.status == TransactionStatus.PLANNED] if fields.get('status') == TransactionStatus.REALIZED else []
     for t in txs:
         for field, value in fields.items():
             setattr(t, field, value)
@@ -455,7 +459,11 @@ def bulk_update_transactions_service(*, user: User, ids: list[int], shift_days: 
     update_fields = [*fields, *extra, 'updated_at', *(['date'] if shift_days else [])]
     with transaction.atomic(), pghistory.context(user=user.pk):
         Transaction.objects.bulk_update(txs, update_fields, batch_size=500)
+    if realized:
+        from apps.integrations import bling
+        bling.issue_on_realized(realized)
     return len(txs)
+
 
 
 def bulk_delete_transactions_service(*, user: User, ids: list[int]) -> int:

@@ -106,6 +106,16 @@ class BlingTests(TestCase):
         self.assertIn('sem itens de NF-e', self.invoice.notes)
         self.assertFalse(self.fake.made('POST', '/nfe'))
 
+    def test_realized_by_hand_issues_product_nfe(self):
+        self.invoice.delete()
+        tx = Transaction.objects.filter(sale=self.tx.sale).exclude(pk=self.tx.pk).first()
+        r = self.client.patch(f'/api/transaction/{tx.pk}', data={'status': 'realized'}, content_type='application/json', headers=self.auth())
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertTrue(Invoice.objects.get(transaction=tx, kind=InvoiceKind.PRODUCT).done)
+        self.assertEqual(len(self.fake.made('POST', '/nfe')), 1)
+        self.client.patch(f'/api/transaction/{tx.pk}', data={'notes': 'x'}, content_type='application/json', headers=self.auth())
+        self.assertEqual(len(self.fake.made('POST', '/nfe')), 1)  # only on the planned -> realized change
+
     def test_webhook_signed_updates_invoice(self):
         self.fake.status = 1
         bling.issue_service(invoice_id=self.invoice.pk)

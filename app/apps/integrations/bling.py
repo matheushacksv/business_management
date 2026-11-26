@@ -23,7 +23,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from apps.finance.models import Contact, Invoice, InvoiceKind
+from apps.finance.models import Contact, Invoice, InvoiceKind, Transaction, TransactionStatus
 from apps.finance.services import check_customer
 from apps.integrations.asaas import _label, attach_files
 from apps.integrations.models import BlingConfig, EventStatus, WebhookEvent
@@ -222,6 +222,15 @@ def issue_on_payment(invoice: Invoice) -> None:
         issue_service(invoice_id=invoice.pk)
     except ValidationError as e:
         Invoice.objects.filter(pk=invoice.pk).update(notes='; '.join(e.messages)[:1000])
+
+
+def issue_on_realized(transaction_ids: list[int]) -> None:
+    """Sale installment settled by hand: same product NF-e as an Asaas payment (sales whose plan has items only)."""
+    txs = (Transaction.objects.filter(pk__in=transaction_ids, status=TransactionStatus.REALIZED, sale__plan__isnull=False)
+           .exclude(sale__plan__nfe_skus=[]))
+    for tx in txs:
+        invoice, _ = Invoice.objects.get_or_create(transaction=tx, kind=InvoiceKind.PRODUCT)
+        issue_on_payment(invoice)
 
 
 # Webhook
