@@ -95,7 +95,10 @@ class CollectionCaseTests(TestCase):
     def test_agreement_stage_requires_agreement_and_logs_moves(self):
         ChecklistItem.objects.update(required=False)  # checklist: ChecklistTests
         case_id = self.create().json()['id']
-        self.assertEqual(self.patch(case_id, stage_id=st('Ação Protocolada')).status_code, 200)
+        r = self.patch(case_id, stage_id=st('Ação Protocolada'))  # filing needs the lawsuit number
+        self.assertIn('número do processo', str(r.json()))
+        r = self.patch(case_id, stage_id=st('Ação Protocolada'), process_number=' 5001234-56.2026.8.21.0001 ')
+        self.assertEqual(r.json()['process_number'], '5001234-56.2026.8.21.0001')
         self.assertEqual(self.patch(case_id, stage_id=st('Acordo ou Sentença')).status_code, 400)
         agreement = 'R$ 20.000,00 em 10x de 2.000, primeiro vencimento 10/12'
         response = self.patch(case_id, stage_id=st('Acordo ou Sentença'), agreement=agreement)
@@ -159,13 +162,6 @@ class CollectionCaseTests(TestCase):
         stages = self.client.get('/api/legal-stage', headers=self.auth).json()
         self.assertEqual(len(stages), 7)
 
-    def test_claim_replaces_old_installments_until_agreement(self):
-        case = self.create(delivered_percent='75', fine_amount='5000').json()
-        # 2000 x 75% = 1500 - 1000 paid = 500 + 5000 fine = 5500 + 20% fees
-        self.assertEqual(Decimal(case['claimed_amount']), Decimal('6600.00'))
-        self.assertEqual(Decimal(case['due_amount']), Decimal('6600.00'))
-        self.assertIsNone(self.create(company_id=self.b.pk).json()['claimed_amount'])
-
     def test_new_inflow_of_customer_under_agreement_joins_it(self):
         case_id = self.create().json()['id']
         new = lambda: services.create_transaction_service(  # noqa: E731
@@ -180,12 +176,12 @@ class CollectionCaseTests(TestCase):
     def test_register_and_break_agreement(self):
         case_id = self.create().json()['id']
         r = self.client.post(f'/api/collection-case/{case_id}/agreement', data={
-            'down_payment': '300', 'down_payment_date': '2026-12-01', 'count': 3, 'amount': '250', 'first_due': '2027-01-31',
+            'down_payment': '300', 'down_payment_date': '2026-12-01', 'total': '1050', 'count': 3, 'first_due': '2027-01-31',
             'text': 'Homologado'}, content_type='application/json', headers=self.auth)
         self.assertEqual(r.status_code, 200, r.content)
         case = r.json()
         self.assertEqual(case['stage_name'], 'Acordo ou Sentença')
-        self.assertTrue(case['agreement'].startswith('Entrada de R$ 300,00 em 01/12/2026 + 3x de R$ 250,00'))
+        self.assertTrue(case['agreement'].startswith('Acordo de R$ 1.050,00: entrada de R$ 300,00 em 01/12/2026 + 3x de R$ 250,00'))
         self.assertEqual(Decimal(case['due_amount']), Decimal('1050'))  # the agreement, not the defaulted 2 x 500
         rows = [(t['reference'], dt.date.fromisoformat(t['date'])) for t in
                 self.client.get(f'/api/collection-case/{case_id}/transactions', headers=self.auth).json()]
@@ -200,7 +196,7 @@ class CollectionCaseTests(TestCase):
         self.assertEqual((r.json()['stage_name'], r.json()['agreement']), ('Em andamento', ''))
         agreement = Transaction.objects.filter(collection_case_id=case_id, agreement_installment=True)
         self.assertEqual(list(agreement.values_list('reference', flat=True)), ['Entrada'])
-        self.assertEqual(Decimal(r.json()['due_amount']), Decimal('1000'))  # back to the claim (here: the defaulted ones)
+        self.assertEqual(Decimal(r.json()['due_amount']), Decimal('1000'))  # back to the defaulted ones
 
 
 class ChecklistTests(TestCase):
@@ -240,7 +236,7 @@ class ChecklistTests(TestCase):
                 self.assertEqual(r.status_code, 200, r.content)
         self.assertEqual(self.patch(case_id, {'stage_id': st('Ação Protocolada')}).status_code, 400)  # responsible missing
         self.assertEqual(self.patch(case_id, {'responsible_id': self.admin.pk}).json()['responsible_name'], 'admin@test.com')
-        self.assertEqual(self.patch(case_id, {'stage_id': st('Ação Protocolada')}).status_code, 200)
+        self.assertEqual(self.patch(case_id, {'stage_id': st('Ação Protocolada'), 'process_number': '123'}).status_code, 200)
         self.assertEqual(self.patch(case_id, {'summary': 'Ainda devendo'}).status_code, 200)
 
     def test_items_admin_only(self):

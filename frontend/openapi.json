@@ -8360,68 +8360,6 @@
     ]
    }
   },
-  "/api/legal-config": {
-   "get": {
-    "operationId": "api_endpoints_legal_get_legal_config_endpoint",
-    "summary": "Get Legal Config Endpoint",
-    "parameters": [],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/LegalConfigIO"
-        }
-       }
-      }
-     }
-    },
-    "tags": [
-     "Legal"
-    ],
-    "security": [
-     {
-      "CookieJWTAuth": []
-     }
-    ]
-   },
-   "put": {
-    "operationId": "api_endpoints_legal_update_legal_config_endpoint",
-    "summary": "Update Legal Config Endpoint",
-    "parameters": [],
-    "responses": {
-     "200": {
-      "description": "OK",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/LegalConfigIO"
-        }
-       }
-      }
-     }
-    },
-    "tags": [
-     "Legal"
-    ],
-    "requestBody": {
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/LegalConfigIO"
-       }
-      }
-     },
-     "required": true
-    },
-    "security": [
-     {
-      "CookieJWTAuth": []
-     }
-    ]
-   }
-  },
   "/api/investment": {
    "get": {
     "operationId": "api_endpoints_investments_list_investments_endpoint",
@@ -17683,6 +17621,11 @@
       "title": "Requires Checklist",
       "type": "boolean"
      },
+     "requires_process_number": {
+      "default": false,
+      "title": "Requires Process Number",
+      "type": "boolean"
+     },
      "id": {
       "title": "Id",
       "type": "integer"
@@ -17717,6 +17660,11 @@
      "requires_checklist": {
       "default": false,
       "title": "Requires Checklist",
+      "type": "boolean"
+     },
+     "requires_process_number": {
+      "default": false,
+      "title": "Requires Process Number",
       "type": "boolean"
      }
     },
@@ -17819,17 +17767,6 @@
      "defaulted_amount": {
       "title": "Defaulted Amount",
       "type": "string"
-     },
-     "claimed_amount": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Claimed Amount"
      },
      "due_amount": {
       "title": "Due Amount",
@@ -17936,28 +17873,6 @@
       ],
       "title": "Paid Amount"
      },
-     "delivered_percent": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Delivered Percent"
-     },
-     "fine_amount": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Fine Amount"
-     },
      "summary": {
       "anyOf": [
        {
@@ -17980,6 +17895,18 @@
        }
       ],
       "title": "Drive Link"
+     },
+     "process_number": {
+      "anyOf": [
+       {
+        "maxLength": 40,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Process Number"
      },
      "agreement": {
       "anyOf": [
@@ -18037,7 +17964,6 @@
      "open_amount",
      "received_amount",
      "defaulted_amount",
-     "claimed_amount",
      "due_amount",
      "responsible_id",
      "created_at",
@@ -18107,37 +18033,6 @@
       "minLength": 1,
       "title": "Drive Link",
       "type": "string"
-     },
-     "delivered_percent": {
-      "anyOf": [
-       {
-        "maximum": 100.0,
-        "minimum": 0.0,
-        "type": "number"
-       },
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Delivered Percent"
-     },
-     "fine_amount": {
-      "anyOf": [
-       {
-        "minimum": 0.0,
-        "type": "number"
-       },
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Fine Amount"
      },
      "stage_id": {
       "anyOf": [
@@ -18435,36 +18330,17 @@
       ],
       "title": "Drive Link"
      },
-     "delivered_percent": {
+     "process_number": {
       "anyOf": [
        {
-        "maximum": 100.0,
-        "minimum": 0.0,
-        "type": "number"
-       },
-       {
+        "maxLength": 40,
         "type": "string"
        },
        {
         "type": "null"
        }
       ],
-      "title": "Delivered Percent"
-     },
-     "fine_amount": {
-      "anyOf": [
-       {
-        "minimum": 0.0,
-        "type": "number"
-       },
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Fine Amount"
+      "title": "Process Number"
      },
      "stage_id": {
       "anyOf": [
@@ -18714,13 +18590,7 @@
       ],
       "title": "Down Payment Date"
      },
-     "count": {
-      "maximum": 120,
-      "minimum": 1,
-      "title": "Count",
-      "type": "integer"
-     },
-     "amount": {
+     "total": {
       "anyOf": [
        {
         "exclusiveMinimum": 0.0,
@@ -18730,7 +18600,13 @@
         "type": "string"
        }
       ],
-      "title": "Amount"
+      "title": "Total"
+     },
+     "count": {
+      "maximum": 120,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
      },
      "first_due": {
       "format": "date",
@@ -18739,8 +18615,8 @@
      }
     },
     "required": [
+     "total",
      "count",
-     "amount",
      "first_due"
     ],
     "title": "AgreementIn",
@@ -18757,27 +18633,6 @@
      "stage_id"
     ],
     "title": "BrokenAgreementIn",
-    "type": "object"
-   },
-   "LegalConfigIO": {
-    "properties": {
-     "minimum_wage": {
-      "anyOf": [
-       {
-        "exclusiveMinimum": 0.0,
-        "type": "number"
-       },
-       {
-        "type": "string"
-       }
-      ],
-      "title": "Minimum Wage"
-     }
-    },
-    "required": [
-     "minimum_wage"
-    ],
-    "title": "LegalConfigIO",
     "type": "object"
    },
    "Holder": {

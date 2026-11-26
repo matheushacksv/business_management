@@ -10,11 +10,11 @@ from django.utils import timezone
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, Transaction, TransactionStatus, TransactionType
 from apps.legal.models import AutoCheck, CaseCheck, CaseComment, ChecklistItem, CollectionCase, LegalStage
-from apps.finance.services import add_months
+from apps.finance.services import add_months, split_amount
 from apps.users.models import User
 
 MONEY = DecimalField(max_digits=16, decimal_places=2)
-TEXT_FIELDS = ('client_company', 'contact_info', 'delivered', 'summary', 'drive_link', 'agreement')
+TEXT_FIELDS = ('client_company', 'contact_info', 'delivered', 'summary', 'drive_link', 'agreement', 'process_number')
 
 
 def _linked(status: str, agreement: bool = True):
@@ -112,6 +112,8 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
         missing = [c['label'] for c in checklist_service(user=user, case_id=case.pk, case=case) if c['required'] and not c['done']]
         if missing:
             raise ValidationError(f'Checklist incompleto: {"; ".join(missing)}')
+    if case.stage != old_stage and case.stage.requires_process_number and not case.process_number:
+        raise ValidationError(f'Informe o número do processo para mover para "{case.stage.name}"')
     with transaction.atomic(), pghistory.context(user=user.pk):
         case.save(update_fields=[*fields, 'updated_at'])  # responsible_id: Django accepts the attname
         if case.stage != old_stage:
@@ -283,7 +285,7 @@ def _drop_open_installments(case: CollectionCase) -> int:
 
 def register_agreement_service(*, user: User, case_id: int, stage_id: int | None = None, text: str = '',
                                down_payment: Decimal | None = None, down_payment_date=None,
-                               count: int, amount: Decimal, first_due) -> CollectionCase:
+                               total: Decimal, count: int, first_due) -> CollectionCase:
     case = get_case_service(user=user, case_id=case_id)
     stages = LegalStage.objects.filter(requires_agreement=True)
     stage = stages.filter(pk=stage_id).first() if stage_id else stages.first()
@@ -291,6 +293,9 @@ def register_agreement_service(*, user: User, case_id: int, stage_id: int | None
         raise ValidationError('Escolha uma etapa de acordo ou sentença')
     if down_payment and not down_payment_date:
         raise ValidationError('Informe a data da entrada')
+    rest = total - (down_payment or 0)
+    if rest < Decimal('0.01') * count:
+        raise ValidationError('O valor total precisa ser maior que a entrada')
     linked = Transaction.objects.filter(collection_case=case, type=TransactionType.INFLOW)
     subgroup_id = (linked.values_list('subgroup_id', flat=True).first()
                    or Transaction.objects.filter(company=case.company, contact=case.contact, type=TransactionType.INFLOW)
@@ -298,10 +303,11 @@ def register_agreement_service(*, user: User, case_id: int, stage_id: int | None
     if subgroup_id is None:
         raise ValidationError('O cliente não tem lançamentos de entrada para usar como subgrupo')
     rows = [('Entrada', down_payment_date, down_payment)] if down_payment else []
-    rows += [(f'{i + 1}/{count}', add_months(first_due, i), amount) for i in range(count)]
-    total = sum(r[2] for r in rows)
-    summary = (f'Entrada de {_brl(down_payment)} em {down_payment_date:%d/%m/%Y} + ' if down_payment else '') \
-        + f'{count}x de {_brl(amount)} a partir de {first_due:%d/%m/%Y} (total {_brl(total)})'
+    amounts = split_amount(rest, count)  # remainder cents on the first one
+    rows += [(f'{i + 1}/{count}', add_months(first_due, i), value) for i, value in enumerate(amounts)]
+    summary = f'Acordo de {_brl(total)}: ' \
+        + (f'entrada de {_brl(down_payment)} em {down_payment_date:%d/%m/%Y} + ' if down_payment else '') \
+        + f'{count}x de {_brl(amounts[-1])} a partir de {first_due:%d/%m/%Y}'
     with transaction.atomic(), pghistory.context(user=user.pk):
         dropped = _drop_open_installments(case)
         Transaction.objects.bulk_create(

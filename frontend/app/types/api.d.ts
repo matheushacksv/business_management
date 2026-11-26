@@ -1667,24 +1667,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/legal-config": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Legal Config Endpoint */
-        get: operations["api_endpoints_legal_get_legal_config_endpoint"];
-        /** Update Legal Config Endpoint */
-        put: operations["api_endpoints_legal_update_legal_config_endpoint"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/investment": {
         parameters: {
             query?: never;
@@ -4569,6 +4551,11 @@ export interface components {
              * @default false
              */
             requires_checklist: boolean;
+            /**
+             * Requires Process Number
+             * @default false
+             */
+            requires_process_number: boolean;
             /** Id */
             id: number;
         };
@@ -4591,6 +4578,11 @@ export interface components {
              * @default false
              */
             requires_checklist: boolean;
+            /**
+             * Requires Process Number
+             * @default false
+             */
+            requires_process_number: boolean;
         };
         /** CaseFilters */
         CaseFilters: {
@@ -4623,8 +4615,6 @@ export interface components {
             received_amount: string;
             /** Defaulted Amount */
             defaulted_amount: string;
-            /** Claimed Amount */
-            claimed_amount: string | null;
             /** Due Amount */
             due_amount: string;
             /** Unrecoverable By Name */
@@ -4645,14 +4635,12 @@ export interface components {
             proposal_amount?: string | null;
             /** Paid Amount */
             paid_amount?: string | null;
-            /** Delivered Percent */
-            delivered_percent?: string | null;
-            /** Fine Amount */
-            fine_amount?: string | null;
             /** Summary */
             summary?: string | null;
             /** Drive Link */
             drive_link?: string | null;
+            /** Process Number */
+            process_number?: string | null;
             /** Agreement */
             agreement?: string | null;
             /** Closed At */
@@ -4696,10 +4684,6 @@ export interface components {
              * Format: uri
              */
             drive_link: string;
-            /** Delivered Percent */
-            delivered_percent?: number | string | null;
-            /** Fine Amount */
-            fine_amount?: number | string | null;
             /** Stage Id */
             stage_id?: number | null;
             /**
@@ -4801,10 +4785,8 @@ export interface components {
             summary?: string | null;
             /** Drive Link */
             drive_link?: string | null;
-            /** Delivered Percent */
-            delivered_percent?: number | string | null;
-            /** Fine Amount */
-            fine_amount?: number | string | null;
+            /** Process Number */
+            process_number?: string | null;
             /** Stage Id */
             stage_id?: number | null;
             /** Agreement */
@@ -4879,10 +4861,10 @@ export interface components {
             down_payment?: number | string | null;
             /** Down Payment Date */
             down_payment_date?: string | null;
+            /** Total */
+            total: number | string;
             /** Count */
             count: number;
-            /** Amount */
-            amount: number | string;
             /**
              * First Due
              * Format: date
@@ -4893,11 +4875,6 @@ export interface components {
         BrokenAgreementIn: {
             /** Stage Id */
             stage_id: number;
-        };
-        /** LegalConfigIO */
-        LegalConfigIO: {
-            /** Minimum Wage */
-            minimum_wage: number | string;
         };
         /**
          * Holder
@@ -9067,50 +9044,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseOut"];
-                };
-            };
-        };
-    };
-    api_endpoints_legal_get_legal_config_endpoint: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegalConfigIO"];
-                };
-            };
-        };
-    };
-    api_endpoints_legal_update_legal_config_endpoint: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LegalConfigIO"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LegalConfigIO"];
                 };
             };
         };

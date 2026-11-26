@@ -22,8 +22,7 @@ const state = reactive({
   paid_amount: c?.paid_amount != null ? Number(c.paid_amount) : (undefined as number | undefined),
   summary: c?.summary ?? props.summary ?? '',
   drive_link: c?.drive_link ?? '',
-  delivered_percent: c?.delivered_percent != null ? Number(c.delivered_percent) : (undefined as number | undefined),
-  fine_amount: c?.fine_amount != null ? Number(c.fine_amount) : (undefined as number | undefined),
+  process_number: c?.process_number ?? '',
   stage_id: c?.stage_id as number | undefined,
   agreement: c?.agreement ?? '',
 })
@@ -54,17 +53,8 @@ const stageList = computed(() => (lookups.cache.value.legalStages ?? []).filter(
 const stageOptions = computed(() => stageList.value.map(s => ({ label: s.name, value: s.id })))
 watch(stageList, list => { state.stage_id ??= list[0]?.id }, { immediate: true })
 const needsAgreement = computed(() => !!stageList.value.find(s => s.id === state.stage_id)?.requires_agreement)
+const needsProcess = computed(() => !!stageList.value.find(s => s.id === state.stage_id)?.requires_process_number)
 const saving = ref(false)
-
-// Claim = share delivered (minus paid) + cancellation fine (old contracts: 3 minimum wages; new: fixed) + fees
-const NEW_CONTRACT_FINE = 5000
-const minimumWage = ref<number>()
-unwrap(api.GET('/api/legal-config')).then(c => (minimumWage.value = Number(c.minimum_wage))).catch(notifyError)
-const claimed = computed(() => {
-  if (state.delivered_percent == null || state.proposal_amount == null) return null
-  const delivered = Math.max(state.proposal_amount * state.delivered_percent / 100 - (state.paid_amount ?? 0), 0)
-  return (delivered + (state.fine_amount ?? 0)) * (1 + LEGAL_FEE_RATE)
-})
 
 const missing = computed(() => {
   const fields: [unknown, string][] = [
@@ -74,6 +64,7 @@ const missing = computed(() => {
     [state.summary.trim(), 'Resumo da situação'], [state.drive_link.trim(), 'Link do drive'],
   ]
   if (needsAgreement.value) fields.push([state.agreement.trim(), 'Acordo feito'])
+  if (needsProcess.value) fields.push([state.process_number.trim(), 'Nº do processo'])
   return fields.filter(([value]) => !value).map(([, label]) => label)
 })
 
@@ -87,8 +78,7 @@ async function submit() {
     client_company: state.client_company, contact_info: state.contact_info, delivered: state.delivered,
     proposal_amount: state.proposal_amount!.toFixed(2), paid_amount: state.paid_amount!.toFixed(2),
     summary: state.summary, drive_link: state.drive_link.trim(), stage_id: state.stage_id, agreement: state.agreement,
-    delivered_percent: state.delivered_percent != null ? state.delivered_percent.toFixed(2) : null,
-    fine_amount: state.fine_amount != null ? state.fine_amount.toFixed(2) : null,
+    ...(c ? { process_number: state.process_number } : {}),
   }
   try {
     const saved = c
@@ -129,29 +119,14 @@ async function submit() {
       <UInputNumber v-model="state.paid_amount" :min="0" :step="0.01" :increment="false" :decrement="false"
                     :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
     </UFormField>
-    <UFormField label="% do treinamento entregue">
-      <UInputNumber v-model="state.delivered_percent" :min="0" :max="100" :step="1" :increment="false" :decrement="false"
-                    :format-options="{ maximumFractionDigits: 2 }" locale="pt-BR" class="w-full" />
-    </UFormField>
-    <UFormField label="Multa de cancelamento">
-      <div class="flex gap-1">
-        <UInputNumber v-model="state.fine_amount" :min="0" :step="0.01" :increment="false" :decrement="false"
-                      :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="min-w-0 flex-1" />
-        <UButton label="Antigo" size="sm" color="neutral" variant="soft" :disabled="!minimumWage"
-                 :title="minimumWage ? `3 salários mínimos: ${formatMoney(3 * minimumWage)}` : undefined"
-                 @click="state.fine_amount = 3 * minimumWage!" />
-        <UButton label="Novo" size="sm" color="neutral" variant="soft" :title="formatMoney(NEW_CONTRACT_FINE)"
-                 @click="state.fine_amount = NEW_CONTRACT_FINE" />
-      </div>
-    </UFormField>
-    <UFormField v-if="claimed != null" label="Valor cobrado na ação" class="sm:col-span-2">
-      <p class="text-sm text-highlighted tabular">{{ formatMoney(claimed) }}</p>
-    </UFormField>
     <UFormField label="Resumo da situação do cliente" required class="sm:col-span-2">
       <UTextarea v-model="state.summary" :rows="3" autoresize class="w-full" />
     </UFormField>
     <UFormField label="Link do drive" required class="sm:col-span-2">
       <UInput v-model="state.drive_link" type="url" placeholder="Cole o link da pasta no Google Drive" icon="i-lucide-link" class="w-full" />
+    </UFormField>
+    <UFormField v-if="c" label="Nº do processo" :required="needsProcess" class="sm:col-span-2">
+      <UInput v-model="state.process_number" class="w-full" />
     </UFormField>
     <UFormField v-if="!c" label="Empresa do grupo" required>
       <USelect v-model="state.company_id" :items="lookups.options.companies.value" :disabled="!!companyId" class="w-full" />

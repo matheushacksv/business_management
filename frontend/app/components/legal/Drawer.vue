@@ -177,8 +177,6 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           <div class="min-w-0"><p class="text-dimmed">Recebido (acordo)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Valor da proposta</p><p class="text-sm text-highlighted tabular truncate">{{ item.proposal_amount != null ? formatMoney(item.proposal_amount) : '—' }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Pago pelo cliente</p><p class="text-sm text-highlighted tabular truncate">{{ item.paid_amount != null ? formatMoney(item.paid_amount) : '—' }}</p></div>
-          <div class="min-w-0"><p class="text-dimmed">Entregue</p><p class="text-sm text-highlighted tabular truncate">{{ item.delivered_percent != null ? `${Number(item.delivered_percent)}%` : '—' }}</p></div>
-          <div class="min-w-0"><p class="text-dimmed">Valor cobrado na ação</p><p class="text-sm text-highlighted tabular truncate">{{ item.claimed_amount != null ? formatMoney(item.claimed_amount) : '—' }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Honorários do acordo (20%)</p><p class="text-sm text-highlighted tabular truncate">{{ formatMoney((Number(item.open_amount) + Number(item.received_amount)) * LEGAL_FEE_RATE) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Honorários pagos</p><p class="text-sm text-highlighted tabular truncate">{{ formatMoney(Number(item.received_amount) * LEGAL_FEE_RATE) }}</p></div>
         </div>
@@ -211,6 +209,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
                 <dt class="text-xs text-dimmed">Link do drive</dt>
                 <dd><a v-if="item.drive_link" :href="item.drive_link" target="_blank" rel="noopener" class="text-primary hover:underline">Abrir pasta</a><span v-else>—</span></dd>
               </div>
+              <div><dt class="text-xs text-dimmed">Nº do processo</dt><dd class="tabular">{{ item.process_number || '—' }}</dd></div>
               <div class="col-span-2"><dt class="text-xs text-dimmed">O que foi entregue</dt><dd class="whitespace-pre-line">{{ item.delivered || '—' }}</dd></div>
               <div class="col-span-2"><dt class="text-xs text-dimmed">Resumo da situação</dt><dd class="whitespace-pre-line">{{ item.summary || '—' }}</dd></div>
               <div v-if="item.agreement" class="col-span-2"><dt class="text-xs text-dimmed">Acordo ou sentença</dt><dd class="whitespace-pre-line">{{ item.agreement }}</dd></div>

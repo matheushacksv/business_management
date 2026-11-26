@@ -3,11 +3,11 @@ from ninja import Query, Router
 
 from api.schemas.legal_dto import (
     AgreementIn, BrokenAgreementIn, CaseFilters, CaseOut, CheckOut, ChecklistItemIn, ChecklistItemOut, CommentOut, CreateCase, CreateComment,
-    LegalConfigIO, LegalStageIn, LegalStageOut, PatchCase, PrefillOut, ResponsibleOut, SetCheck,
+    LegalStageIn, LegalStageOut, PatchCase, PrefillOut, ResponsibleOut, SetCheck,
 )
 from api.schemas.transactions_dto import TransactionOut
 from apps.legal import services
-from apps.legal.models import ChecklistItem, LegalConfig, LegalStage
+from apps.legal.models import ChecklistItem, LegalStage
 from apps.users.models import Role, User
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
 
@@ -167,17 +167,3 @@ def register_agreement_endpoint(request, case_id: int, data: AgreementIn):
 def broken_agreement_endpoint(request, case_id: int, data: BrokenAgreementIn):
     return services.broken_agreement_service(user=request.user, case_id=case_id, stage_id=data.stage_id)
 
-
-@router.get('/legal-config', response=LegalConfigIO)
-@require_permission('legal', VIEW)
-def get_legal_config_endpoint(request):
-    return LegalConfig.get()
-
-
-@router.put('/legal-config', response=LegalConfigIO)
-@require_permission('legal', CHANGE)
-def update_legal_config_endpoint(request, data: LegalConfigIO):
-    config = LegalConfig.get()
-    config.minimum_wage = data.minimum_wage
-    config.save()
-    return config

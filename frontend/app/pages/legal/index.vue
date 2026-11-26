@@ -64,20 +64,33 @@ function onDrop(stage: number) {
     Object.assign(agreement, { case: card, stage, open: true })
     return
   }
+  if (lookups.cache.value.legalStages?.find(s => s.id === stage)?.requires_process_number && !card.process_number) {
+    Object.assign(protocol, { case: card, stage, number: '', open: true })
+    return
+  }
   move(card, stage)
 }
 
-async function move(card: Case, stage: number) {
+// Stages marked "requires process number": asked when the card is dropped there
+const protocol = reactive({ open: false, case: null as Case | null, stage: 0, number: '' })
+async function confirmProtocol() {
+  if (!protocol.number.trim()) return
+  if (await move(protocol.case!, protocol.stage, { process_number: protocol.number.trim() })) protocol.open = false
+}
+
+async function move(card: Case, stage: number, extra: { process_number?: string } = {}) {
   const previous = card.stage_id
   card.stage_id = stage  // optimistic
   try {
     const saved = await unwrap(api.PATCH('/api/collection-case/{case_id}', {
-      params: { path: { case_id: card.id! } }, body: { stage_id: stage },
+      params: { path: { case_id: card.id! } }, body: { stage_id: stage, ...extra },
     }))
     Object.assign(card, saved)
+    return true
   } catch (e) {
     card.stage_id = previous
     notifyError(e)
+    return false
   }
 }
 
@@ -223,6 +236,19 @@ function onCreated(id: number) {
       <template #body>
         <LegalAgreementForm v-if="agreement.case" :case-id="agreement.case.id!" :stage-id="agreement.stage"
                             @saved="agreementSaved" @cancel="agreement.open = false" />
+      </template>
+    </UModal>
+    <UModal v-model:open="protocol.open" title="Número do processo">
+      <template #body>
+        <form id="protocol-form" @submit.prevent="confirmProtocol">
+          <UInput v-model="protocol.number" autofocus class="w-full" />
+        </form>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton label="Cancelar" color="neutral" variant="ghost" @click="protocol.open = false" />
+          <UButton type="submit" form="protocol-form" label="Mover" :disabled="!protocol.number.trim()" />
+        </div>
       </template>
     </UModal>
   </AppPage>
