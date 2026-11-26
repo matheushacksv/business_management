@@ -84,6 +84,18 @@ class DunningTests(TestCase):
         self.cards()
         self.assertEqual(Card.objects.count(), 2)
 
+    def test_payment_closes_card_at_once_with_note(self):
+        tx = self.installment(dt.date(2026, 11, 19), '1500')
+        tx.reference = '3/10'
+        tx.save()
+        self.cards()
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.api('patch', f'/transaction/{tx.pk}', {'status': 'realized', 'date': '2026-11-20'})
+        self.assertEqual(r.status_code, 200, r.content)
+        card = Card.objects.get()  # closed without loading the board
+        self.assertEqual(card.outcome, Outcome.RESOLVED)
+        self.assertEqual(card.notes.get().text, 'Resolvido automaticamente: 3/10 de R$ 1.500,00 paga em 20/11/2026')
+
     def test_resolve_by_hand_needs_nothing_overdue(self):
         self.installment(dt.date(2026, 11, 19))
         card = self.cards()[0]

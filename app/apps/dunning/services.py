@@ -93,8 +93,26 @@ def sync_cards_service(*, today: dt.date | None = None) -> None:
     for card in paid_off:
         card.outcome, card.closed_at, card.updated_at = Outcome.RESOLVED, today, timezone.now()
     Card.objects.bulk_update(paid_off, ['outcome', 'closed_at', 'updated_at'])
+    CardNote.objects.bulk_create(CardNote(card=c, text=_paid_note(c)) for c in paid_off)
 
     _run_cadence(today)
+
+
+def _brl(v: Decimal) -> str:
+    return 'R$ ' + f'{v:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+
+
+def _paid_note(card: Card) -> str:
+    """Why the card closed by itself: the installments settled while it was open."""
+    paid = list(Transaction.objects.filter(
+        company_id=card.company_id, contact_id=card.contact_id, type=TransactionType.INFLOW,  # type:ignore
+        status=TransactionStatus.REALIZED, updated_at__gte=card.created_at,
+    ).order_by('date', 'id')[:6])
+    if not paid:
+        return 'Resolvido automaticamente: nenhuma parcela em atraso'
+    items = [f"{t.reference or 'parcela'} de {_brl(t.amount)} paga em {t.date:%d/%m/%Y}" for t in paid[:5]]
+    return 'Resolvido automaticamente: ' + '; '.join(items) + ('; …' if len(paid) > 5 else '')
+
 
 
 def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:

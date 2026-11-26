@@ -19,6 +19,7 @@ import pghistory
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.utils import timezone
 
 from apps.attachments.models import Attachment
@@ -209,6 +210,8 @@ def _paid(p: dict) -> tuple[str, str]:
             tx.date = dt.date.fromisoformat(p.get('clientPaymentDate') or p.get('paymentDate') or timezone.localdate().isoformat())
             tx.account_id = tx.account_id or config.account_id  # type:ignore
             tx.save(update_fields=['status', 'date', 'account', 'updated_at'])
+            from apps.dunning.services import sync_cards_service
+            transaction.on_commit(sync_cards_service)  # paid: the dunning card closes now, not on the next board load
         # Asaas only issues NFS-e; the product NF-e (other half) goes to Bling when the company uses it, else stays pending
         product, _ = Invoice.objects.get_or_create(transaction=tx, kind=InvoiceKind.PRODUCT)
         from apps.integrations import bling

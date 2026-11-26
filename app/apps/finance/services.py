@@ -402,8 +402,10 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
     except IntegrityError:
         raise ValidationError('Invalid transaction')
     if was_planned and tx.status == TransactionStatus.REALIZED:
+        from apps.dunning.services import sync_cards_service
         from apps.integrations import bling
         bling.issue_on_realized([tx.pk])
+        transaction.on_commit(sync_cards_service)  # paid: the dunning card closes now, not on the next board load
     return tx
 
 
@@ -460,8 +462,10 @@ def bulk_update_transactions_service(*, user: User, ids: list[int], shift_days: 
     with transaction.atomic(), pghistory.context(user=user.pk):
         Transaction.objects.bulk_update(txs, update_fields, batch_size=500)
     if realized:
+        from apps.dunning.services import sync_cards_service
         from apps.integrations import bling
         bling.issue_on_realized(realized)
+        transaction.on_commit(sync_cards_service)  # paid: the dunning card closes now, not on the next board load
     return len(txs)
 
 

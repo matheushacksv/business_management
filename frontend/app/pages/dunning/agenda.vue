@@ -7,6 +7,7 @@ definePageMeta({ permission: ['dunning', 'view'] })
 const { api, unwrap, notifyError } = useApi()
 const auth = useAuth()
 const { stages, assignees } = useDunning()
+onMounted(() => notifyPaidOff(() => navigateTo('/dunning?outcome=resolved')).catch(notifyError))
 
 // Default: my activities, if I can be responsible
 const assignee = ref<number | undefined>(auth.can('dunning', 'change') ? auth.me.value?.id ?? undefined : undefined)

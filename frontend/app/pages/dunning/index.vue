@@ -12,7 +12,8 @@ const { stages, assignees } = useDunning()
 const canChange = computed(() => auth.can('dunning', 'change'))
 
 // Board = open cards; resolved / legal leave it (like won/lost on Pipedrive) and come back with the filter
-const filters = reactive({ outcome: 'open' as 'open' | 'resolved' | 'legal', search: '', company_id: [] as number[], assignee_id: undefined as number | undefined })
+const route = useRoute()
+const filters = reactive({ outcome: (route.query.outcome === 'resolved' ? 'resolved' : 'open') as 'open' | 'resolved' | 'legal', search: '', company_id: [] as number[], assignee_id: undefined as number | undefined })
 const items = ref<Card[]>([])
 const loading = ref(false)
 async function load() {
@@ -30,6 +31,7 @@ async function load() {
 let timer: ReturnType<typeof setTimeout> | undefined
 watch(filters, () => { clearTimeout(timer); timer = setTimeout(load, 300) }, { deep: true })
 onMounted(load)
+onMounted(() => notifyPaidOff(() => { filters.outcome = 'resolved' }).catch(notifyError))
 
 const OUTCOMES = [{ label: 'Em aberto', value: 'open' }, { label: 'Resolvidos', value: 'resolved' }, { label: 'Jurídico', value: 'legal' }]
 const sum = (list: Card[]) => list.reduce((s, c) => s + Number(c.overdue_amount), 0)
@@ -65,7 +67,6 @@ function openCard(id: number) {
   modalOpen.value = true
 }
 // /dunning?card=<id> (from the customer page) opens that card
-const route = useRoute()
 onMounted(() => { if (route.query.card) openCard(Number(route.query.card)) })
 const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(p => p[0]!.toUpperCase()).join('')
 </script>

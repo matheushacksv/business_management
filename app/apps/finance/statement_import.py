@@ -260,6 +260,8 @@ def commit_statement_service(*, user: User, account_id: int, lines: list[dict]) 
                 tx.status, tx.date, tx.account = TransactionStatus.REALIZED, line['date'], account
                 tx.save(update_fields=['status', 'date', 'account', 'updated_at'])
                 counts['settled'] += 1
+                from apps.dunning.services import sync_cards_service
+                transaction.on_commit(sync_cards_service)  # paid: the dunning card closes now, not on the next board load
             elif action == 'transfer':
                 other = companies.exclude(pk=company.pk).filter(pk=line.get('company_id')).first()
                 if other is None:
