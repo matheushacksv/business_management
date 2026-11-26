@@ -51,13 +51,13 @@ const pending = computed(() => checks.value.filter(c => c.required && !c.done).l
             :color="pending ? 'warning' : 'success'" variant="subtle" class="self-start" />
     <ul class="divide-y divide-muted rounded-xl ring ring-default">
       <li v-for="c in checks" :key="c.item_id" class="flex items-start gap-3 px-3 py-2.5 text-sm">
-        <UCheckbox :model-value="c.done" :disabled="!!c.auto || !canChange" class="mt-0.5"
+        <UCheckbox :model-value="c.done" :disabled="(!!c.auto && c.done && !c.checked_at) || !canChange" class="mt-0.5"
                    @update:model-value="(v: any) => toggle(c, !!v)" />
         <div class="min-w-0 flex-1">
           <p :class="c.done ? 'text-highlighted' : ''">
             {{ c.label }}<span v-if="c.required" class="text-error"> *</span>
           </p>
-          <p v-if="c.auto" class="text-xs text-dimmed">Automático</p>
+          <p v-if="c.auto && c.done && !c.checked_at" class="text-xs text-dimmed">Automático</p>
           <p v-else-if="c.done" class="text-xs text-dimmed">
             {{ c.checked_by_name }} · {{ formatDateTime(c.checked_at!) }}<template v-if="c.note"> · {{ c.note }}</template>
           </p>

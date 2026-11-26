@@ -220,7 +220,7 @@ def checklist_service(*, user: User, case_id: int, case: CollectionCase | None =
         check = checks.get(item.pk)
         result.append({
             'item_id': item.pk, 'label': item.label, 'required': item.required, 'auto': item.auto or None,
-            'done': auto[item.auto] if item.auto else check is not None,
+            'done': (item.auto and auto[item.auto]) or check is not None,  # automatic ones can also be ticked by hand
             'note': check.note if check else '',
             'checked_by_name': (check.checked_by.name or check.checked_by.email) if check and check.checked_by else None,
             'checked_at': check.checked_at if check else None,
@@ -231,8 +231,6 @@ def checklist_service(*, user: User, case_id: int, case: CollectionCase | None =
 def set_check_service(*, user: User, case_id: int, item_id: int, done: bool, note: str = '') -> list[dict]:
     case = get_case_service(user=user, case_id=case_id)
     item = ChecklistItem.objects.get(pk=item_id, active=True)
-    if item.auto:
-        raise ValidationError('Este item é marcado pelo sistema')
     with transaction.atomic(), pghistory.context(user=user.pk):
         if done:
             CaseCheck.objects.update_or_create(case=case, item=item, defaults={'note': note.strip(), 'checked_by': user})

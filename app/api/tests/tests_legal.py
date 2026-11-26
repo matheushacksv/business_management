@@ -184,9 +184,10 @@ class ChecklistTests(TestCase):
         self.assertIn('Contrato assinado', str(r.json()))
         items = self.client.get(f'/api/collection-case/{case_id}/checklist', headers=self.auth).json()
         self.assertTrue(next(i for i in items if i['auto'] == 'amounts')['done'])
-        auto = next(i for i in items if i['auto'] == 'contract')
-        self.assertEqual(self.client.put(f'/api/collection-case/{case_id}/checklist/{auto["item_id"]}', data={'done': True},
-                                         content_type='application/json', headers=self.auth).status_code, 400)
+        auto = next(i for i in items if i['auto'] == 'contract')  # not ticked by the system: by hand (e.g. paper contract)
+        r = self.client.put(f'/api/collection-case/{case_id}/checklist/{auto["item_id"]}', data={'done': True, 'note': 'físico'},
+                            content_type='application/json', headers=self.auth)
+        self.assertTrue(next(i for i in r.json() if i['auto'] == 'contract')['done'])
         # admin makes the automatic ones optional; manual ones get ticked; responsible set
         ChecklistItem.objects.filter(auto__in=['customer_data', 'contract', 'attempts']).update(required=False)
         for i in items:
