@@ -18,6 +18,21 @@ const comments = ref<Comment[]>([])
 const installments = ref<Transaction[]>([])
 const tab = ref('summary')
 const editing = ref(false)
+
+// Admins settle an installment here (same as on the transaction: Bling NF-e, dunning card)
+const realizing = ref<number | null>(null)
+async function realize(t: Transaction) {
+  realizing.value = t.id!
+  try {
+    await unwrap(api.PATCH('/api/transaction/{transaction_id}', { params: { path: { transaction_id: t.id! } }, body: { status: 'realized' } }))
+    await load()
+    emit('changed')
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    realizing.value = null
+  }
+}
 // Progress (comments) lives in its own column, always visible
 const tabs = [
   { label: 'Resumo', value: 'summary', icon: 'i-lucide-file-text' },
@@ -189,6 +204,8 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
               <span class="flex-1 truncate">{{ t.reference || t.subgroup_name }}</span>
               <SStatusBadge kind="status" :value="t.status" />
               <SMoney :value="t.amount" class="w-28 text-right" />
+              <UButton v-if="auth.me.value?.is_admin && t.status === 'planned'" icon="i-lucide-check" color="success" variant="ghost"
+                       size="xs" aria-label="Marcar como realizado" :loading="realizing === t.id" @click="realize(t)" />
             </li>
           </ul>
           <p v-else class="text-sm text-dimmed">Nenhuma parcela vinculada.</p>
