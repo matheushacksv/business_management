@@ -273,10 +273,22 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           <UButton type="submit" label="Comentar" icon="i-lucide-send" :loading="sending" :disabled="!text.trim()" class="self-end" />
         </form>
         <ul class="mt-4 max-h-[60dvh] space-y-3 overflow-y-auto">
-          <li v-for="c in comments" :key="c.id!" class="rounded-lg bg-elevated/50 p-3 text-sm ring ring-default">
-            <p class="mb-1 text-xs text-dimmed">{{ c.author_name ?? 'Sistema' }} · {{ new Date(c.created_at!).toLocaleString('pt-BR') }}</p>
-            <p class="whitespace-pre-line">{{ c.text }}</p>
-          </li>
+          <template v-for="c in comments" :key="c.id!">
+            <li v-if="c.is_log" class="flex gap-2 px-1 text-xs text-muted">
+              <UIcon name="i-lucide-history" class="mt-0.5 size-3.5 shrink-0 text-dimmed" />
+              <div class="min-w-0">
+                <p class="whitespace-pre-line">{{ c.text }}</p>
+                <p class="mt-0.5 text-dimmed">{{ c.author_name ?? 'Sistema' }} · {{ new Date(c.created_at!).toLocaleString('pt-BR') }}</p>
+              </div>
+            </li>
+            <li v-else class="rounded-lg bg-elevated/50 p-3 text-sm ring ring-default">
+              <p class="mb-1 flex items-center gap-1.5 text-xs text-dimmed">
+                <UIcon name="i-lucide-message-square" class="size-3.5" />
+                {{ c.author_name ?? 'Sistema' }} · {{ new Date(c.created_at!).toLocaleString('pt-BR') }}
+              </p>
+              <p class="whitespace-pre-line text-highlighted">{{ c.text }}</p>
+            </li>
+          </template>
         </ul>
       </SPanel>
       </div>

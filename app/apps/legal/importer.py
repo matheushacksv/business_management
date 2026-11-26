@@ -158,7 +158,7 @@ def import_collection(file, *, rows: set[int], default_company: Company, compani
                 company_id=company_id, contact_id=contact_id, type=TransactionType.INFLOW,
                 status=TransactionStatus.PLANNED, collection_case__isnull=True,
             ).update(collection_case=case)
-            CaseComment.objects.create(case=case, text=(
+            CaseComment.objects.create(case=case, is_log=True, text=(
                 f'Importado da planilha: {linked} parcela(s) em aberto vinculada(s). '
                 'Complete os campos obrigatórios (empresa, contato, o que foi entregue, link do drive).'))
             open_amount = sum((t.amount for t in case.transactions.filter(status=TransactionStatus.PLANNED)), Decimal('0'))

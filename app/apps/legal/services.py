@@ -36,7 +36,7 @@ def _check(case: CollectionCase) -> None:
 
 
 def _log(user: User, case: CollectionCase, text: str) -> None:
-    CaseComment.objects.create(case=case, author=user, text=text)
+    CaseComment.objects.create(case=case, author=user, text=text, is_log=True)
 
 
 def list_cases_service(*, user: User, stage=None, company_id=None, contact_id=None, search: str | None = None):

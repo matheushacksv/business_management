@@ -4807,6 +4807,11 @@ export interface components {
             /** Text */
             text: string;
             /**
+             * Is Log
+             * @default false
+             */
+            is_log: boolean;
+            /**
              * Created At
              * Format: date-time
              */

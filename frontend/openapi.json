@@ -18429,6 +18429,11 @@
       "title": "Text",
       "type": "string"
      },
+     "is_log": {
+      "default": false,
+      "title": "Is Log",
+      "type": "boolean"
+     },
      "created_at": {
       "format": "date-time",
       "title": "Created At",

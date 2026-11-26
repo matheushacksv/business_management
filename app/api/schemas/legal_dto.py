@@ -97,7 +97,7 @@ class CommentOut(ModelSchema):
 
     class Meta:
         model = CaseComment
-        fields = ['id', 'text', 'created_at']
+        fields = ['id', 'text', 'is_log', 'created_at']
 
     @staticmethod
     def resolve_author_name(obj: CaseComment) -> str | None:

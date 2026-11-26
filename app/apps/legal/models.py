@@ -68,6 +68,7 @@ class CaseComment(models.Model):
     case = models.ForeignKey(CollectionCase, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     text = models.TextField()
+    is_log = models.BooleanField(default=False)  # written by the system (stage, checklist, agreement...), not a person's note
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
