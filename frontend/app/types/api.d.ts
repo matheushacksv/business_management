@@ -1415,7 +1415,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/collection-case/stages": {
+    "/api/legal-stage": {
         parameters: {
             query?: never;
             header?: never;
@@ -1425,11 +1425,30 @@ export interface paths {
         /** List Stages Endpoint */
         get: operations["api_endpoints_legal_list_stages_endpoint"];
         put?: never;
-        post?: never;
+        /** Create Stage Endpoint */
+        post: operations["api_endpoints_legal_create_stage_endpoint"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/legal-stage/{stage_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Stage Endpoint */
+        delete: operations["api_endpoints_legal_delete_stage_endpoint"];
+        options?: never;
+        head?: never;
+        /** Update Stage Endpoint */
+        patch: operations["api_endpoints_legal_update_stage_endpoint"];
         trace?: never;
     };
     "/api/collection-case": {
@@ -4477,17 +4496,52 @@ export interface components {
             /** Items */
             items: components["schemas"]["HistoryEventOut"][];
         };
-        /** CaseStageOut */
-        CaseStageOut: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
+        /** LegalStageOut */
+        LegalStageOut: {
+            /** Name */
+            name: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /**
+             * Requires Agreement
+             * @default false
+             */
+            requires_agreement: boolean;
+            /**
+             * Requires Checklist
+             * @default false
+             */
+            requires_checklist: boolean;
+            /** Id */
+            id: number;
+        };
+        /** LegalStageIn */
+        LegalStageIn: {
+            /** Name */
+            name: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /**
+             * Requires Agreement
+             * @default false
+             */
+            requires_agreement: boolean;
+            /**
+             * Requires Checklist
+             * @default false
+             */
+            requires_checklist: boolean;
         };
         /** CaseFilters */
         CaseFilters: {
             /** Stage */
-            stage?: components["schemas"]["CaseStage"][] | null;
+            stage?: number[] | null;
             /** Company Id */
             company_id?: number[] | null;
             /** Contact Id */
@@ -4495,12 +4549,6 @@ export interface components {
             /** Search */
             search?: string | null;
         };
-        /**
-         * CaseStage
-         * @description Kanban columns of the legal team, in order.
-         * @enum {string}
-         */
-        CaseStage: "new" | "stand_by" | "requested" | "filed" | "in_progress" | "agreement" | "awaiting_judge" | "done";
         /** CaseOut */
         CaseOut: {
             /** Company Id */
@@ -4511,6 +4559,10 @@ export interface components {
             contact_id: number;
             /** Contact Name */
             contact_name: string;
+            /** Stage Id */
+            stage_id: number;
+            /** Stage Name */
+            stage_name: string;
             /** Open Amount */
             open_amount: string;
             /** Received Amount */
@@ -4537,13 +4589,10 @@ export interface components {
             summary?: string | null;
             /** Drive Link */
             drive_link?: string | null;
-            /**
-             * Stage
-             * @default new
-             */
-            stage: string;
             /** Agreement */
             agreement?: string | null;
+            /** Closed At */
+            closed_at?: string | null;
             /** Unrecoverable At */
             unrecoverable_at?: string | null;
             /**
@@ -4583,8 +4632,8 @@ export interface components {
              * Format: uri
              */
             drive_link: string;
-            /** @default new */
-            stage: components["schemas"]["CaseStage"];
+            /** Stage Id */
+            stage_id?: number | null;
             /**
              * Agreement
              * @default
@@ -4684,11 +4733,14 @@ export interface components {
             summary?: string | null;
             /** Drive Link */
             drive_link?: string | null;
-            stage?: components["schemas"]["CaseStage"] | null;
+            /** Stage Id */
+            stage_id?: number | null;
             /** Agreement */
             agreement?: string | null;
             /** Unrecoverable */
             unrecoverable?: boolean | null;
+            /** Closed */
+            closed?: boolean | null;
             /** Responsible Id */
             responsible_id?: number | null;
         };
@@ -8415,7 +8467,77 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CaseStageOut"][];
+                    "application/json": components["schemas"]["LegalStageOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_create_stage_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalStageIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalStageOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_delete_stage_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stage_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_endpoints_legal_update_stage_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stage_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalStageIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalStageOut"];
                 };
             };
         };
@@ -8423,7 +8545,7 @@ export interface operations {
     api_endpoints_legal_list_cases_endpoint: {
         parameters: {
             query?: {
-                stage?: components["schemas"]["CaseStage"][] | null;
+                stage?: number[] | null;
                 company_id?: number[] | null;
                 contact_id?: number | null;
                 search?: string | null;

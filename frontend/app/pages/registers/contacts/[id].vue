@@ -192,8 +192,8 @@ const cardColumns: TableColumn<Card>[] = [
 const caseColumns: TableColumn<Case>[] = [
   { accessorKey: 'created_at', header: 'Aberto em', cell: ({ row }) => formatDate(row.original.created_at) },
   { accessorKey: 'company_name', header: 'Empresa', meta: { class: { td: 'text-muted' } } },
-  { accessorKey: 'stage', header: 'Etapa', cell: ({ row }) => h('div', [
-    h('p', LABELS.caseStage[row.original.stage] ?? row.original.stage),
+  { accessorKey: 'stage_name', header: 'Etapa', cell: ({ row }) => h('div', [
+    h('p', row.original.closed_at ? 'Concluída' : row.original.stage_name),
     row.original.unrecoverable_at ? h('p', { class: 'text-xs text-error' }, 'Irrecuperável') : null,
   ]) },
   { accessorKey: 'responsible_name', header: 'Responsável', cell: ({ row }) => row.original.responsible_name ?? '—' },

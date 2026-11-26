@@ -22,7 +22,7 @@ from apps.companies.models import Company
 from apps.finance.importer import ENTRIES_SHEET, Entry, _contact_key, _text, parse_entry, read_plan
 from apps.finance.services import add_months
 from apps.finance.models import Contact, SubGroup, Transaction, TransactionStatus, TransactionType
-from apps.legal.models import CaseComment, CaseStage, CollectionCase
+from apps.legal.models import CaseComment, CollectionCase
 
 CASES_SHEET_PREFIX = 'Contratos Cancelados'
 STOPWORDS = {'de', 'do', 'da', 'dos', 'das', 'e', 'grupo', 'group', 'ltda', 'me'}
@@ -151,7 +151,7 @@ def import_collection(file, *, rows: set[int], default_company: Company, compani
             else:
                 summary = ''
             case = CollectionCase.objects.create(
-                company_id=company_id, contact_id=contact_id, stage=CaseStage.NEW, summary=summary,
+                company_id=company_id, contact_id=contact_id, summary=summary,
                 proposal_amount=row.contract if row else None, paid_amount=row.received if row else None,
             )
             linked = Transaction.objects.filter(

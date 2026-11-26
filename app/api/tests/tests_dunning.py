@@ -221,7 +221,7 @@ class DunningTests(TestCase):
         case = CollectionCase.objects.create(company=self.company, contact=self.client_)
         r = self.api('patch', f'/collection-case/{case.pk}', {'unrecoverable': True})
         self.assertEqual(r.status_code, 200, r.content)
-        self.assertEqual((r.json()['unrecoverable_at'], r.json()['unrecoverable_by_name'], r.json()['stage']),
-                         ('2026-11-20', 'admin@test.com', 'new'))
+        self.assertEqual((r.json()['unrecoverable_at'], r.json()['unrecoverable_by_name'], r.json()['stage_name']),
+                         ('2026-11-20', 'admin@test.com', 'Nova Ação'))
         r = self.api('patch', f'/collection-case/{case.pk}', {'unrecoverable': False})
         self.assertIsNone(r.json()['unrecoverable_at'])

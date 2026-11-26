@@ -88,7 +88,7 @@ async function setDone(done: boolean) {
   if (done && !await confirm({ title: 'Concluir ação?', confirmLabel: 'Concluir' })) return
   try {
     item.value = await unwrap(api.PATCH('/api/collection-case/{case_id}', {
-      params: { path: { case_id: props.caseId! } }, body: { stage: done ? 'done' : 'in_progress' },
+      params: { path: { case_id: props.caseId! } }, body: { closed: done },
     }))
     emit('changed')
   } catch (e) {
@@ -122,7 +122,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
 
 <template>
   <UModal v-model:open="open" :title="item?.contact_name ?? 'Ação'"
-          :description="item ? `${LABELS.caseStage[item.stage]} · ${item.company_name}` : undefined"
+          :description="item ? `${item.closed_at ? 'Concluída' : item.stage_name} · ${item.company_name}` : undefined"
           :ui="{ content: 'sm:max-w-6xl' }">
     <template #body>
       <USkeleton v-if="!item" class="h-40 w-full" />
@@ -168,9 +168,9 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </dl>
             <div class="flex gap-2">
               <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
-              <UButton v-if="canChange" :label="item.stage === 'done' ? 'Reabrir' : 'Concluir'"
-                       :icon="item.stage === 'done' ? 'i-lucide-rotate-ccw' : 'i-lucide-circle-check'" color="success" variant="soft"
-                       @click="setDone(item.stage !== 'done')" />
+              <UButton v-if="canChange" :label="item.closed_at ? 'Reabrir' : 'Concluir'"
+                       :icon="item.closed_at ? 'i-lucide-rotate-ccw' : 'i-lucide-circle-check'" color="success" variant="soft"
+                       @click="setDone(!item.closed_at)" />
               <UButton v-if="auth.can('legal', 'delete')" label="Excluir" icon="i-lucide-trash-2" color="error" variant="ghost" @click="remove" />
             </div>
           </template>

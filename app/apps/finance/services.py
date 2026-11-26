@@ -168,18 +168,18 @@ def is_judicial_name(name: str) -> bool:
 
 def _link_judicial(user: User | None, target: Contact, source_name: str, tx_ids: list[int]) -> None:
     """Inflows of a "- Acordo"/"(Ação)" duplicate keep their legal origin: they are linked to the
-    customer's collection case (the open one of that company, else a new one at "Acordo ou Sentença")."""
-    from apps.legal.models import CaseComment, CaseStage, CollectionCase  # local: legal depends on finance
+    customer's collection case (the open one of that company, else a new one at the agreement stage)."""
+    from apps.legal.models import CaseComment, CollectionCase, LegalStage  # local: legal depends on finance
 
     by_company: dict[int, list[int]] = {}
     for pk, company_id in Transaction.objects.filter(pk__in=tx_ids).values_list('pk', 'company_id'):
         by_company.setdefault(company_id, []).append(pk)
     for company_id, ids in by_company.items():
         cases = CollectionCase.objects.filter(company_id=company_id, contact=target).order_by('-updated_at')
-        case = cases.exclude(stage=CaseStage.DONE).first() or cases.first()
+        case = cases.filter(closed_at__isnull=True).first() or cases.first()
         if case is None:
             case = CollectionCase.objects.create(
-                company_id=company_id, contact=target, stage=CaseStage.AGREEMENT, created_by=user,
+                company_id=company_id, contact=target, stage=LegalStage.objects.filter(requires_agreement=True).first() or LegalStage.objects.first(), created_by=user,
                 agreement=f'Acordo importado da planilha (nome original: {source_name})',
             )
         Transaction.objects.filter(pk__in=ids).update(collection_case=case)

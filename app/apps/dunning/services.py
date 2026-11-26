@@ -357,7 +357,7 @@ def situations_service(*, user: User, contact_ids=None) -> dict[int, str]:
     """contact_id -> 'ok' | 'attention' | 'critical', for customers (contacts with inflows or sales).
     Red: open legal action (if `legal_critical`), late for `critical_days` or more, or card in a critical stage.
     Yellow: late for `attention_days` or more, open legal action otherwise, or an open card. Unrecoverable is a separate mark (legal) and changes nothing here."""
-    from apps.legal.models import CaseStage, CollectionCase
+    from apps.legal.models import CollectionCase
     from apps.sales.models import Sale
 
     today = timezone.localdate()
@@ -383,7 +383,7 @@ def situations_service(*, user: User, contact_ids=None) -> dict[int, str]:
             mark(contact_id, 'critical' if since <= critical_since else 'attention')
     for contact_id, severity in scoped(Card.objects.filter(closed_at__isnull=True)).values_list('contact_id', 'stage__severity'):
         mark(contact_id, 'critical' if severity == Severity.CRITICAL else 'attention')
-    for contact_id in scoped(CollectionCase.objects.exclude(stage=CaseStage.DONE)).values_list('contact_id', flat=True):
+    for contact_id in scoped(CollectionCase.objects.filter(closed_at__isnull=True)).values_list('contact_id', flat=True):
         mark(contact_id, 'critical' if config.legal_critical else 'attention')
     return result
 

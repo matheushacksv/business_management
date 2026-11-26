@@ -51,6 +51,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
 
   const legal = section('Jurídico', [
     can('legal') && { label: 'Ações', icon: 'i-lucide-scale', to: '/legal' },
+    can('legal', 'change') && { label: 'Etapas', icon: 'i-lucide-columns-3', to: '/legal/stages' },
     !!auth.me.value?.is_admin && { label: 'Checklist', icon: 'i-lucide-list-checks', to: '/legal/checklist' },
   ])
 

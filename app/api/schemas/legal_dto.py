@@ -5,7 +5,7 @@ from ninja import ModelSchema, Schema
 from pydantic import Field, HttpUrl
 import datetime as dt
 
-from apps.legal.models import AutoCheck, CaseComment, CaseStage, ChecklistItem, CollectionCase
+from apps.legal.models import AutoCheck, CaseComment, ChecklistItem, CollectionCase
 
 Money = Field(ge=0, max_digits=14, decimal_places=2)
 Required = Field(min_length=1)
@@ -22,7 +22,7 @@ class CreateCase(Schema):
     paid_amount: Decimal = Money
     summary: str = Required
     drive_link: HttpUrl
-    stage: CaseStage = CaseStage.NEW
+    stage_id: int | None = None  # default: first stage
     agreement: str = ''
 
 
@@ -34,9 +34,10 @@ class PatchCase(Schema):
     paid_amount: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
     summary: str | None = Field(None, min_length=1)
     drive_link: HttpUrl | None = None
-    stage: CaseStage | None = None
+    stage_id: int | None = None
     agreement: str | None = None
     unrecoverable: bool | None = None
+    closed: bool | None = None
     responsible_id: int | None = None
 
 
@@ -45,6 +46,8 @@ class CaseOut(ModelSchema):
     company_name: str = Field(alias='company.name')
     contact_id: int
     contact_name: str = Field(alias='contact.name')
+    stage_id: int
+    stage_name: str = Field(alias='stage.name')
     open_amount: Decimal  # linked installments still planned: what is owed
     received_amount: Decimal  # linked installments realized
     unrecoverable_by_name: str | None = None
@@ -54,7 +57,7 @@ class CaseOut(ModelSchema):
     class Meta:
         model = CollectionCase
         fields = ['id', 'client_company', 'contact_info', 'delivered', 'proposal_amount', 'paid_amount',
-                  'summary', 'drive_link', 'stage', 'agreement', 'unrecoverable_at', 'created_at', 'updated_at']
+                  'summary', 'drive_link', 'agreement', 'closed_at', 'unrecoverable_at', 'created_at', 'updated_at']
 
     @staticmethod
     def resolve_responsible_name(obj) -> str | None:
@@ -68,7 +71,7 @@ class CaseOut(ModelSchema):
 
 
 class CaseFilters(Schema):
-    stage: list[CaseStage] | None = None
+    stage: list[int] | None = None
     company_id: list[int] | None = None
     contact_id: int | None = None
     search: str | None = None
@@ -90,9 +93,15 @@ class CommentOut(ModelSchema):
         return (obj.author.name or obj.author.email) if obj.author else None  # type:ignore
 
 
-class CaseStageOut(Schema):
-    value: str
-    label: str
+class LegalStageIn(Schema):
+    name: str = Field(min_length=1, max_length=60)
+    position: int = Field(0, ge=0)
+    requires_agreement: bool = False
+    requires_checklist: bool = False
+
+
+class LegalStageOut(LegalStageIn):
+    id: int
 
 
 

@@ -3,17 +3,23 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 
-class CaseStage(models.TextChoices):
-    """Kanban columns of the legal team, in order."""
+class LegalStage(models.Model):
+    """Configurable kanban column of the legal team. New cases enter the first one."""
 
-    NEW = 'new', 'Nova Ação'
-    STAND_BY = 'stand_by', 'Stand By'
-    REQUESTED = 'requested', 'Solicitada ao Jurídico'
-    FILED = 'filed', 'Ação Protocolada'
-    IN_PROGRESS = 'in_progress', 'Em andamento'
-    AGREEMENT = 'agreement', 'Acordo ou Sentença'
-    AWAITING_JUDGE = 'awaiting_judge', 'Aguardando Juiz'
-    DONE = 'done', 'Concluída'
+    name = models.CharField(max_length=60)
+    position = models.PositiveSmallIntegerField(default=0)
+    requires_agreement = models.BooleanField(default=False)  # entering it needs the agreement/sentence text
+    requires_checklist = models.BooleanField(default=False)  # entering it (from one without) needs the required checklist (PDF 11.2)
+
+    class Meta:
+        ordering = ['position', 'id']
+
+    def __str__(self):
+        return self.name
+
+
+def first_stage() -> int | None:
+    return LegalStage.objects.values_list('pk', flat=True).first()
 
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
@@ -34,8 +40,9 @@ class CollectionCase(models.Model):
     paid_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     summary = models.TextField(blank=True)  # "Resumo da situação do cliente"
     drive_link = models.URLField(max_length=500, blank=True)
-    stage = models.CharField(max_length=20, choices=CaseStage.choices, default=CaseStage.NEW)
-    agreement = models.TextField(blank=True)  # required from the "Acordo ou Sentença" stage on
+    stage = models.ForeignKey(LegalStage, on_delete=models.PROTECT, related_name='cases', default=first_stage)
+    closed_at = models.DateField(null=True, blank=True)  # concluded: off the kanban, keeps its last stage
+    agreement = models.TextField(blank=True)  # required by stages with requires_agreement
     # Loss classification, apart from the stage: sent to legal is not the same as unrecoverable (PDF 15)
     unrecoverable_at = models.DateField(null=True, blank=True)
     unrecoverable_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')

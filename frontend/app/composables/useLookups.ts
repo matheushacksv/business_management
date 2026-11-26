@@ -12,6 +12,7 @@ interface Lookups {
   plans?: S['PlanOut'][]
   salespeople?: S['SalespersonOut'][]
   users?: S['UserOut'][]
+  legalStages?: S['LegalStageOut'][]
 }
 
 /**
@@ -32,6 +33,7 @@ export function useLookups() {
     plans: () => unwrap(api.GET('/api/plan', { params: { query: {} } })),
     salespeople: () => unwrap(api.GET('/api/salesperson', { params: { query: {} } })),
     users: () => unwrap(api.GET('/api/user')),
+    legalStages: () => unwrap(api.GET('/api/legal-stage')),
   }
 
   async function ensure<K extends keyof Lookups>(...keys: K[]) {
@@ -59,6 +61,7 @@ export function useLookups() {
     plans: computed<Option[]>(() => (cache.value.plans ?? []).map(p => ({ label: p.name, value: p.id! }))),
     salespeople: computed<Option[]>(() => (cache.value.salespeople ?? []).map(p => ({ label: p.name, value: p.id! }))),
     users: computed<Option[]>(() => (cache.value.users ?? []).map(u => ({ label: u.name || u.email, value: u.id! }))),
+    legalStages: computed<Option[]>(() => (cache.value.legalStages ?? []).map(s => ({ label: s.name, value: s.id! }))),
   }
 
   function groupLabel(value?: string | null) {

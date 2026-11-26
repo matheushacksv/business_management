@@ -62,7 +62,7 @@ class ContactMergeTests(TestCase):
         services.merge_contacts_service(user=self.admin, target_id=franciele.pk, source_ids=[agreement.pk])
 
         case = CollectionCase.objects.get(contact=franciele)
-        self.assertEqual(case.stage, 'agreement')
+        self.assertEqual(case.stage.name, 'Acordo ou Sentença')
         self.assertIn('Franciele Tatiane Advogada - Acordo Judicial', case.agreement)
         for tx, case_id in ((normal, None), (paid, case.pk), (planned, case.pk)):
             tx.refresh_from_db()

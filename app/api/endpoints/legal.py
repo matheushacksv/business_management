@@ -2,12 +2,12 @@ from django.db.models import Q
 from ninja import Query, Router
 
 from api.schemas.legal_dto import (
-    CaseFilters, CaseOut, CaseStageOut, CheckOut, ChecklistItemIn, ChecklistItemOut, CommentOut, CreateCase, CreateComment,
-    PatchCase, PrefillOut, ResponsibleOut, SetCheck,
+    CaseFilters, CaseOut, CheckOut, ChecklistItemIn, ChecklistItemOut, CommentOut, CreateCase, CreateComment,
+    LegalStageIn, LegalStageOut, PatchCase, PrefillOut, ResponsibleOut, SetCheck,
 )
 from api.schemas.transactions_dto import TransactionOut
 from apps.legal import services
-from apps.legal.models import CaseStage, ChecklistItem
+from apps.legal.models import ChecklistItem, LegalStage
 from apps.users.models import Role, User
 from apps.users.permissions import CHANGE, CREATE, DELETE, VIEW, require_permission
 
@@ -23,10 +23,29 @@ def _clean(data) -> dict:
     return fields
 
 
-@router.get('/collection-case/stages', response=list[CaseStageOut])
+@router.get('/legal-stage', response=list[LegalStageOut])
 @require_permission('legal', VIEW)
 def list_stages_endpoint(request):
-    return [{'value': s.value, 'label': s.label} for s in CaseStage]
+    return LegalStage.objects.all()
+
+
+@router.post('/legal-stage', response={201: LegalStageOut})
+@require_permission('legal', CHANGE)
+def create_stage_endpoint(request, data: LegalStageIn):
+    return 201, services.save_stage_service(user=request.user, **data.dict())
+
+
+@router.patch('/legal-stage/{stage_id}', response=LegalStageOut)
+@require_permission('legal', CHANGE)
+def update_stage_endpoint(request, stage_id: int, data: LegalStageIn):
+    return services.save_stage_service(user=request.user, stage_id=stage_id, **data.dict())
+
+
+@router.delete('/legal-stage/{stage_id}', response={204: None})
+@require_permission('legal', DELETE)
+def delete_stage_endpoint(request, stage_id: int):
+    services.delete_stage_service(user=request.user, stage_id=stage_id)
+    return 204, None
 
 
 @router.get('/collection-case', response=list[CaseOut])

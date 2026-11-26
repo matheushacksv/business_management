@@ -9,7 +9,7 @@ const emit = defineEmits<{ saved: [id: number]; cancel: [] }>()
 
 const { api, unwrap, notifyError, notifySuccess } = useApi()
 const lookups = useLookups()
-lookups.ensure('companies').catch(notifyError)
+lookups.ensure('companies', 'legalStages').catch(notifyError)
 
 const c = props.item
 const state = reactive({
@@ -22,7 +22,7 @@ const state = reactive({
   paid_amount: c?.paid_amount != null ? Number(c.paid_amount) : (undefined as number | undefined),
   summary: c?.summary ?? props.summary ?? '',
   drive_link: c?.drive_link ?? '',
-  stage: c?.stage ?? 'new',
+  stage_id: c?.stage_id as number | undefined,
   agreement: c?.agreement ?? '',
 })
 watch(lookups.options.companies, (list) => {
@@ -47,10 +47,11 @@ watch(() => [state.contact_id, state.company_id], async ([contactId, companyId])
   }
 }, { immediate: true })
 
-const OPEN_STAGES = ['new', 'stand_by', 'requested']  // from "Ação Protocolada" on: checklist (Drawer)
-const stageOptions = Object.entries(LABELS.caseStage).map(([value, label]) => ({ value, label }))
-  .filter(o => c || OPEN_STAGES.includes(o.value))
-const needsAgreement = computed(() => state.stage === 'agreement')
+// A new case cannot open in a stage that requires the checklist (ticked later, in the Drawer)
+const stageList = computed(() => (lookups.cache.value.legalStages ?? []).filter(s => c || !s.requires_checklist))
+const stageOptions = computed(() => stageList.value.map(s => ({ label: s.name, value: s.id })))
+watch(stageList, list => { state.stage_id ??= list[0]?.id }, { immediate: true })
+const needsAgreement = computed(() => !!stageList.value.find(s => s.id === state.stage_id)?.requires_agreement)
 const saving = ref(false)
 
 const missing = computed(() => {
@@ -73,7 +74,7 @@ async function submit() {
   const body = {
     client_company: state.client_company, contact_info: state.contact_info, delivered: state.delivered,
     proposal_amount: state.proposal_amount!.toFixed(2), paid_amount: state.paid_amount!.toFixed(2),
-    summary: state.summary, drive_link: state.drive_link.trim(), stage: state.stage as any, agreement: state.agreement,
+    summary: state.summary, drive_link: state.drive_link.trim(), stage_id: state.stage_id, agreement: state.agreement,
   }
   try {
     const saved = c
@@ -124,7 +125,7 @@ async function submit() {
       <USelect v-model="state.company_id" :items="lookups.options.companies.value" :disabled="!!companyId" class="w-full" />
     </UFormField>
     <UFormField label="Etapa" :class="c ? 'sm:col-span-2' : ''">
-      <USelect v-model="state.stage" :items="stageOptions" class="w-full" />
+      <USelect v-model="state.stage_id" :items="stageOptions" class="w-full" />
     </UFormField>
     <UFormField v-if="needsAgreement || state.agreement" label="Acordo ou sentença" :required="needsAgreement" class="sm:col-span-2">
       <UTextarea v-model="state.agreement" :rows="2" autoresize

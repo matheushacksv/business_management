@@ -1,0 +1,40 @@
+import apps.legal.models
+import django.db.models.deletion
+import pgtrigger.compiler
+import pgtrigger.migrations
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ('legal', '0005_legal_stages_data'),
+    ]
+
+    operations = [
+        migrations.RemoveField(model_name='collectioncase', name='stage'),
+        migrations.RenameField(model_name='collectioncase', old_name='stage_new', new_name='stage'),
+        migrations.AlterField(
+            model_name='collectioncase',
+            name='stage',
+            field=models.ForeignKey(default=apps.legal.models.first_stage, on_delete=django.db.models.deletion.PROTECT, related_name='cases', to='legal.legalstage'),
+        ),
+        migrations.RemoveField(model_name='collectioncaseevent', name='stage'),
+        migrations.RenameField(model_name='collectioncaseevent', old_name='stage_new', new_name='stage'),
+        migrations.AlterField(
+            model_name='collectioncaseevent',
+            name='stage',
+            field=models.ForeignKey(db_constraint=False, default=apps.legal.models.first_stage, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', related_query_name='+', to='legal.legalstage'),
+        ),
+        pgtrigger.migrations.AddTrigger(
+            model_name='collectioncase',
+            trigger=pgtrigger.compiler.Trigger(name='insert_insert', sql=pgtrigger.compiler.UpsertTriggerSql(func='INSERT INTO "legal_collectioncaseevent" ("agreement", "client_company", "closed_at", "company_id", "contact_id", "contact_info", "created_at", "created_by_id", "delivered", "drive_link", "id", "paid_amount", "pgh_context_id", "pgh_created_at", "pgh_label", "pgh_obj_id", "proposal_amount", "responsible_id", "stage_id", "summary", "unrecoverable_at", "unrecoverable_by_id", "updated_at") VALUES (NEW."agreement", NEW."client_company", NEW."closed_at", NEW."company_id", NEW."contact_id", NEW."contact_info", NEW."created_at", NEW."created_by_id", NEW."delivered", NEW."drive_link", NEW."id", NEW."paid_amount", _pgh_attach_context(), NOW(), \'insert\', NEW."id", NEW."proposal_amount", NEW."responsible_id", NEW."stage_id", NEW."summary", NEW."unrecoverable_at", NEW."unrecoverable_by_id", NEW."updated_at"); RETURN NULL;', hash='77beba0a525bbfc60205e6a3d9174039d81c815b', operation='INSERT', pgid='pgtrigger_insert_insert_6c51b', table='legal_collectioncase', when='AFTER')),
+        ),
+        pgtrigger.migrations.AddTrigger(
+            model_name='collectioncase',
+            trigger=pgtrigger.compiler.Trigger(name='update_update', sql=pgtrigger.compiler.UpsertTriggerSql(condition='WHEN (OLD.* IS DISTINCT FROM NEW.*)', func='INSERT INTO "legal_collectioncaseevent" ("agreement", "client_company", "closed_at", "company_id", "contact_id", "contact_info", "created_at", "created_by_id", "delivered", "drive_link", "id", "paid_amount", "pgh_context_id", "pgh_created_at", "pgh_label", "pgh_obj_id", "proposal_amount", "responsible_id", "stage_id", "summary", "unrecoverable_at", "unrecoverable_by_id", "updated_at") VALUES (NEW."agreement", NEW."client_company", NEW."closed_at", NEW."company_id", NEW."contact_id", NEW."contact_info", NEW."created_at", NEW."created_by_id", NEW."delivered", NEW."drive_link", NEW."id", NEW."paid_amount", _pgh_attach_context(), NOW(), \'update\', NEW."id", NEW."proposal_amount", NEW."responsible_id", NEW."stage_id", NEW."summary", NEW."unrecoverable_at", NEW."unrecoverable_by_id", NEW."updated_at"); RETURN NULL;', hash='982dcef0ebf519e53361f0a38a06165d045cbef4', operation='UPDATE', pgid='pgtrigger_update_update_66b82', table='legal_collectioncase', when='AFTER')),
+        ),
+        pgtrigger.migrations.AddTrigger(
+            model_name='collectioncase',
+            trigger=pgtrigger.compiler.Trigger(name='delete_delete', sql=pgtrigger.compiler.UpsertTriggerSql(func='INSERT INTO "legal_collectioncaseevent" ("agreement", "client_company", "closed_at", "company_id", "contact_id", "contact_info", "created_at", "created_by_id", "delivered", "drive_link", "id", "paid_amount", "pgh_context_id", "pgh_created_at", "pgh_label", "pgh_obj_id", "proposal_amount", "responsible_id", "stage_id", "summary", "unrecoverable_at", "unrecoverable_by_id", "updated_at") VALUES (OLD."agreement", OLD."client_company", OLD."closed_at", OLD."company_id", OLD."contact_id", OLD."contact_info", OLD."created_at", OLD."created_by_id", OLD."delivered", OLD."drive_link", OLD."id", OLD."paid_amount", _pgh_attach_context(), NOW(), \'delete\', OLD."id", OLD."proposal_amount", OLD."responsible_id", OLD."stage_id", OLD."summary", OLD."unrecoverable_at", OLD."unrecoverable_by_id", OLD."updated_at"); RETURN NULL;', hash='398eefe805cb5adf75c615ca80fae13faa25af9b', operation='DELETE', pgid='pgtrigger_delete_delete_a76d5', table='legal_collectioncase', when='AFTER')),
+        ),
+    ]

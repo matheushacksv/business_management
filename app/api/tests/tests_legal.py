@@ -7,8 +7,12 @@ from ninja_jwt.tokens import AccessToken
 from apps.companies.models import Company
 from apps.finance import selectors, services
 from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
-from apps.legal.models import CaseStage, ChecklistItem, CollectionCase
+from apps.legal.models import ChecklistItem, CollectionCase, LegalStage
 from apps.users.models import Role, User
+
+
+def st(name):  # stages seeded by migration 0005
+    return LegalStage.objects.get(name=name).pk
 
 
 def auth_for(user):
@@ -90,12 +94,12 @@ class CollectionCaseTests(TestCase):
     def test_agreement_stage_requires_agreement_and_logs_moves(self):
         ChecklistItem.objects.update(required=False)  # checklist: ChecklistTests
         case_id = self.create().json()['id']
-        self.assertEqual(self.patch(case_id, stage=CaseStage.FILED).status_code, 200)
-        self.assertEqual(self.patch(case_id, stage=CaseStage.AGREEMENT).status_code, 400)
+        self.assertEqual(self.patch(case_id, stage_id=st('Ação Protocolada')).status_code, 200)
+        self.assertEqual(self.patch(case_id, stage_id=st('Acordo ou Sentença')).status_code, 400)
         agreement = 'R$ 20.000,00 em 10x de 2.000, primeiro vencimento 10/12'
-        response = self.patch(case_id, stage=CaseStage.AGREEMENT, agreement=agreement)
+        response = self.patch(case_id, stage_id=st('Acordo ou Sentença'), agreement=agreement)
         self.assertEqual(response.status_code, 200, response.content)
-        self.assertEqual(response.json()['stage'], 'agreement')
+        self.assertEqual(response.json()['stage_name'], 'Acordo ou Sentença')
 
         self.client.post(f'/api/collection-case/{case_id}/comments', data={'text': 'Audiência marcada'},
                          content_type='application/json', headers=self.auth)
@@ -106,6 +110,21 @@ class CollectionCaseTests(TestCase):
         self.assertTrue(texts[2].startswith('Etapa: Nova Ação → Ação Protocolada'))
         self.assertEqual(comments[0]['author_name'], 'admin@test.com')
 
+    def test_close_reopen_and_stage_setup(self):
+        case_id = self.create().json()['id']
+        r = self.patch(case_id, closed=True)
+        self.assertEqual((r.json()['closed_at'] is not None, r.json()['stage_name']), (True, 'Nova Ação'))  # keeps its stage
+        self.assertIsNone(self.patch(case_id, closed=False).json()['closed_at'])
+        # a new stage with the agreement rule
+        new = self.client.post('/api/legal-stage', data={'name': 'Mediação', 'position': 1, 'requires_agreement': True},
+                               content_type='application/json', headers=self.auth).json()
+        self.assertEqual(self.patch(case_id, stage_id=new['id']).status_code, 400)  # agreement missing
+        self.assertEqual(self.patch(case_id, stage_id=new['id'], agreement='Acordo em 3x').status_code, 200)
+        self.assertEqual(self.client.delete(f'/api/legal-stage/{new["id"]}', headers=self.auth).status_code, 400)  # has a case
+        self.patch(case_id, closed=True)
+        self.assertEqual(self.client.delete(f'/api/legal-stage/{new["id"]}', headers=self.auth).status_code, 204)
+        self.assertEqual(CollectionCase.objects.get(pk=case_id).stage.name, 'Nova Ação')  # concluded case moved
+
     def test_delete_returns_installments_to_reports(self):
         case_id = self.create().json()['id']
         response = self.client.delete(f'/api/collection-case/{case_id}', headers=self.auth)
@@ -115,9 +134,9 @@ class CollectionCaseTests(TestCase):
 
     def test_list_filters_transactions_and_scope(self):
         case_id = self.create().json()['id']
-        listed = self.client.get('/api/collection-case', {'stage': 'new', 'search': 'mar'}, headers=self.auth).json()
+        listed = self.client.get('/api/collection-case', {'stage': st('Nova Ação'), 'search': 'mar'}, headers=self.auth).json()
         self.assertEqual([c['id'] for c in listed], [case_id])
-        self.assertEqual(self.client.get('/api/collection-case', {'stage': 'done'}, headers=self.auth).json(), [])
+        self.assertEqual(self.client.get('/api/collection-case', {'stage': st('Aguardando Juiz')}, headers=self.auth).json(), [])
         txs = self.client.get(f'/api/collection-case/{case_id}/transactions', headers=self.auth).json()
         self.assertEqual([t['id'] for t in txs], [self.open1.pk, self.open2.pk])
         self.assertEqual(txs[0]['collection_case_id'], case_id)
@@ -126,7 +145,7 @@ class CollectionCaseTests(TestCase):
         lawyer.companies.add(self.b)  # other company: does not see the case
         self.auth = auth_for(lawyer)
         self.assertEqual(self.client.get('/api/collection-case', headers=self.auth).json(), [])
-        self.assertEqual(self.patch(case_id, stage=CaseStage.FILED).status_code, 404)
+        self.assertEqual(self.patch(case_id, stage_id=st('Ação Protocolada')).status_code, 404)
 
     def test_permissions(self):
         accountant = User.objects.create_user(email='acc@test.com', password='Str@ngPassw8rd2026', role=Role.ACCOUNTANT)
@@ -137,8 +156,8 @@ class CollectionCaseTests(TestCase):
         self.auth = auth_for(manager)
         self.assertEqual(self.client.get('/api/collection-case', headers=self.auth).status_code, 200)
         self.assertEqual(self.create().status_code, 403)
-        stages = self.client.get('/api/collection-case/stages', headers=self.auth).json()
-        self.assertEqual(len(stages), 8)
+        stages = self.client.get('/api/legal-stage', headers=self.auth).json()
+        self.assertEqual(len(stages), 7)
 
 
 class ChecklistTests(TestCase):
@@ -159,8 +178,8 @@ class ChecklistTests(TestCase):
 
     def test_filed_needs_required_items(self):
         case_id = self.create().json()['id']
-        self.assertEqual(self.create(stage='filed').status_code, 400)
-        r = self.patch(case_id, {'stage': 'filed'})
+        self.assertEqual(self.create(stage_id=st('Ação Protocolada')).status_code, 400)
+        r = self.patch(case_id, {'stage_id': st('Ação Protocolada')})
         self.assertEqual(r.status_code, 400)
         self.assertIn('Contrato assinado', str(r.json()))
         items = self.client.get(f'/api/collection-case/{case_id}/checklist', headers=self.auth).json()
@@ -175,9 +194,9 @@ class ChecklistTests(TestCase):
                 r = self.client.put(f'/api/collection-case/{case_id}/checklist/{i["item_id"]}', data={'done': True, 'note': 'ok'},
                                     content_type='application/json', headers=self.auth)
                 self.assertEqual(r.status_code, 200, r.content)
-        self.assertEqual(self.patch(case_id, {'stage': 'filed'}).status_code, 400)  # responsible missing
+        self.assertEqual(self.patch(case_id, {'stage_id': st('Ação Protocolada')}).status_code, 400)  # responsible missing
         self.assertEqual(self.patch(case_id, {'responsible_id': self.admin.pk}).json()['responsible_name'], 'admin@test.com')
-        self.assertEqual(self.patch(case_id, {'stage': 'filed'}).status_code, 200)
+        self.assertEqual(self.patch(case_id, {'stage_id': st('Ação Protocolada')}).status_code, 200)
         self.assertEqual(self.patch(case_id, {'summary': 'Ainda devendo'}).status_code, 200)
 
     def test_items_admin_only(self):

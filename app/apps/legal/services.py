@@ -9,15 +9,11 @@ from django.utils import timezone
 
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, Transaction, TransactionStatus, TransactionType
-from apps.legal.models import AutoCheck, CaseCheck, CaseComment, CaseStage, ChecklistItem, CollectionCase
+from apps.legal.models import AutoCheck, CaseCheck, CaseComment, ChecklistItem, CollectionCase, LegalStage
 from apps.users.models import User
 
 MONEY = DecimalField(max_digits=16, decimal_places=2)
 TEXT_FIELDS = ('client_company', 'contact_info', 'delivered', 'summary', 'drive_link', 'agreement')
-AGREEMENT_STAGES = {CaseStage.AGREEMENT}
-_ORDER = list(CaseStage.values)
-# From "Ação Protocolada" on, the required checklist items must be done (PDF 11.2)
-LOCKED_STAGES = set(_ORDER[_ORDER.index(CaseStage.FILED):])
 
 
 def _linked(status: str):
@@ -29,11 +25,11 @@ def _cases_for(user: User):
     return (CollectionCase.objects.filter(company__in=list_companies_service(user=user))
             .annotate(open_amount=_linked(TransactionStatus.PLANNED),  # still owed
                       received_amount=_linked(TransactionStatus.REALIZED))
-            .select_related('company', 'contact', 'unrecoverable_by', 'responsible'))
+            .select_related('company', 'contact', 'stage', 'unrecoverable_by', 'responsible'))
 
 
 def _check(case: CollectionCase) -> None:
-    if case.stage in AGREEMENT_STAGES and not case.agreement.strip():
+    if case.stage.requires_agreement and not case.agreement.strip():
         raise ValidationError('Describe the agreement or sentence (amount, installments, first due date)')
 
 
@@ -44,7 +40,7 @@ def _log(user: User, case: CollectionCase, text: str) -> None:
 def list_cases_service(*, user: User, stage=None, company_id=None, contact_id=None, search: str | None = None):
     qs = _cases_for(user)
     if stage:
-        qs = qs.filter(stage__in=stage)
+        qs = qs.filter(stage_id__in=stage)
     if company_id:
         qs = qs.filter(company_id__in=company_id)
     if contact_id:
@@ -67,17 +63,21 @@ def create_case_service(*, user: User, company_id: int, contact_id: int, **field
     for field in TEXT_FIELDS:
         if field in fields:
             fields[field] = fields[field].strip()
-    case = CollectionCase(company=company, contact_id=contact_id, created_by=user, **fields)
+    stage_id = fields.pop('stage_id', None)
+    stage = LegalStage.objects.filter(pk=stage_id).first() if stage_id else LegalStage.objects.first()
+    if stage is None:
+        raise ValidationError('Etapa não existe')
+    case = CollectionCase(company=company, contact_id=contact_id, stage=stage, created_by=user, **fields)
     _check(case)
-    if case.stage in LOCKED_STAGES:
-        raise ValidationError('Abra o caso numa etapa anterior a "Ação Protocolada" e complete o checklist')
+    if stage.requires_checklist:
+        raise ValidationError(f'Abra o caso numa etapa sem checklist obrigatório e complete o checklist antes de "{stage.name}"')
     with transaction.atomic(), pghistory.context(user=user.pk):
         case.save()
         linked = Transaction.objects.filter(
             company=company, contact_id=contact_id, type=TransactionType.INFLOW,
             status=TransactionStatus.PLANNED, collection_case__isnull=True,
         ).update(collection_case=case)
-        _log(user, case, f'Caso aberto em "{case.get_stage_display()}"; {linked} parcela(s) em aberto vinculada(s).')  # type:ignore
+        _log(user, case, f'Caso aberto em "{stage.name}"; {linked} parcela(s) em aberto vinculada(s).')
     return get_case_service(user=user, case_id=case.pk)
 
 
@@ -86,7 +86,13 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
     case = get_case_service(user=user, case_id=case_id)
     old_stage = case.stage
     unrecoverable = fields.pop('unrecoverable', None)
+    closed = fields.pop('closed', None)
     log = []
+    if closed is not None and closed != bool(case.closed_at):
+        fields['closed_at'] = timezone.localdate() if closed else None
+        log.append('Caso concluído' if closed else 'Caso reaberto')
+    if 'stage_id' in fields and not LegalStage.objects.filter(pk=fields['stage_id']).exists():
+        raise ValidationError('Etapa não existe')
     if unrecoverable is not None and unrecoverable != bool(case.unrecoverable_at):
         fields.update(unrecoverable_at=timezone.localdate() if unrecoverable else None,
                       unrecoverable_by=user if unrecoverable else None)
@@ -100,15 +106,15 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
     for field, value in fields.items():
         setattr(case, field, value)
     _check(case)
-    if case.stage in LOCKED_STAGES and old_stage not in LOCKED_STAGES:
+    if case.stage.requires_checklist and not old_stage.requires_checklist:
         missing = [c['label'] for c in checklist_service(user=user, case_id=case.pk, case=case) if c['required'] and not c['done']]
         if missing:
             raise ValidationError(f'Checklist incompleto: {"; ".join(missing)}')
     with transaction.atomic(), pghistory.context(user=user.pk):
         case.save(update_fields=[*fields, 'updated_at'])  # responsible_id: Django accepts the attname
         if case.stage != old_stage:
-            text = f'Etapa: {CaseStage(old_stage).label} → {CaseStage(case.stage).label}'
-            if case.stage in AGREEMENT_STAGES:
+            text = f'Etapa: {old_stage.name} → {case.stage.name}'
+            if case.stage.requires_agreement:
                 text += f'\nAcordo: {case.agreement}'
             _log(user, case, text)
         for text in log:
@@ -234,3 +240,26 @@ def set_check_service(*, user: User, case_id: int, item_id: int, done: bool, not
         elif CaseCheck.objects.filter(case=case, item=item).delete()[0]:
             _log(user, case, f'Checklist: desmarcado {item.label}')
     return checklist_service(user=user, case_id=case.pk, case=case)
+
+
+# Stages (kanban columns)
+
+def save_stage_service(*, user: User, stage_id: int | None = None, **fields) -> LegalStage:
+    stage = LegalStage.objects.get(pk=stage_id) if stage_id else LegalStage()
+    for field, value in fields.items():
+        setattr(stage, field, value)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        stage.save()
+    return stage
+
+
+def delete_stage_service(*, user: User, stage_id: int) -> None:
+    stage = LegalStage.objects.get(pk=stage_id)
+    if stage.cases.filter(closed_at__isnull=True).exists():
+        raise ValidationError('Esta etapa tem casos em andamento')
+    other = LegalStage.objects.exclude(pk=stage_id).first()
+    if other is None:
+        raise ValidationError('O funil precisa de pelo menos uma etapa')
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        stage.cases.update(stage=other)  # concluded cases keep a stage
+        stage.delete()

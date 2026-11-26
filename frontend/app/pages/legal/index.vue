@@ -9,7 +9,7 @@ definePageMeta({ permission: ['legal', 'view'] })
 const { api, unwrap, notifyError } = useApi()
 const auth = useAuth()
 const lookups = useLookups()
-lookups.ensure('companies').catch(notifyError)
+lookups.ensure('companies', 'legalStages').catch(notifyError)
 const UBadge = resolveComponent('UBadge')
 const canChange = computed(() => auth.can('legal', 'change'))
 
@@ -39,12 +39,13 @@ onMounted(load)
 
 // Like won/lost on Pipedrive: concluded actions leave the board, the filter brings them back
 const status = ref<'open' | 'done'>('open')
-const visible = computed(() => items.value.filter(c => (c.stage === 'done') === (status.value === 'done')))
+const visible = computed(() => items.value.filter(c => !!c.closed_at === (status.value === 'done')))
 const sum = (list: Case[]) => list.reduce((s, c) => s + Number(c.open_amount), 0)
 const totalOpen = computed(() => sum(visible.value))
-const stages = Object.entries(LABELS.caseStage).map(([value, label]) => ({ value, label }))
-const columnsByStage = computed(() => stages.filter(s => s.value !== 'done').map(s => {
-  const cards = visible.value.filter(c => c.stage === s.value)
+const stages = lookups.options.legalStages
+const needsAgreement = (id: number) => !!lookups.cache.value.legalStages?.find(s => s.id === id)?.requires_agreement
+const columnsByStage = computed(() => stages.value.map(s => {
+  const cards = visible.value.filter(c => c.stage_id === s.value)
   return { ...s, cards, total: sum(cards) }
 }))
 const isIncomplete = (c: Case) => !c.client_company || !c.contact_info || !c.delivered || !c.summary
@@ -52,14 +53,15 @@ const isIncomplete = (c: Case) => !c.client_company || !c.contact_info || !c.del
 
 // Drag and drop (native HTML5: no library)
 const dragging = ref<number | null>(null)
-const over = ref<string | null>(null)
-function onDrop(stage: string) {
+const over = ref<number | null>(null)
+function onDrop(stage: number) {
   over.value = null
   const card = items.value.find(c => c.id === dragging.value)
   dragging.value = null
-  if (!card || card.stage === stage) return
-  if (stage === 'agreement' && !card.agreement?.trim()) {
+  if (!card || card.stage_id === stage) return
+  if (needsAgreement(stage) && !card.agreement?.trim()) {
     agreement.case = card
+    agreement.stage = stage
     agreement.text = ''
     agreement.open = true
     return
@@ -67,25 +69,25 @@ function onDrop(stage: string) {
   move(card, stage)
 }
 
-async function move(card: Case, stage: string, extra: Record<string, string> = {}) {
-  const previous = card.stage
-  card.stage = stage  // optimistic
+async function move(card: Case, stage: number, extra: Record<string, string> = {}) {
+  const previous = card.stage_id
+  card.stage_id = stage  // optimistic
   try {
     const saved = await unwrap(api.PATCH('/api/collection-case/{case_id}', {
-      params: { path: { case_id: card.id! } }, body: { stage: stage as any, ...extra },
+      params: { path: { case_id: card.id! } }, body: { stage_id: stage, ...extra },
     }))
     Object.assign(card, saved)
   } catch (e) {
-    card.stage = previous
+    card.stage_id = previous
     notifyError(e)
   }
 }
 
-// Moving to "Acordo ou Sentença" requires the agreement description
-const agreement = reactive({ open: false, text: '', case: null as Case | null })
+// Stages marked "requires agreement" need its description
+const agreement = reactive({ open: false, text: '', case: null as Case | null, stage: 0 })
 async function confirmAgreement() {
   if (!agreement.case || !agreement.text.trim()) return
-  await move(agreement.case, 'agreement', { agreement: agreement.text })
+  await move(agreement.case, agreement.stage, { agreement: agreement.text })
   agreement.open = false
 }
 
@@ -94,8 +96,8 @@ const listColumns: TableColumn<Case>[] = [
     h('p', { class: 'text-highlighted truncate max-w-64' }, row.original.contact_name),
     h('p', { class: 'text-xs text-dimmed' }, row.original.client_company || ''),
   ]) },
-  { accessorKey: 'stage', header: 'Etapa', cell: ({ row }) => h(UBadge, {
-    label: LABELS.caseStage[row.original.stage], color: row.original.stage === 'done' ? 'success' : 'primary', variant: 'subtle',
+  { accessorKey: 'stage_name', header: 'Etapa', cell: ({ row }) => h(UBadge, {
+    label: row.original.closed_at ? 'Concluída' : row.original.stage_name, color: row.original.closed_at ? 'success' : 'primary', variant: 'subtle',
   }) },
   { accessorKey: 'company_name', header: 'Empresa do grupo' },
   { accessorKey: 'proposal_amount', header: () => h('span', { class: 'block text-right' }, 'Proposta'),
@@ -110,12 +112,12 @@ const listColumns: TableColumn<Case>[] = [
 // List view: pick several cases and move them to one stage
 const selection = useSelection<Case>(() => visible.value)
 const tableColumns = computed(() => canChange.value ? [selection.column, ...listColumns] : listColumns)
-const bulkStage = ref<string>()
+const bulkStage = ref<number>()
 watch(view, () => selection.clear())
-async function moveSelected(stage: string) {
+async function moveSelected(stage: number) {
   const cards = selection.rows.value
   const results = await Promise.allSettled(cards.map(c => unwrap(api.PATCH('/api/collection-case/{case_id}', {
-    params: { path: { case_id: c.id! } }, body: { stage: stage as any },
+    params: { path: { case_id: c.id! } }, body: { stage_id: stage },
   }))))
   const failed = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[]
   if (failed.length) notifyError(failed[0]!.reason, `${failed.length} de ${cards.length} não movido(s)`)
@@ -162,8 +164,8 @@ function onCreated(id: number) {
       <section v-for="col in columnsByStage" :key="col.value"
                class="flex min-w-0 flex-col rounded-xl bg-elevated/50 ring ring-default transition"
                :class="{ 'ring-primary bg-primary/5': over === col.value }"
-               @dragover.prevent="over = col.value" @dragleave="over = over === col.value ? null : over"
-               @drop.prevent="onDrop(col.value)">
+               @dragover.prevent="over = Number(col.value)" @dragleave="over = over === col.value ? null : over"
+               @drop.prevent="onDrop(Number(col.value))">
         <header class="flex items-center justify-between gap-2 border-b border-default px-2.5 py-2">
           <div class="min-w-0">
             <p class="truncate text-sm font-medium text-highlighted">{{ col.label }}</p>

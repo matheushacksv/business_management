@@ -7430,7 +7430,7 @@
     ]
    }
   },
-  "/api/collection-case/stages": {
+  "/api/legal-stage": {
    "get": {
     "operationId": "api_endpoints_legal_list_stages_endpoint",
     "summary": "List Stages Endpoint",
@@ -7442,13 +7442,123 @@
        "application/json": {
         "schema": {
          "items": {
-          "$ref": "#/components/schemas/CaseStageOut"
+          "$ref": "#/components/schemas/LegalStageOut"
          },
          "title": "Response",
          "type": "array"
         }
        }
       }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "post": {
+    "operationId": "api_endpoints_legal_create_stage_endpoint",
+    "summary": "Create Stage Endpoint",
+    "parameters": [],
+    "responses": {
+     "201": {
+      "description": "Created",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalStageOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LegalStageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/legal-stage/{stage_id}": {
+   "patch": {
+    "operationId": "api_endpoints_legal_update_stage_endpoint",
+    "summary": "Update Stage Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "stage_id",
+      "schema": {
+       "title": "Stage Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalStageOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LegalStageIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "delete": {
+    "operationId": "api_endpoints_legal_delete_stage_endpoint",
+    "summary": "Delete Stage Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "stage_id",
+      "schema": {
+       "title": "Stage Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "No Content"
      }
     },
     "tags": [
@@ -7473,7 +7583,7 @@
        "anyOf": [
         {
          "items": {
-          "$ref": "#/components/schemas/CaseStage"
+          "type": "integer"
          },
          "type": "array"
         },
@@ -17388,22 +17498,71 @@
     "title": "FeedOut",
     "type": "object"
    },
-   "CaseStageOut": {
+   "LegalStageOut": {
     "properties": {
-     "value": {
-      "title": "Value",
+     "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
       "type": "string"
      },
-     "label": {
-      "title": "Label",
-      "type": "string"
+     "position": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "requires_agreement": {
+      "default": false,
+      "title": "Requires Agreement",
+      "type": "boolean"
+     },
+     "requires_checklist": {
+      "default": false,
+      "title": "Requires Checklist",
+      "type": "boolean"
+     },
+     "id": {
+      "title": "Id",
+      "type": "integer"
      }
     },
     "required": [
-     "value",
-     "label"
+     "name",
+     "id"
     ],
-    "title": "CaseStageOut",
+    "title": "LegalStageOut",
+    "type": "object"
+   },
+   "LegalStageIn": {
+    "properties": {
+     "name": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "position": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Position",
+      "type": "integer"
+     },
+     "requires_agreement": {
+      "default": false,
+      "title": "Requires Agreement",
+      "type": "boolean"
+     },
+     "requires_checklist": {
+      "default": false,
+      "title": "Requires Checklist",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "LegalStageIn",
     "type": "object"
    },
    "CaseFilters": {
@@ -17412,7 +17571,7 @@
       "anyOf": [
        {
         "items": {
-         "$ref": "#/components/schemas/CaseStage"
+         "type": "integer"
         },
         "type": "array"
        },
@@ -17462,21 +17621,6 @@
     "title": "CaseFilters",
     "type": "object"
    },
-   "CaseStage": {
-    "description": "Kanban columns of the legal team, in order.",
-    "enum": [
-     "new",
-     "stand_by",
-     "requested",
-     "filed",
-     "in_progress",
-     "agreement",
-     "awaiting_judge",
-     "done"
-    ],
-    "title": "CaseStage",
-    "type": "string"
-   },
    "CaseOut": {
     "properties": {
      "company_id": {
@@ -17493,6 +17637,14 @@
      },
      "contact_name": {
       "title": "Contact Name",
+      "type": "string"
+     },
+     "stage_id": {
+      "title": "Stage Id",
+      "type": "integer"
+     },
+     "stage_name": {
+      "title": "Stage Name",
       "type": "string"
      },
      "open_amount": {
@@ -17627,12 +17779,6 @@
       ],
       "title": "Drive Link"
      },
-     "stage": {
-      "default": "new",
-      "maxLength": 20,
-      "title": "Stage",
-      "type": "string"
-     },
      "agreement": {
       "anyOf": [
        {
@@ -17643,6 +17789,18 @@
        }
       ],
       "title": "Agreement"
+     },
+     "closed_at": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Closed At"
      },
      "unrecoverable_at": {
       "anyOf": [
@@ -17672,6 +17830,8 @@
      "company_name",
      "contact_id",
      "contact_name",
+     "stage_id",
+     "stage_name",
      "open_amount",
      "received_amount",
      "responsible_id",
@@ -17743,13 +17903,16 @@
       "title": "Drive Link",
       "type": "string"
      },
-     "stage": {
-      "allOf": [
+     "stage_id": {
+      "anyOf": [
        {
-        "$ref": "#/components/schemas/CaseStage"
+        "type": "integer"
+       },
+       {
+        "type": "null"
        }
       ],
-      "default": "new"
+      "title": "Stage Id"
      },
      "agreement": {
       "default": "",
@@ -18036,15 +18199,16 @@
       ],
       "title": "Drive Link"
      },
-     "stage": {
+     "stage_id": {
       "anyOf": [
        {
-        "$ref": "#/components/schemas/CaseStage"
+        "type": "integer"
        },
        {
         "type": "null"
        }
-      ]
+      ],
+      "title": "Stage Id"
      },
      "agreement": {
       "anyOf": [
@@ -18067,6 +18231,17 @@
        }
       ],
       "title": "Unrecoverable"
+     },
+     "closed": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Closed"
      },
      "responsible_id": {
       "anyOf": [
