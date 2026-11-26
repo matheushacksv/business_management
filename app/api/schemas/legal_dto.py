@@ -52,7 +52,7 @@ class CaseOut(ModelSchema):
     open_amount: Decimal  # agreement installments still planned
     received_amount: Decimal  # agreement installments realized
     defaulted_amount: Decimal  # defaulted installments suspended in the case (not its money)
-    due_amount: Decimal  # still to come in: open agreement installments; before the agreement the defaulted ones
+    due_amount: Decimal  # still to come in: open agreement installments; before it, proposal - paid (else the defaulted ones)
     unrecoverable_by_name: str | None = None
     responsible_id: int | None
     responsible_name: str | None = None
@@ -66,6 +66,8 @@ class CaseOut(ModelSchema):
     def resolve_due_amount(obj) -> Decimal:
         if obj.closed_at or obj.stage.requires_agreement or obj.agreement.strip():
             return obj.open_amount
+        if obj.proposal_amount is not None and obj.paid_amount is not None:  # balance the customer still owes
+            return max(obj.proposal_amount - obj.paid_amount, Decimal('0'))
         return obj.defaulted_amount
 
     @staticmethod

@@ -162,6 +162,10 @@ class CollectionCaseTests(TestCase):
         stages = self.client.get('/api/legal-stage', headers=self.auth).json()
         self.assertEqual(len(stages), 7)
 
+    def test_due_before_agreement_is_the_balance(self):
+        case = self.create(proposal_amount='5000.00').json()  # paid 1000; only 1000 of installments in the system
+        self.assertEqual((Decimal(case['due_amount']), Decimal(case['defaulted_amount'])), (Decimal('4000'), Decimal('1000')))
+
     def test_new_inflow_of_customer_under_agreement_joins_it(self):
         case_id = self.create().json()['id']
         new = lambda: services.create_transaction_service(  # noqa: E731
