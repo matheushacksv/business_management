@@ -29,7 +29,7 @@ const body = (d: Record<string, any>) => ({ label: d.label, auto: d.auto ?? '', 
 
 <template>
   <AppCrud
-    title="Checklist do jurídico" module="users" singular="Item"
+    title="Configurar jurídico" tabs="legal" module="users" singular="Item"
     :columns="columns" :fields="fields" :search-keys="['label']"
     :load="() => unwrap(api.GET('/api/legal-checklist-item')) as Promise<Item[]>"
     :create="(d) => unwrap(api.POST('/api/legal-checklist-item', { body: body(d) as any }))"

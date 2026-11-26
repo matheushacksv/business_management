@@ -32,7 +32,7 @@ const fields = computed(() => [
 
 <template>
   <AppCrud
-    title="Equipe" module="sales" singular="Integrante"
+    title="Equipe" tabs="team" module="sales" singular="Integrante"
     :columns="columns" :to-form="(r) => ({ ...r, monthly_salary: Number(r.monthly_salary), crm_amount: r.crm_amount == null ? undefined : Number(r.crm_amount) })" :fields="fields" :search-keys="['name']"
     :load="() => unwrap(api.GET('/api/salesperson', { params: { query: {} } })) as Promise<Salesperson[]>"
     :create="(d) => unwrap(api.POST('/api/salesperson', { body: { name: d.name, user_id: d.user_id ?? null, monthly_salary: d.monthly_salary, crm_amount: d.crm_amount ?? null } }))"

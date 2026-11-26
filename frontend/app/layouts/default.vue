@@ -2,6 +2,7 @@
 import type { NavigationMenuItem, DropdownMenuItem } from '@nuxt/ui'
 
 const auth = useAuth()
+const pageTabs = usePageTabs()
 
 // Menu = only what the role can see (mirrors /api/me permissions)
 const route = useRoute()
@@ -24,13 +25,6 @@ const items = computed<NavigationMenuItem[][]>(() => {
       can('transactions') && { label: 'Lançamentos', icon: 'i-lucide-arrow-left-right', to: '/transactions' },
       can('transactions') && { label: 'Notas fiscais', icon: 'i-lucide-receipt-text', to: '/invoices' },
       can('investments') && { label: 'Investimentos', icon: 'i-lucide-piggy-bank', to: '/investments' },
-      parent({ label: 'Cobrança', icon: 'i-lucide-phone-call' }, ['/dunning'], [
-        can('dunning') && { label: 'Funil', to: '/dunning', exact: true },
-        can('dunning') && { label: 'Agenda', to: '/dunning/agenda' },
-        can('dunning') && { label: 'Produtividade', to: '/dunning/productivity' },
-        can('dunning', 'change') && { label: 'Etapas', to: '/dunning/stages' },
-        can('dunning', 'change') && { label: 'Cadência', to: '/dunning/cadence' },
-      ]),
       parent({ label: 'Relatórios', icon: 'i-lucide-chart-column' }, ['/reports', '/sales/report'], [
         can('reports') && { label: 'DRE', to: '/reports/dre' },
         can('reports') && { label: 'Fluxo de caixa', to: '/reports/cash-flow' },
@@ -43,16 +37,18 @@ const items = computed<NavigationMenuItem[][]>(() => {
 
   const sales = section('Comercial', [
     can('sales') && { label: 'Vendas e contratos', icon: 'i-lucide-handshake', to: '/sales', exact: true },
-    can('sales') && { label: 'Produtos', icon: 'i-lucide-package', to: '/sales/products' },
-    can('sales') && { label: 'Planos', icon: 'i-lucide-book-open', to: '/sales/plans' },
-    can('sales') && { label: 'Comissões', icon: 'i-lucide-hand-coins', to: '/sales/commissions' },
-    can('sales') && { label: 'Equipe', icon: 'i-lucide-users-round', to: '/sales/salespeople' },
+    can('sales') && { label: 'Catálogo', icon: 'i-lucide-package', to: '/sales/products', active: ['/sales/products', '/sales/plans'].includes(route.path) },
+    can('sales') && { label: 'Equipe', icon: 'i-lucide-users-round', to: '/sales/salespeople', active: ['/sales/salespeople', '/sales/commissions'].includes(route.path) },
+  ])
+
+  const dunning = section('Cobrança', [
+    can('dunning') && { label: 'Funil', icon: 'i-lucide-phone-call', to: '/dunning', active: ['/dunning', '/dunning/stages', '/dunning/cadence'].includes(route.path) },
+    can('dunning') && { label: 'Agenda', icon: 'i-lucide-calendar-days', to: '/dunning/agenda' },
+    can('dunning') && { label: 'Produtividade', icon: 'i-lucide-gauge', to: '/dunning/productivity' },
   ])
 
   const legal = section('Jurídico', [
-    can('legal') && { label: 'Ações', icon: 'i-lucide-scale', to: '/legal' },
-    can('legal', 'change') && { label: 'Etapas', icon: 'i-lucide-columns-3', to: '/legal/stages' },
-    !!auth.me.value?.is_admin && { label: 'Checklist', icon: 'i-lucide-list-checks', to: '/legal/checklist' },
+    can('legal') && { label: 'Funil', icon: 'i-lucide-scale', to: '/legal', active: route.path.startsWith('/legal') },
   ])
 
   const tools = keep<NavigationMenuItem>([
@@ -77,7 +73,7 @@ const items = computed<NavigationMenuItem[][]>(() => {
     ]),
   ])
 
-  return [finance, sales, legal, tools, settings].filter(group => group.length)
+  return [finance, dunning, legal, sales, tools, settings].filter(group => group.length)
 })
 
 const colorMode = useColorMode()
@@ -172,7 +168,7 @@ async function changePassword() {
     </UDashboardSidebar>
 
     <slot />
-    <AppGlobalSearch :menu="items" />
+    <AppGlobalSearch :menu="[...items, Object.values(pageTabs).map(g => ({ label: g.label, children: g.items }))]" />
 
     <UModal v-model:open="passwordOpen" title="Alterar senha">
       <template #body>

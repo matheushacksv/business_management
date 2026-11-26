@@ -142,8 +142,9 @@ function onCreated(id: number) {
 </script>
 
 <template>
-  <AppPage title="Jurídico · Ações">
+  <AppPage title="Jurídico">
     <template #actions>
+      <UButton v-if="auth.can('legal', 'change')" icon="i-lucide-settings" color="neutral" variant="ghost" to="/legal/stages" aria-label="Configurar" />
       <UButton v-if="auth.can('legal', 'create')" label="Nova ação" icon="i-lucide-plus" class="rounded-full" @click="createOpen = true" />
     </template>
     <template #toolbar>

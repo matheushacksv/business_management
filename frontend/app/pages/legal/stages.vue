@@ -27,7 +27,7 @@ const body = (d: Record<string, any>) => ({
 
 <template>
   <AppCrud
-    title="Etapas do jurídico" module="legal" singular="Etapa"
+    title="Configurar jurídico" tabs="legal" module="legal" singular="Etapa"
     :columns="columns" :fields="fields" :search-keys="['name']"
     :load="() => unwrap(api.GET('/api/legal-stage')) as Promise<Stage[]>"
     :create="(d) => unwrap(api.POST('/api/legal-stage', { body: body(d) }))"

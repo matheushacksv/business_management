@@ -20,6 +20,7 @@ export interface CrudField {
 
 const props = defineProps<{
   title: string
+  tabs?: import('~/composables/usePageTabs').TabGroup
   module: string
   singular: string
   columns: TableColumn<T>[]
@@ -139,7 +140,7 @@ async function destroy() {
 </script>
 
 <template>
-  <AppPage :title="title">
+  <AppPage :title="title" :tabs="tabs">
     <template #actions>
       <slot name="actions" />
       <UButton v-if="create && can('create')" :label="`Novo(a) ${singular.toLowerCase()}`" icon="i-lucide-plus"

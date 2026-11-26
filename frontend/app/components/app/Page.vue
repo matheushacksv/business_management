@@ -1,6 +1,10 @@
 <script setup lang="ts">
-// Page frame: dashboard panel + navbar (title, actions) + optional toolbar (filters)
-defineProps<{ title: string; id?: string }>()
+import type { TabGroup } from '~/composables/usePageTabs'
+// Page frame: dashboard panel + navbar (title, actions) + optional tabs (sibling routes) + optional toolbar (filters)
+const props = defineProps<{ title: string; id?: string; tabs?: TabGroup }>()
+
+const groups = usePageTabs()
+const tabItems = computed(() => props.tabs ? groups.value[props.tabs].items : [])
 </script>
 
 <template>
@@ -15,6 +19,9 @@ defineProps<{ title: string; id?: string }>()
           <UColorModeButton color="neutral" variant="ghost" />
         </template>
       </UDashboardNavbar>
+      <UDashboardToolbar v-if="tabItems.length > 1" :ui="{ root: 'border-default' }">
+        <UNavigationMenu :items="tabItems" highlight class="-mx-1 flex-1" />
+      </UDashboardToolbar>
       <UDashboardToolbar v-if="$slots.toolbar" :ui="{ root: 'border-default py-2 h-auto' }">
         <div class="flex flex-wrap items-center gap-2 py-0.5">
           <slot name="toolbar" />

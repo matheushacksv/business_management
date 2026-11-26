@@ -72,6 +72,9 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
 
 <template>
   <AppPage title="Cobrança">
+    <template #actions>
+      <UButton v-if="auth.can('dunning', 'change')" icon="i-lucide-settings" color="neutral" variant="ghost" to="/dunning/stages" aria-label="Configurar" />
+    </template>
     <template #toolbar>
       <USelect v-model="filters.outcome" :items="OUTCOMES" class="w-36" aria-label="Situação" />
       <UInput v-model="filters.search" icon="i-lucide-search" placeholder="Cliente…" class="w-56" />

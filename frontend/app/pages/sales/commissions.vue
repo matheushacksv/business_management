@@ -189,7 +189,7 @@ function exportXlsx() {
 </script>
 
 <template>
-  <AppPage title="Comissões">
+  <AppPage title="Equipe" tabs="team">
     <template #actions>
       <UButton v-if="auth.can('sales', 'change')" label="Adicionar" icon="i-lucide-plus" @click="openAdd" />
       <UButton label="Demonstrativo" icon="i-lucide-receipt-text" color="neutral" variant="outline"

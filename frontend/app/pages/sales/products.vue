@@ -19,7 +19,7 @@ const fields = [
 
 <template>
   <AppCrud
-    title="Produtos" module="sales" singular="Produto"
+    title="Catálogo" tabs="catalog" module="sales" singular="Produto"
     :columns="columns" :fields="fields" :search-keys="['name']"
     :load="() => unwrap(api.GET('/api/product', { params: { query: {} } })) as Promise<Product[]>"
     :create="(d) => unwrap(api.POST('/api/product', { body: { name: d.name } }))"

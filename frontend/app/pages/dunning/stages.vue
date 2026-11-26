@@ -36,7 +36,7 @@ async function saveConfig() {
 
 <template>
   <AppCrud
-    title="Etapas da cobrança" module="dunning" singular="Etapa"
+    title="Configurar cobrança" tabs="dunning" module="dunning" singular="Etapa"
     :columns="columns" :fields="fields" :search-keys="['name']"
     :load="() => unwrap(api.GET('/api/dunning/stage')) as Promise<Stage[]>"
     :create="(d) => unwrap(api.POST('/api/dunning/stage', { body: body(d) }))"

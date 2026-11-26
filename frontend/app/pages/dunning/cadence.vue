@@ -43,7 +43,7 @@ const body = (d: Record<string, any>) => ({ day: Number(d.day), kind: d.kind, ti
 
 <template>
   <AppCrud
-    title="Cadência da cobrança" module="dunning" singular="Atividade"
+    title="Configurar cobrança" tabs="dunning" module="dunning" singular="Atividade"
     :columns="columns" :fields="fields" :search-keys="['title', 'template']"
     :load="() => unwrap(api.GET('/api/dunning/cadence')) as Promise<Step[]>"
     :create="(d) => unwrap(api.POST('/api/dunning/cadence', { body: body(d) }))"
