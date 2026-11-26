@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pghistory
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
@@ -16,6 +18,19 @@ class LegalStage(models.Model):
 
     def __str__(self):
         return self.name
+
+
+FEE_RATE = Decimal('0.20')  # lawyer fees: always 20% (also LEGAL_FEE_RATE in the frontend)
+
+
+class LegalConfig(models.Model):
+    """Single row. Old contracts' cancellation fine = 3 minimum wages; new ones a fixed amount."""
+
+    minimum_wage = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1518.00'))
+
+    @classmethod
+    def get(cls) -> 'LegalConfig':
+        return cls.objects.get_or_create(pk=1)[0]
 
 
 def first_stage() -> int | None:
@@ -38,6 +53,9 @@ class CollectionCase(models.Model):
     delivered = models.TextField(blank=True)  # "O que foi entregue"
     proposal_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     paid_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    # What the action claims: share of the contract delivered (minus paid) + cancellation fine + fees
+    delivered_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    fine_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     summary = models.TextField(blank=True)  # "Resumo da situação do cliente"
     drive_link = models.URLField(max_length=500, blank=True)
     stage = models.ForeignKey(LegalStage, on_delete=models.PROTECT, related_name='cases', default=first_stage)
@@ -58,6 +76,14 @@ class CollectionCase(models.Model):
 
     def __str__(self):
         return f'Cobrança #{self.pk} - {self.contact}'
+
+    @property
+    def claimed_amount(self) -> Decimal | None:
+        if self.delivered_percent is None or self.proposal_amount is None:
+            return None
+        delivered = self.proposal_amount * self.delivered_percent / 100 - (self.paid_amount or 0)
+        base = max(delivered, Decimal('0')) + (self.fine_amount or 0)
+        return (base * (1 + FEE_RATE)).quantize(Decimal('0.01'))
 
 
 class CaseComment(models.Model):

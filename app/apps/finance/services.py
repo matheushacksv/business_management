@@ -182,7 +182,7 @@ def _link_judicial(user: User | None, target: Contact, source_name: str, tx_ids:
                 company_id=company_id, contact=target, stage=LegalStage.objects.filter(requires_agreement=True).first() or LegalStage.objects.first(), created_by=user,
                 agreement=f'Acordo importado da planilha (nome original: {source_name})',
             )
-        Transaction.objects.filter(pk__in=ids).update(collection_case=case)
+        Transaction.objects.filter(pk__in=ids).update(collection_case=case, agreement_installment=True)
         CaseComment.objects.create(case=case, author=user, text=(
             f'{len(ids)} lançamento(s) de "{source_name}" vinculado(s) a este caso ao mesclar os contatos.'))
 

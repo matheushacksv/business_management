@@ -133,6 +133,31 @@ async function remove() {
   }
 }
 
+// Agreement: registering creates its installments; breaking it cancels the open ones and the lawsuit goes on
+const lookups = useLookups()
+lookups.ensure('legalStages').catch(notifyError)
+const stages = computed(() => lookups.cache.value.legalStages ?? [])
+const inAgreement = computed(() => !!stages.value.find(s => s.id === item.value?.stage_id)?.requires_agreement)
+const agreementOpen = ref(false)
+async function agreementSaved() {
+  agreementOpen.value = false
+  await refresh()
+}
+const broken = reactive({ open: false, stage: undefined as number | undefined, saving: false })
+const brokenOptions = computed(() => stages.value.filter(s => !s.requires_agreement).map(s => ({ label: s.name, value: s.id })))
+async function breakAgreement() {
+  broken.saving = true
+  try {
+    await unwrap(api.POST('/api/collection-case/{case_id}/broken-agreement', { params: { path: { case_id: item.value!.id! } }, body: { stage_id: broken.stage! } }))
+    broken.open = false
+    await refresh()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    broken.saving = false
+  }
+}
+
 // Imported cases come without the required fields: flag it
 const incomplete = computed(() => !!item.value && (!item.value.client_company || !item.value.contact_info
   || !item.value.delivered || !item.value.summary || !item.value.drive_link
@@ -148,11 +173,13 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
       <div v-else class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
       <div class="min-w-0 space-y-5">
         <div class="s-panel grid grid-cols-2 gap-x-4 gap-y-3 p-4 text-xs">
-          <div class="min-w-0"><p class="text-dimmed">Devido (em aberto)</p><p class="font-display text-lg text-error tabular truncate">{{ formatMoney(item.open_amount) }}</p></div>
-          <div class="min-w-0"><p class="text-dimmed">Recebido (parcelas)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Devido (em aberto)</p><p class="font-display text-lg text-error tabular truncate">{{ formatMoney(item.due_amount) }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Recebido (acordo)</p><p class="font-display text-lg text-success tabular truncate">{{ formatMoney(item.received_amount) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Valor da proposta</p><p class="text-sm text-highlighted tabular truncate">{{ item.proposal_amount != null ? formatMoney(item.proposal_amount) : '—' }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Pago pelo cliente</p><p class="text-sm text-highlighted tabular truncate">{{ item.paid_amount != null ? formatMoney(item.paid_amount) : '—' }}</p></div>
-          <div class="min-w-0"><p class="text-dimmed">Honorários (20%)</p><p class="text-sm text-highlighted tabular truncate">{{ (formatMoney((Number(item.open_amount) + Number(item.received_amount)) * LEGAL_FEE_RATE)) }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Entregue</p><p class="text-sm text-highlighted tabular truncate">{{ item.delivered_percent != null ? `${Number(item.delivered_percent)}%` : '—' }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Valor cobrado na ação</p><p class="text-sm text-highlighted tabular truncate">{{ item.claimed_amount != null ? formatMoney(item.claimed_amount) : '—' }}</p></div>
+          <div class="min-w-0"><p class="text-dimmed">Honorários do acordo (20%)</p><p class="text-sm text-highlighted tabular truncate">{{ formatMoney((Number(item.open_amount) + Number(item.received_amount)) * LEGAL_FEE_RATE) }}</p></div>
           <div class="min-w-0"><p class="text-dimmed">Honorários pagos</p><p class="text-sm text-highlighted tabular truncate">{{ formatMoney(Number(item.received_amount) * LEGAL_FEE_RATE) }}</p></div>
         </div>
 
@@ -190,6 +217,10 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
             </dl>
             <div class="flex gap-2">
               <UButton v-if="canChange" label="Editar" icon="i-lucide-pencil" @click="editing = true" />
+              <UButton v-if="canChange && !item.closed_at" label="Registrar acordo" icon="i-lucide-handshake" color="neutral" variant="soft"
+                       @click="agreementOpen = true" />
+              <UButton v-if="canChange && inAgreement" label="Acordo descumprido" icon="i-lucide-circle-x" color="warning" variant="soft"
+                       @click="broken.open = true" />
               <UButton v-if="canChange" :label="item.closed_at ? 'Reabrir' : 'Concluir'"
                        :icon="item.closed_at ? 'i-lucide-rotate-ccw' : 'i-lucide-circle-check'" color="success" variant="soft"
                        @click="setDone(!item.closed_at)" />
@@ -229,6 +260,25 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           </li>
         </ul>
       </SPanel>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="agreementOpen" title="Registrar acordo" :ui="{ content: 'max-w-xl' }">
+    <template #body>
+      <LegalAgreementForm v-if="item" :case-id="item.id!" @saved="agreementSaved" @cancel="agreementOpen = false" />
+    </template>
+  </UModal>
+  <UModal v-model:open="broken.open" title="Acordo descumprido">
+    <template #body>
+      <UFormField label="Voltar para a etapa" required>
+        <USelect v-model="broken.stage" :items="brokenOptions" class="w-full" />
+      </UFormField>
+    </template>
+    <template #footer>
+      <div class="flex w-full justify-end gap-2">
+        <UButton label="Cancelar" color="neutral" variant="ghost" @click="broken.open = false" />
+        <UButton label="Cancelar parcelas em aberto" color="warning" :loading="broken.saving" :disabled="!broken.stage" @click="breakAgreement" />
       </div>
     </template>
   </UModal>

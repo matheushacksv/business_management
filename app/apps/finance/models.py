@@ -175,6 +175,9 @@ class Transaction(models.Model):
     collection_case = models.ForeignKey(  # planned + linked = out of DRE / cash flow (uncertain)
         'legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions'
     )
+    # Linked to a case: True = installment of the agreement/sentence (the case's money);
+    # False = defaulted installment, suspended while the lawsuit claims its own amount
+    agreement_installment = models.BooleanField(default=False)
     asaas_id = models.CharField(max_length=40, blank=True, db_index=True)  # charge (pay_...)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

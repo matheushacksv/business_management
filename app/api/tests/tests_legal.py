@@ -62,7 +62,8 @@ class CollectionCaseTests(TestCase):
         response = self.create()
         self.assertEqual(response.status_code, 201, response.content)
         case = response.json()
-        self.assertEqual(Decimal(case['open_amount']), Decimal('1000'))  # only company A, only planned
+        self.assertEqual(Decimal(case['defaulted_amount']), Decimal('1000'))  # only company A, only planned: suspended
+        self.assertEqual((Decimal(case['open_amount']), Decimal(case['due_amount'])), (Decimal('0'), Decimal('1000')))
         self.assertEqual(Decimal(case['received_amount']), Decimal('0'))
         self.assertEqual(set(Transaction.objects.filter(collection_case_id=case['id'])),
                          {self.open1, self.open2})
@@ -74,12 +75,12 @@ class CollectionCaseTests(TestCase):
                                             company_id=[self.a.pk])
         self.assertEqual(flow['closing'], Decimal('1000'))  # only the realized one
 
-        # Received installment counts again, in reports and in the case totals
+        # Received installment counts again in reports; a defaulted one is not the case's money (only the agreement)
         services.update_transaction_service(user=self.admin, transaction_id=self.open1.pk,
                                             status=TransactionStatus.REALIZED)
         case = self.client.get(f'/api/collection-case/{case["id"]}', headers=self.auth).json()
-        self.assertEqual((Decimal(case['open_amount']), Decimal(case['received_amount'])),
-                         (Decimal('500'), Decimal('500')))
+        self.assertEqual((Decimal(case['defaulted_amount']), Decimal(case['received_amount'])),
+                         (Decimal('500'), Decimal('0')))
         self.assertEqual(revenue(dre_before) - revenue(selectors.dre_selector(user=self.admin, year=2026)),
                          Decimal('500'))
 
@@ -138,8 +139,7 @@ class CollectionCaseTests(TestCase):
         self.assertEqual([c['id'] for c in listed], [case_id])
         self.assertEqual(self.client.get('/api/collection-case', {'stage': st('Aguardando Juiz')}, headers=self.auth).json(), [])
         txs = self.client.get(f'/api/collection-case/{case_id}/transactions', headers=self.auth).json()
-        self.assertEqual([t['id'] for t in txs], [self.open1.pk, self.open2.pk])
-        self.assertEqual(txs[0]['collection_case_id'], case_id)
+        self.assertEqual(txs, [])  # defaulted installments are suspended in the case, not listed: only the agreement's
 
         lawyer = User.objects.create_user(email='jur@test.com', password='Str@ngPassw8rd2026', role=Role.LEGAL)
         lawyer.companies.add(self.b)  # other company: does not see the case
@@ -158,6 +158,38 @@ class CollectionCaseTests(TestCase):
         self.assertEqual(self.create().status_code, 403)
         stages = self.client.get('/api/legal-stage', headers=self.auth).json()
         self.assertEqual(len(stages), 7)
+
+    def test_claim_replaces_old_installments_until_agreement(self):
+        case = self.create(delivered_percent='75', fine_amount='5000').json()
+        # 2000 x 75% = 1500 - 1000 paid = 500 + 5000 fine = 5500 + 20% fees
+        self.assertEqual(Decimal(case['claimed_amount']), Decimal('6600.00'))
+        self.assertEqual(Decimal(case['due_amount']), Decimal('6600.00'))
+        self.assertIsNone(self.create(company_id=self.b.pk).json()['claimed_amount'])
+
+    def test_register_and_break_agreement(self):
+        case_id = self.create().json()['id']
+        r = self.client.post(f'/api/collection-case/{case_id}/agreement', data={
+            'down_payment': '300', 'down_payment_date': '2026-12-01', 'count': 3, 'amount': '250', 'first_due': '2027-01-31',
+            'text': 'Homologado'}, content_type='application/json', headers=self.auth)
+        self.assertEqual(r.status_code, 200, r.content)
+        case = r.json()
+        self.assertEqual(case['stage_name'], 'Acordo ou Sentença')
+        self.assertTrue(case['agreement'].startswith('Entrada de R$ 300,00 em 01/12/2026 + 3x de R$ 250,00'))
+        self.assertEqual(Decimal(case['due_amount']), Decimal('1050'))  # the agreement, not the defaulted 2 x 500
+        rows = [(t['reference'], dt.date.fromisoformat(t['date'])) for t in
+                self.client.get(f'/api/collection-case/{case_id}/transactions', headers=self.auth).json()]
+        self.assertEqual(rows, [('Entrada', dt.date(2026, 12, 1)), ('1/3', dt.date(2027, 1, 31)),
+                                ('2/3', dt.date(2027, 2, 28)), ('3/3', dt.date(2027, 3, 31))])
+        self.assertEqual(Transaction.objects.filter(pk__in=[self.open1.pk, self.open2.pk], collection_case_id=case_id).count(), 2)
+
+        Transaction.objects.filter(collection_case_id=case_id, reference='Entrada').update(status=TransactionStatus.REALIZED)
+        r = self.client.post(f'/api/collection-case/{case_id}/broken-agreement', data={'stage_id': st('Em andamento')},
+                             content_type='application/json', headers=self.auth)
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual((r.json()['stage_name'], r.json()['agreement']), ('Em andamento', ''))
+        agreement = Transaction.objects.filter(collection_case_id=case_id, agreement_installment=True)
+        self.assertEqual(list(agreement.values_list('reference', flat=True)), ['Entrada'])
+        self.assertEqual(Decimal(r.json()['due_amount']), Decimal('1000'))  # back to the claim (here: the defaulted ones)
 
 
 class ChecklistTests(TestCase):
@@ -209,3 +241,4 @@ class ChecklistTests(TestCase):
                                           headers=self.auth).status_code, 201)
         names = [r['name'] for r in self.client.get('/api/collection-case/responsibles', headers=auth_for(legal)).json()]
         self.assertEqual(sorted(names), ['admin@test.com', 'j@test.com'])
+

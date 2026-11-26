@@ -8266,6 +8266,162 @@
     ]
    }
   },
+  "/api/collection-case/{case_id}/agreement": {
+   "post": {
+    "operationId": "api_endpoints_legal_register_agreement_endpoint",
+    "summary": "Register Agreement Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CaseOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AgreementIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/collection-case/{case_id}/broken-agreement": {
+   "post": {
+    "operationId": "api_endpoints_legal_broken_agreement_endpoint",
+    "summary": "Broken Agreement Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "case_id",
+      "schema": {
+       "title": "Case Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CaseOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BrokenAgreementIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
+  "/api/legal-config": {
+   "get": {
+    "operationId": "api_endpoints_legal_get_legal_config_endpoint",
+    "summary": "Get Legal Config Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalConfigIO"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   },
+   "put": {
+    "operationId": "api_endpoints_legal_update_legal_config_endpoint",
+    "summary": "Update Legal Config Endpoint",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LegalConfigIO"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Legal"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LegalConfigIO"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/investment": {
    "get": {
     "operationId": "api_endpoints_investments_list_investments_endpoint",
@@ -11993,6 +12149,10 @@
       ],
       "title": "Collection Case Id"
      },
+     "agreement_installment": {
+      "title": "Agreement Installment",
+      "type": "boolean"
+     },
      "company_name": {
       "title": "Company Name",
       "type": "string"
@@ -12137,6 +12297,7 @@
      "series_index",
      "transfer_id",
      "collection_case_id",
+     "agreement_installment",
      "company_name",
      "subgroup_name",
      "company",
@@ -17655,6 +17816,25 @@
       "title": "Received Amount",
       "type": "string"
      },
+     "defaulted_amount": {
+      "title": "Defaulted Amount",
+      "type": "string"
+     },
+     "claimed_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Claimed Amount"
+     },
+     "due_amount": {
+      "title": "Due Amount",
+      "type": "string"
+     },
      "unrecoverable_by_name": {
       "anyOf": [
        {
@@ -17756,6 +17936,28 @@
       ],
       "title": "Paid Amount"
      },
+     "delivered_percent": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivered Percent"
+     },
+     "fine_amount": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fine Amount"
+     },
      "summary": {
       "anyOf": [
        {
@@ -17834,6 +18036,9 @@
      "stage_name",
      "open_amount",
      "received_amount",
+     "defaulted_amount",
+     "claimed_amount",
+     "due_amount",
      "responsible_id",
      "created_at",
      "updated_at"
@@ -17902,6 +18107,37 @@
       "minLength": 1,
       "title": "Drive Link",
       "type": "string"
+     },
+     "delivered_percent": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivered Percent"
+     },
+     "fine_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fine Amount"
      },
      "stage_id": {
       "anyOf": [
@@ -18199,6 +18435,37 @@
       ],
       "title": "Drive Link"
      },
+     "delivered_percent": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delivered Percent"
+     },
+     "fine_amount": {
+      "anyOf": [
+       {
+        "minimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fine Amount"
+     },
      "stage_id": {
       "anyOf": [
        {
@@ -18399,6 +18666,118 @@
      "done"
     ],
     "title": "SetCheck",
+    "type": "object"
+   },
+   "AgreementIn": {
+    "description": "Registers the agreement: its installments (a previous agreement's open ones are replaced).",
+    "properties": {
+     "stage_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stage Id"
+     },
+     "text": {
+      "default": "",
+      "title": "Text",
+      "type": "string"
+     },
+     "down_payment": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Down Payment"
+     },
+     "down_payment_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Down Payment Date"
+     },
+     "count": {
+      "maximum": 120,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+     },
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "first_due": {
+      "format": "date",
+      "title": "First Due",
+      "type": "string"
+     }
+    },
+    "required": [
+     "count",
+     "amount",
+     "first_due"
+    ],
+    "title": "AgreementIn",
+    "type": "object"
+   },
+   "BrokenAgreementIn": {
+    "properties": {
+     "stage_id": {
+      "title": "Stage Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "stage_id"
+    ],
+    "title": "BrokenAgreementIn",
+    "type": "object"
+   },
+   "LegalConfigIO": {
+    "properties": {
+     "minimum_wage": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Minimum Wage"
+     }
+    },
+    "required": [
+     "minimum_wage"
+    ],
+    "title": "LegalConfigIO",
     "type": "object"
    },
    "Holder": {

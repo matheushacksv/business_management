@@ -1633,6 +1633,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/collection-case/{case_id}/agreement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Agreement Endpoint */
+        post: operations["api_endpoints_legal_register_agreement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-case/{case_id}/broken-agreement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Broken Agreement Endpoint */
+        post: operations["api_endpoints_legal_broken_agreement_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/legal-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Legal Config Endpoint */
+        get: operations["api_endpoints_legal_get_legal_config_endpoint"];
+        /** Update Legal Config Endpoint */
+        put: operations["api_endpoints_legal_update_legal_config_endpoint"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/investment": {
         parameters: {
             query?: never;
@@ -2801,6 +2853,8 @@ export interface components {
             transfer_id: number | null;
             /** Collection Case Id */
             collection_case_id: number | null;
+            /** Agreement Installment */
+            agreement_installment: boolean;
             /** Company Name */
             company_name: string;
             /** Subgroup Name */
@@ -4567,6 +4621,12 @@ export interface components {
             open_amount: string;
             /** Received Amount */
             received_amount: string;
+            /** Defaulted Amount */
+            defaulted_amount: string;
+            /** Claimed Amount */
+            claimed_amount: string | null;
+            /** Due Amount */
+            due_amount: string;
             /** Unrecoverable By Name */
             unrecoverable_by_name?: string | null;
             /** Responsible Id */
@@ -4585,6 +4645,10 @@ export interface components {
             proposal_amount?: string | null;
             /** Paid Amount */
             paid_amount?: string | null;
+            /** Delivered Percent */
+            delivered_percent?: string | null;
+            /** Fine Amount */
+            fine_amount?: string | null;
             /** Summary */
             summary?: string | null;
             /** Drive Link */
@@ -4632,6 +4696,10 @@ export interface components {
              * Format: uri
              */
             drive_link: string;
+            /** Delivered Percent */
+            delivered_percent?: number | string | null;
+            /** Fine Amount */
+            fine_amount?: number | string | null;
             /** Stage Id */
             stage_id?: number | null;
             /**
@@ -4733,6 +4801,10 @@ export interface components {
             summary?: string | null;
             /** Drive Link */
             drive_link?: string | null;
+            /** Delivered Percent */
+            delivered_percent?: number | string | null;
+            /** Fine Amount */
+            fine_amount?: number | string | null;
             /** Stage Id */
             stage_id?: number | null;
             /** Agreement */
@@ -4790,6 +4862,42 @@ export interface components {
              * @default
              */
             note: string;
+        };
+        /**
+         * AgreementIn
+         * @description Registers the agreement: its installments (a previous agreement's open ones are replaced).
+         */
+        AgreementIn: {
+            /** Stage Id */
+            stage_id?: number | null;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /** Down Payment */
+            down_payment?: number | string | null;
+            /** Down Payment Date */
+            down_payment_date?: string | null;
+            /** Count */
+            count: number;
+            /** Amount */
+            amount: number | string;
+            /**
+             * First Due
+             * Format: date
+             */
+            first_due: string;
+        };
+        /** BrokenAgreementIn */
+        BrokenAgreementIn: {
+            /** Stage Id */
+            stage_id: number;
+        };
+        /** LegalConfigIO */
+        LegalConfigIO: {
+            /** Minimum Wage */
+            minimum_wage: number | string;
         };
         /**
          * Holder
@@ -8907,6 +9015,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CheckOut"][];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_register_agreement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgreementIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_broken_agreement_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrokenAgreementIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_get_legal_config_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalConfigIO"];
+                };
+            };
+        };
+    };
+    api_endpoints_legal_update_legal_config_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalConfigIO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalConfigIO"];
                 };
             };
         };

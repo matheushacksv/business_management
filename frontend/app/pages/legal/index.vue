@@ -40,7 +40,7 @@ onMounted(load)
 // Like won/lost on Pipedrive: concluded actions leave the board, the filter brings them back
 const status = ref<'open' | 'done'>('open')
 const visible = computed(() => items.value.filter(c => !!c.closed_at === (status.value === 'done')))
-const sum = (list: Case[]) => list.reduce((s, c) => s + Number(c.open_amount), 0)
+const sum = (list: Case[]) => list.reduce((s, c) => s + Number(c.due_amount), 0)
 const totalOpen = computed(() => sum(visible.value))
 const totalReceived = computed(() => items.value.reduce((s, c) => s + Number(c.received_amount), 0))
 const stages = lookups.options.legalStages
@@ -61,21 +61,18 @@ function onDrop(stage: number) {
   dragging.value = null
   if (!card || card.stage_id === stage) return
   if (needsAgreement(stage) && !card.agreement?.trim()) {
-    agreement.case = card
-    agreement.stage = stage
-    agreement.text = ''
-    agreement.open = true
+    Object.assign(agreement, { case: card, stage, open: true })
     return
   }
   move(card, stage)
 }
 
-async function move(card: Case, stage: number, extra: Record<string, string> = {}) {
+async function move(card: Case, stage: number) {
   const previous = card.stage_id
   card.stage_id = stage  // optimistic
   try {
     const saved = await unwrap(api.PATCH('/api/collection-case/{case_id}', {
-      params: { path: { case_id: card.id! } }, body: { stage_id: stage, ...extra },
+      params: { path: { case_id: card.id! } }, body: { stage_id: stage },
     }))
     Object.assign(card, saved)
   } catch (e) {
@@ -84,11 +81,10 @@ async function move(card: Case, stage: number, extra: Record<string, string> = {
   }
 }
 
-// Stages marked "requires agreement" need its description
-const agreement = reactive({ open: false, text: '', case: null as Case | null, stage: 0 })
-async function confirmAgreement() {
-  if (!agreement.case || !agreement.text.trim()) return
-  await move(agreement.case, agreement.stage, { agreement: agreement.text })
+// Stages marked "requires agreement": registering it creates its installments (replacing the open ones)
+const agreement = reactive({ open: false, case: null as Case | null, stage: 0 })
+function agreementSaved(saved: Case) {
+  Object.assign(agreement.case!, saved)
   agreement.open = false
 }
 
@@ -105,8 +101,8 @@ const listColumns: TableColumn<Case>[] = [
     cell: ({ row }) => h('p', { class: 'text-right tabular' }, row.original.proposal_amount != null ? formatMoney(row.original.proposal_amount) : '—') },
   { accessorKey: 'paid_amount', header: () => h('span', { class: 'block text-right' }, 'Pago'),
     cell: ({ row }) => h('p', { class: 'text-right tabular' }, row.original.paid_amount != null ? formatMoney(row.original.paid_amount) : '—') },
-  { accessorKey: 'open_amount', header: () => h('span', { class: 'block text-right' }, 'Devido'),
-    cell: ({ row }) => h('p', { class: 'text-right tabular text-error' }, formatMoney(row.original.open_amount)) },
+  { accessorKey: 'due_amount', header: () => h('span', { class: 'block text-right' }, 'Devido'),
+    cell: ({ row }) => h('p', { class: 'text-right tabular text-error' }, formatMoney(row.original.due_amount)) },
   { accessorKey: 'updated_at', header: 'Atualizado', cell: ({ row }) => formatDate(row.original.updated_at!.slice(0, 10)) },
 ]
 
@@ -197,7 +193,7 @@ function onCreated(id: number) {
             <UBadge v-if="card.unrecoverable_at" label="Perda" icon="i-lucide-ban" color="neutral" variant="solid" size="sm" class="mt-1" />
             <div class="mt-2 flex flex-wrap items-end justify-between gap-x-2 text-xs">
               <span class="text-dimmed">{{ formatDate(card.updated_at!.slice(0, 10)) }}</span>
-              <span class="tabular text-error">{{ formatMoney(card.open_amount) }}</span>
+              <span class="tabular text-error">{{ formatMoney(card.due_amount) }}</span>
             </div>
           </article>
           <p v-if="!col.cards.length" class="py-4 text-center text-xs text-dimmed">Vazio</p>
@@ -223,16 +219,10 @@ function onCreated(id: number) {
         <LegalForm @saved="onCreated" @cancel="createOpen = false" />
       </template>
     </UModal>
-    <UModal v-model:open="agreement.open" title="Acordo ou sentença">
+    <UModal v-model:open="agreement.open" title="Acordo ou sentença" :ui="{ content: 'max-w-xl' }">
       <template #body>
-        <UTextarea v-model="agreement.text" :rows="3" autoresize class="w-full"
-                   placeholder="Ex.: R$ 20.000,00 em 10x de R$ 2.000,00, primeiro vencimento dia 10/12" />
-      </template>
-      <template #footer>
-        <div class="flex w-full justify-end gap-2">
-          <UButton label="Cancelar" color="neutral" variant="ghost" @click="agreement.open = false" />
-          <UButton label="Mover" :disabled="!agreement.text.trim()" @click="confirmAgreement" />
-        </div>
+        <LegalAgreementForm v-if="agreement.case" :case-id="agreement.case.id!" :stage-id="agreement.stage"
+                            @saved="agreementSaved" @cancel="agreement.open = false" />
       </template>
     </UModal>
   </AppPage>

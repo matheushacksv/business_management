@@ -22,6 +22,8 @@ class CreateCase(Schema):
     paid_amount: Decimal = Money
     summary: str = Required
     drive_link: HttpUrl
+    delivered_percent: Decimal | None = Field(None, ge=0, le=100, max_digits=5, decimal_places=2)
+    fine_amount: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
     stage_id: int | None = None  # default: first stage
     agreement: str = ''
 
@@ -34,6 +36,8 @@ class PatchCase(Schema):
     paid_amount: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
     summary: str | None = Field(None, min_length=1)
     drive_link: HttpUrl | None = None
+    delivered_percent: Decimal | None = Field(None, ge=0, le=100, max_digits=5, decimal_places=2)
+    fine_amount: Decimal | None = Field(None, ge=0, max_digits=14, decimal_places=2)
     stage_id: int | None = None
     agreement: str | None = None
     unrecoverable: bool | None = None
@@ -48,16 +52,25 @@ class CaseOut(ModelSchema):
     contact_name: str = Field(alias='contact.name')
     stage_id: int
     stage_name: str = Field(alias='stage.name')
-    open_amount: Decimal  # linked installments still planned: what is owed
-    received_amount: Decimal  # linked installments realized
+    open_amount: Decimal  # agreement installments still planned
+    received_amount: Decimal  # agreement installments realized
+    defaulted_amount: Decimal  # defaulted installments suspended in the case (not its money)
+    claimed_amount: Decimal | None  # delivered share - paid + fine, plus fees (needs delivered_percent)
+    due_amount: Decimal  # still to come in: open agreement installments; before the agreement the claim (else the defaulted ones)
     unrecoverable_by_name: str | None = None
     responsible_id: int | None
     responsible_name: str | None = None
 
     class Meta:
         model = CollectionCase
-        fields = ['id', 'client_company', 'contact_info', 'delivered', 'proposal_amount', 'paid_amount',
+        fields = ['id', 'client_company', 'contact_info', 'delivered', 'proposal_amount', 'paid_amount', 'delivered_percent', 'fine_amount',
                   'summary', 'drive_link', 'agreement', 'closed_at', 'unrecoverable_at', 'created_at', 'updated_at']
+
+    @staticmethod
+    def resolve_due_amount(obj) -> Decimal:
+        if obj.closed_at or obj.stage.requires_agreement or obj.agreement.strip():
+            return obj.open_amount
+        return obj.claimed_amount if obj.claimed_amount is not None else obj.defaulted_amount
 
     @staticmethod
     def resolve_responsible_name(obj) -> str | None:
@@ -147,3 +160,22 @@ class ChecklistItemOut(ModelSchema):
 class ResponsibleOut(Schema):
     id: int
     name: str
+
+
+class AgreementIn(Schema):
+    """Registers the agreement: its installments (a previous agreement's open ones are replaced)."""
+    stage_id: int | None = None  # default: first stage that requires the agreement
+    text: str = ''
+    down_payment: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    down_payment_date: dt.date | None = None
+    count: int = Field(ge=1, le=120)
+    amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)  # each installment
+    first_due: dt.date
+
+
+class BrokenAgreementIn(Schema):
+    stage_id: int  # where the case goes back to
+
+
+class LegalConfigIO(Schema):
+    minimum_wage: Decimal = Field(gt=0, max_digits=10, decimal_places=2)

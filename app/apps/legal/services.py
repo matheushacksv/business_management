@@ -10,21 +10,23 @@ from django.utils import timezone
 from apps.companies.services import list_companies_service
 from apps.finance.models import Contact, Transaction, TransactionStatus, TransactionType
 from apps.legal.models import AutoCheck, CaseCheck, CaseComment, ChecklistItem, CollectionCase, LegalStage
+from apps.finance.services import add_months
 from apps.users.models import User
 
 MONEY = DecimalField(max_digits=16, decimal_places=2)
 TEXT_FIELDS = ('client_company', 'contact_info', 'delivered', 'summary', 'drive_link', 'agreement')
 
 
-def _linked(status: str):
-    q = Q(transactions__type=TransactionType.INFLOW, transactions__status=status)
+def _linked(status: str, agreement: bool = True):
+    q = Q(transactions__type=TransactionType.INFLOW, transactions__status=status, transactions__agreement_installment=agreement)
     return Coalesce(Sum('transactions__amount', filter=q), Value(Decimal('0')), output_field=MONEY)
 
 
 def _cases_for(user: User):
     return (CollectionCase.objects.filter(company__in=list_companies_service(user=user))
-            .annotate(open_amount=_linked(TransactionStatus.PLANNED),  # still owed
-                      received_amount=_linked(TransactionStatus.REALIZED))
+            .annotate(open_amount=_linked(TransactionStatus.PLANNED),  # agreement installments still owed
+                      received_amount=_linked(TransactionStatus.REALIZED),
+                      defaulted_amount=_linked(TransactionStatus.PLANNED, agreement=False))  # suspended old ones
             .select_related('company', 'contact', 'stage', 'unrecoverable_by', 'responsible'))
 
 
@@ -144,7 +146,8 @@ def add_comment_service(*, user: User, case_id: int, text: str) -> CaseComment:
 
 def case_transactions_service(*, user: User, case_id: int):
     case = get_case_service(user=user, case_id=case_id)
-    return case.transactions.select_related('company', 'subgroup', 'account', 'contact').order_by('date', 'id')
+    return case.transactions.filter(agreement_installment=True).select_related('company', 'subgroup', 'account', 'contact') \
+        .order_by('date', 'id')
 
 
 
@@ -261,3 +264,70 @@ def delete_stage_service(*, user: User, stage_id: int) -> None:
     with transaction.atomic(), pghistory.context(user=user.pk):
         stage.cases.update(stage=other)  # concluded cases keep a stage
         stage.delete()
+
+
+# Agreement: its installments are the case's money (the defaulted ones stay suspended, out of it)
+
+def _brl(v: Decimal) -> str:
+    return 'R$ ' + f'{v:,.2f}'.replace(',', '_').replace('.', ',').replace('_', '.')
+
+
+def _drop_open_installments(case: CollectionCase) -> int:
+    open_ = Transaction.objects.filter(collection_case=case, type=TransactionType.INFLOW, status=TransactionStatus.PLANNED,
+                                       agreement_installment=True)
+    charged = [t.reference or f'{t.date:%d/%m/%Y}' for t in open_.exclude(asaas_id='')]
+    if charged:
+        raise ValidationError(f'Cancele antes as cobranças do Asaas destas parcelas: {", ".join(charged)}')
+    return open_.delete()[0]
+
+
+def register_agreement_service(*, user: User, case_id: int, stage_id: int | None = None, text: str = '',
+                               down_payment: Decimal | None = None, down_payment_date=None,
+                               count: int, amount: Decimal, first_due) -> CollectionCase:
+    case = get_case_service(user=user, case_id=case_id)
+    stages = LegalStage.objects.filter(requires_agreement=True)
+    stage = stages.filter(pk=stage_id).first() if stage_id else stages.first()
+    if stage is None:
+        raise ValidationError('Escolha uma etapa de acordo ou sentença')
+    if down_payment and not down_payment_date:
+        raise ValidationError('Informe a data da entrada')
+    linked = Transaction.objects.filter(collection_case=case, type=TransactionType.INFLOW)
+    subgroup_id = (linked.values_list('subgroup_id', flat=True).first()
+                   or Transaction.objects.filter(company=case.company, contact=case.contact, type=TransactionType.INFLOW)
+                   .values_list('subgroup_id', flat=True).order_by('-date').first())
+    if subgroup_id is None:
+        raise ValidationError('O cliente não tem lançamentos de entrada para usar como subgrupo')
+    rows = [('Entrada', down_payment_date, down_payment)] if down_payment else []
+    rows += [(f'{i + 1}/{count}', add_months(first_due, i), amount) for i in range(count)]
+    total = sum(r[2] for r in rows)
+    summary = (f'Entrada de {_brl(down_payment)} em {down_payment_date:%d/%m/%Y} + ' if down_payment else '') \
+        + f'{count}x de {_brl(amount)} a partir de {first_due:%d/%m/%Y} (total {_brl(total)})'
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        dropped = _drop_open_installments(case)
+        Transaction.objects.bulk_create(
+            Transaction(company=case.company, contact=case.contact, subgroup_id=subgroup_id, collection_case=case, agreement_installment=True,
+                        type=TransactionType.INFLOW, status=TransactionStatus.PLANNED, date=date, amount=value, reference=ref)
+            for ref, date, value in rows
+        )
+        old_stage = case.stage
+        case.stage, case.agreement = stage, '\n'.join(filter(None, [summary, text.strip()]))
+        case.save(update_fields=['stage', 'agreement', 'updated_at'])
+        _log(user, case, f'Etapa: {old_stage.name} → {stage.name}\nAcordo: {case.agreement}'
+                         + (f'\n{dropped} parcela(s) em aberto do acordo anterior substituída(s)' if dropped else ''))
+    return get_case_service(user=user, case_id=case.pk)
+
+
+def broken_agreement_service(*, user: User, case_id: int, stage_id: int) -> CollectionCase:
+    """Customer defaulted on the agreement: its open installments are cancelled, the lawsuit goes on."""
+    case = get_case_service(user=user, case_id=case_id)
+    stage = LegalStage.objects.filter(pk=stage_id, requires_agreement=False).first()
+    if stage is None:
+        raise ValidationError('Escolha uma etapa sem acordo')
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        dropped = _drop_open_installments(case)
+        old_stage, previous = case.stage, case.agreement
+        case.stage, case.agreement = stage, ''
+        case.save(update_fields=['stage', 'agreement', 'updated_at'])
+        _log(user, case, f'Acordo descumprido: {dropped} parcela(s) em aberto cancelada(s)\n'
+                         f'Etapa: {old_stage.name} → {stage.name}' + (f'\nAcordo anterior: {previous}' if previous else ''))
+    return get_case_service(user=user, case_id=case.pk)
