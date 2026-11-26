@@ -160,6 +160,19 @@ async function breakAgreement() {
   }
 }
 
+// Legal responsible: in the modal header (also ticks its checklist item)
+const people = ref<{ label: string; value: number }[]>([])
+unwrap(api.GET('/api/collection-case/responsibles'))
+  .then(list => (people.value = list.map(p => ({ label: p.name, value: p.id })))).catch(notifyError)
+async function setResponsible(id: number | null) {
+  try {
+    await unwrap(api.PATCH('/api/collection-case/{case_id}', { params: { path: { case_id: item.value!.id! } }, body: { responsible_id: id } }))
+    await refresh()
+  } catch (e) {
+    notifyError(e)
+  }
+}
+
 // Imported cases come without the required fields: flag it
 const incomplete = computed(() => !!item.value && (!item.value.client_company || !item.value.contact_info
   || !item.value.delivered || !item.value.summary || !item.value.drive_link
@@ -170,6 +183,11 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
   <UModal v-model:open="open" :title="item?.contact_name ?? 'Ação'"
           :description="item ? `${item.closed_at ? 'Concluída' : item.stage_name} · ${item.company_name}` : undefined"
           :ui="{ content: 'sm:max-w-6xl' }">
+    <template #actions>
+      <USelect v-if="item" :model-value="item.responsible_id ?? undefined" :items="people" :disabled="!canChange"
+               placeholder="Responsável jurídico" aria-label="Responsável jurídico" icon="i-lucide-user-round" class="w-64"
+               @update:model-value="(v: any) => setResponsible(v ?? null)" />
+    </template>
     <template #body>
       <USkeleton v-if="!item" class="h-40 w-full" />
       <div v-else class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">

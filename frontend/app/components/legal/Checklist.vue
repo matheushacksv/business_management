@@ -12,12 +12,9 @@ const canChange = computed(() => auth.can('legal', 'change'))
 const path = computed(() => ({ case_id: props.item.id! }))
 
 const checks = ref<Check[]>([])
-const people = ref<{ label: string; value: number }[]>([])
 const load = () => unwrap(api.GET('/api/collection-case/{case_id}/checklist', { params: { path: path.value } }))
   .then(c => (checks.value = c)).catch(notifyError)
 watch(() => props.item, load, { immediate: true })
-unwrap(api.GET('/api/collection-case/responsibles'))
-  .then(list => (people.value = list.map(p => ({ label: p.name, value: p.id })))).catch(notifyError)
 
 const notes = reactive<Record<number, string>>({})
 async function toggle(c: Check, done: boolean) {
@@ -30,23 +27,11 @@ async function toggle(c: Check, done: boolean) {
     notifyError(e)
   }
 }
-async function setResponsible(id: number | null) {
-  try {
-    await unwrap(api.PATCH('/api/collection-case/{case_id}', { params: { path: path.value }, body: { responsible_id: id } }))
-    emit('changed')
-  } catch (e) {
-    notifyError(e)
-  }
-}
 const pending = computed(() => checks.value.filter(c => c.required && !c.done).length)
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <UFormField label="Responsável jurídico">
-      <USelect :model-value="item.responsible_id ?? undefined" :items="people" :disabled="!canChange" placeholder="Nenhum" class="w-full sm:w-80"
-               @update:model-value="(v: any) => setResponsible(v ?? null)" />
-    </UFormField>
     <UBadge :label="pending ? `Faltam ${pending} item(ns) obrigatório(s)` : 'Checklist completo'"
             :color="pending ? 'warning' : 'success'" variant="subtle" class="self-start" />
     <ul class="divide-y divide-muted rounded-xl ring ring-default">
