@@ -77,10 +77,14 @@ async function addComment() {
   }
 }
 
-async function saved() {
-  editing.value = false
+async function refresh() {
   await load()
   emit('changed')
+}
+
+async function saved() {
+  editing.value = false
+  await refresh()
 }
 
 // Loss: separate from the stage (sent to legal is not the same as unrecoverable)
@@ -165,9 +169,10 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
 
         <UTabs v-model="tab" :items="tabs" :content="false" size="sm" class="w-full" />
 
+        <!-- Kept alive across tabs: ticking the checklist mid-edit must not lose what was typed -->
+        <LegalForm v-if="editing" v-show="tab === 'summary'" :item="item" @saved="saved" @cancel="editing = false" />
         <template v-if="tab === 'summary'">
-          <LegalForm v-if="editing" :item="item" @saved="saved" @cancel="editing = false" />
-          <template v-else>
+          <template v-if="!editing">
             <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <div>
                 <dt class="text-xs text-dimmed">Cliente</dt>
@@ -193,7 +198,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
           </template>
         </template>
 
-        <LegalChecklist v-else-if="tab === 'checklist'" :item="item" @changed="saved" />
+        <LegalChecklist v-else-if="tab === 'checklist'" :item="item" @changed="refresh" />
 
         <AppAttachments v-else-if="tab === 'documents'" target="collection_case" :target-id="item.id!" :editable="canChange" />
 
