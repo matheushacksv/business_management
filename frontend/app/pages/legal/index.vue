@@ -39,10 +39,29 @@ onMounted(load)
 
 // Like won/lost on Pipedrive: concluded actions leave the board, the filter brings them back
 const status = ref<'open' | 'done'>('open')
-const visible = computed(() => items.value.filter(c => !!c.closed_at === (status.value === 'done')))
+// "Filtro" dropdown: situação and empresas above, plus responsible / agreement (client-side: the list is loaded whole)
+const responsible = ref<number | 'none'>()
+const agreementFilter = ref<'with' | 'without'>()
+const hasAgreement = (c: Case) => !!c.agreement?.trim() || needsAgreement(c.stage_id)
+const filtered = computed(() => items.value.filter(c =>
+  (responsible.value === undefined || (responsible.value === 'none' ? !c.responsible_id : c.responsible_id === responsible.value))
+  && (agreementFilter.value === undefined || hasAgreement(c) === (agreementFilter.value === 'with'))))
+const visible = computed(() => filtered.value.filter(c => !!c.closed_at === (status.value === 'done')))
+const activeFilters = computed(() => [filters.company_id.length, status.value === 'done', responsible.value !== undefined,
+  agreementFilter.value !== undefined].filter(Boolean).length)
+function clearFilters() {
+  filters.company_id = []
+  status.value = 'open'
+  responsible.value = undefined
+  agreementFilter.value = undefined
+}
+const people = ref<{ label: string; value: number | 'none' }[]>([])
+unwrap(api.GET('/api/collection-case/responsibles'))
+  .then(list => (people.value = [{ label: 'Sem responsável', value: 'none' }, ...list.map(p => ({ label: p.name, value: p.id }))]))
+  .catch(notifyError)
 const sum = (list: Case[]) => list.reduce((s, c) => s + Number(c.due_amount), 0)
 const totalOpen = computed(() => sum(visible.value))
-const totalReceived = computed(() => items.value.reduce((s, c) => s + Number(c.received_amount), 0))
+const totalReceived = computed(() => filtered.value.reduce((s, c) => s + Number(c.received_amount), 0))
 const stages = lookups.options.legalStages
 const needsAgreement = (id: number) => !!lookups.cache.value.legalStages?.find(s => s.id === id)?.requires_agreement
 const columnsByStage = computed(() => stages.value.map(s => {
@@ -159,9 +178,32 @@ function onCreated(id: number) {
     </template>
     <template #toolbar>
       <UInput v-model="filters.search" icon="i-lucide-search" placeholder="Cliente, empresa, resumo…" class="w-64" />
-      <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple placeholder="Empresas" class="w-44" />
-      <USelect v-model="status" :items="[{ label: 'Em andamento', value: 'open' }, { label: 'Concluídas', value: 'done' }]" class="w-40"
-               aria-label="Situação" />
+      <UPopover :content="{ align: 'start' }">
+        <UButton label="Filtro" icon="i-lucide-list-filter" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down">
+          <template v-if="activeFilters" #trailing>
+            <UBadge :label="String(activeFilters)" size="sm" variant="subtle" />
+          </template>
+        </UButton>
+        <template #content>
+          <div class="flex w-72 flex-col gap-3 p-3">
+            <UFormField label="Situação">
+              <USelect v-model="status" :items="[{ label: 'Em andamento', value: 'open' }, { label: 'Concluídas', value: 'done' }]" class="w-full" />
+            </UFormField>
+            <UFormField label="Acordo">
+              <USelect v-model="agreementFilter" :items="[{ label: 'Com acordo', value: 'with' }, { label: 'Sem acordo', value: 'without' }]"
+                       placeholder="Todos" class="w-full" />
+            </UFormField>
+            <UFormField label="Responsável jurídico">
+              <USelect v-model="responsible" :items="people" placeholder="Todos" class="w-full" />
+            </UFormField>
+            <UFormField label="Empresas">
+              <USelectMenu v-model="filters.company_id" :items="lookups.options.companies.value" value-key="value" multiple placeholder="Todas" class="w-full" />
+            </UFormField>
+            <UButton v-if="activeFilters" label="Limpar filtros" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" class="self-end"
+                     @click="clearFilters" />
+          </div>
+        </template>
+      </UPopover>
       <div class="ms-auto flex items-center gap-3">
         <span class="text-sm text-muted">Total devido <strong class="text-error tabular">{{ formatMoney(totalOpen) }}</strong></span>
         <UFieldGroup>
@@ -172,7 +214,7 @@ function onCreated(id: number) {
     </template>
 
     <div class="grid gap-3 sm:grid-cols-3">
-      <SStat label="Em aberto" :value="formatMoney(sum(items))" tone="error" icon="i-lucide-scale" />
+      <SStat label="Em aberto" :value="formatMoney(sum(filtered))" tone="error" icon="i-lucide-scale" />
       <SStat label="Recebido" :value="formatMoney(totalReceived)" tone="success" icon="i-lucide-badge-dollar-sign" />
       <SStat label="Honorários pagos" :value="formatMoney(totalReceived * LEGAL_FEE_RATE)" icon="i-lucide-hand-coins" />
     </div>
