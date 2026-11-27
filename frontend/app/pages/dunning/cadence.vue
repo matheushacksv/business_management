@@ -35,7 +35,7 @@ const fields = [
   { key: 'day', label: 'Dia de atraso', type: 'number' as const, required: true, default: 1 },
   { key: 'kind', label: 'Tipo', type: 'select' as const, options: kindItems, required: true, default: 'message' },
   { key: 'title', label: 'Atividade', required: true, span: 2 as const },
-  { key: 'template', label: 'Mensagem', type: 'textarea' as const, placeholder: '{cliente} {empresa} {valor} {parcelas} {vencimento} {dias}' },
+  { key: 'template', label: 'Mensagem', type: 'textarea' as const, variables: TEMPLATE_VARIABLES },
   { key: 'active', label: 'Ativa', type: 'switch' as const, default: true },
 ]
 const body = (d: Record<string, any>) => ({ day: Number(d.day), kind: d.kind, title: d.title, template: d.template ?? '', active: !!d.active })

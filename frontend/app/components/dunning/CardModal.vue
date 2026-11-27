@@ -173,7 +173,7 @@ async function dismiss() {
 }
 
 // Messages: placeholders filled with the card values; copy or open WhatsApp
-const text = (a: Activity) => card.value ? fillTemplate(a.message, card.value) : a.message
+const text = (a: Activity) => card.value ? fillTemplate(a.message, card.value, installments.value.find(i => i.asaas_url)?.asaas_url) : a.message
 const whatsapp = (a: Activity) => {
   const phone = card.value?.contact_phone.replace(/\D/g, '')
   if (!phone) return undefined

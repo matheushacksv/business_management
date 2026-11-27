@@ -19653,6 +19653,10 @@
        }
       ],
       "title": "Sale Id"
+     },
+     "asaas_url": {
+      "title": "Asaas Url",
+      "type": "string"
      }
     },
     "required": [
@@ -19660,7 +19664,8 @@
      "date",
      "amount",
      "reference",
-     "sale_id"
+     "sale_id",
+     "asaas_url"
     ],
     "title": "InstallmentOut",
     "type": "object"
@@ -20179,6 +20184,11 @@
       ],
       "default": "attention"
      },
+     "starts_cadence": {
+      "default": false,
+      "title": "Starts Cadence",
+      "type": "boolean"
+     },
      "id": {
       "title": "Id",
       "type": "integer"
@@ -20212,6 +20222,11 @@
        }
       ],
       "default": "attention"
+     },
+     "starts_cadence": {
+      "default": false,
+      "title": "Starts Cadence",
+      "type": "boolean"
      }
     },
     "required": [

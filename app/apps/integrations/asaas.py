@@ -145,8 +145,19 @@ def create_charges_service(*, user: User, sale_id: int) -> int:
                 'interest': {'value': float(config.interest_percent)},
             })
             # saved one by one: a failure halfway keeps what Asaas already has
-            Transaction.objects.filter(pk=tx.pk).update(asaas_id=payment['id'])
+            Transaction.objects.filter(pk=tx.pk).update(asaas_id=payment['id'], asaas_url=payment.get('invoiceUrl') or '')
     return len(pending)
+
+
+def charge_url(tx: Transaction) -> str:
+    """Link of the charge for the customer; charges made before the link was stored are looked up once."""
+    if tx.asaas_id and not tx.asaas_url:
+        try:
+            tx.asaas_url = request(_config(tx.company_id), 'GET', f'/payments/{tx.asaas_id}').get('invoiceUrl') or ''  # type:ignore
+        except ValidationError:  # Asaas down: the message goes without the link this time
+            return ''
+        Transaction.objects.filter(pk=tx.pk).update(asaas_url=tx.asaas_url)
+    return tx.asaas_url
 
 
 def receive_in_cash(tx: Transaction) -> None:

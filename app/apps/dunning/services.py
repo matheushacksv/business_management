@@ -38,10 +38,39 @@ def _overdue_of(card: Card, today: dt.date):
     return _late(today).filter(company_id=card.company_id, contact_id=card.contact_id, date__gte=card.overdue_since)  # type:ignore
 
 
+def _holidays(year: int) -> set[dt.date]:
+    """National holidays (plus Carnival and Corpus Christi, off for the team): no cadence activity on them."""
+    a, b, c = year % 19, year // 100, year % 100  # Easter: anonymous Gregorian algorithm
+    d, e = b // 4, b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7  # noqa: E741
+    m = (a + 11 * h + 22 * l) // 451
+    easter = dt.date(year, (h + l - 7 * m + 114) // 31, (h + l - 7 * m + 114) % 31 + 1)
+    fixed = [(1, 1), (4, 21), (5, 1), (9, 7), (10, 12), (11, 2), (11, 15), (11, 20), (12, 25)]
+    return {dt.date(year, mo, day) for mo, day in fixed} | {easter + dt.timedelta(days=n) for n in (-48, -47, -2, 60)}
+
+
+def _business_day(day: dt.date) -> dt.date:
+    """The day itself, or the next one off weekends and holidays."""
+    while day.weekday() >= 5 or day in _holidays(day.year):
+        day += dt.timedelta(days=1)
+    return day
+
+
+def add_business_days(day: dt.date, n: int) -> dt.date:
+    day = _business_day(day)
+    for _ in range(n):
+        day = _business_day(day + dt.timedelta(days=1))
+    return day
+
+
 def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date, stage: Stage) -> Card:
-    # day 1 = first day late; an old backlog starts its cadence today instead of all late at once
+    # cadence day 1: when the card enters a stage that starts it (here, or later on the move)
     card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since,
-                               cadence_start=max(since + dt.timedelta(days=1), today))
+                               cadence_start=_business_day(today) if stage.starts_cadence else None)
     renegotiated = (Card.objects.filter(company_id=company_id, contact_id=contact_id, outcome=Outcome.RENEGOTIATED)
                     .order_by('-closed_at').values_list('closed_at', flat=True).first())
     if renegotiated:  # late again after renegotiating: the assignee should know
@@ -50,19 +79,19 @@ def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date,
 
 
 def _run_cadence(today: dt.date, cards=None) -> None:
-    """Creates each step's activity when its day comes (day 1 → step 1, day 2 → step 2...).
-    Cards opened before this rule (cadence_start null) already got all of theirs."""
+    """Creates each step's activity when its business day comes (day 1 → step 1, day 2 → step 2...; weekends and
+    holidays skipped). No cadence_start: the card has not entered a stage that starts the cadence yet."""
     steps = list(CadenceStep.objects.filter(active=True))
     if not steps:
         return
     cards = cards if cards is not None else Card.objects.filter(closed_at__isnull=True, cadence_start__isnull=False)
     cards = [c for c in cards if c.cadence_start]
     done = set(Activity.objects.filter(card__in=cards, step__isnull=False).values_list('card_id', 'step_id'))
+    due = {(c.pk, s.pk): add_business_days(c.cadence_start, s.day - 1) for c in cards for s in steps}
     Activity.objects.bulk_create(
-        Activity(card=c, step=s, kind=s.kind, title=s.title, message=s.template,
-                 due_date=c.cadence_start + dt.timedelta(days=s.day - 1))
+        Activity(card=c, step=s, kind=s.kind, title=s.title, message=s.template, due_date=due[c.pk, s.pk])
         for c in cards for s in steps
-        if (c.pk, s.pk) not in done and c.cadence_start + dt.timedelta(days=s.day - 1) <= today
+        if (c.pk, s.pk) not in done and due[c.pk, s.pk] <= today
     )
 
 
@@ -146,7 +175,7 @@ def _cards_for(user: User, today: dt.date):
     critical_since = today - dt.timedelta(days=Config.get().critical_days)
     overdue = _late(today).filter(company_id=OuterRef('company_id'), contact_id=OuterRef('contact_id'),
                                   date__gte=OuterRef('overdue_since'))
-    pending = Activity.objects.filter(card=OuterRef('pk'), done_at__isnull=True)
+    pending = Activity.objects.filter(card=OuterRef('pk'), done_at__isnull=True, skipped=False)
     return (Card.objects.filter(company__in=list_companies_service(user=user)).exclude(outcome=Outcome.DISMISSED)
             .select_related('company', 'contact', 'stage', 'assignee')
             .annotate(
@@ -189,8 +218,13 @@ def get_card_service(*, user: User, card_id: int) -> Card:
 
 
 def card_installments_service(*, user: User, card_id: int):
+    from apps.integrations.asaas import charge_url
+
     card = get_card_service(user=user, card_id=card_id)
-    return _overdue_of(card, timezone.localdate()).order_by('date', 'id')
+    installments = list(_overdue_of(card, timezone.localdate()).order_by('date', 'id'))
+    for tx in installments:
+        tx.asaas_url = charge_url(tx)  # {link} of the messages
+    return installments
 
 
 def assignees_service():
@@ -208,12 +242,16 @@ def update_card_service(*, user: User, card_id: int, **fields) -> Card:
             if card.closed_at:
                 raise ValidationError('Este card já está fechado')
             card.stage = Stage.objects.get(pk=fields.pop('stage_id'))
+            if card.stage.starts_cadence and not card.cadence_start:  # moved to "Em cobrança": day 1 is today
+                card.cadence_start = _business_day(timezone.localdate())
         paid_on = fields.pop('paid_on', None)
         if 'outcome' in fields:
             _close(user, card, fields.pop('outcome'), fields.pop('legal_case_id', None), paid_on)
         for field, value in fields.items():
             setattr(card, field, value)
         card.save()
+        if not card.closed_at:
+            _run_cadence(timezone.localdate(), [card])
     return get_card_service(user=user, card_id=card_id)
 
 
@@ -259,7 +297,7 @@ def _activity_for(user: User, activity_id: int) -> Activity:
 
 def list_activities_service(*, user: User, card_id: int):
     get_card_service(user=user, card_id=card_id)
-    return Activity.objects.filter(card_id=card_id).select_related('done_by').order_by(F('done_at').desc(nulls_first=True), 'due_date', 'id')
+    return Activity.objects.filter(card_id=card_id, skipped=False).select_related('done_by').order_by(F('done_at').desc(nulls_first=True), 'due_date', 'id')
 
 
 def create_activity_service(*, user: User, card_id: int, **fields) -> Activity:
@@ -284,13 +322,17 @@ def update_activity_service(*, user: User, activity_id: int, done: bool | None =
 def delete_activity_service(*, user: User, activity_id: int) -> None:
     activity = _activity_for(user, activity_id)
     with transaction.atomic(), pghistory.context(user=user.pk):
-        activity.delete()
+        if activity.step_id:  # type:ignore  # cadence step: hidden, so the cadence does not create it again
+            activity.skipped = True
+            activity.save(update_fields=['skipped'])
+        else:
+            activity.delete()
 
 
 def agenda_service(*, user: User, assignee_id=None, until: dt.date | None = None):
     """Pending activities of open cards up to a date (default today): the daily to-do list."""
     sync_cards_service()
-    qs = (Activity.objects.filter(done_at__isnull=True, card__closed_at__isnull=True,
+    qs = (Activity.objects.filter(done_at__isnull=True, skipped=False, card__closed_at__isnull=True,
                                   card__company__in=list_companies_service(user=user),
                                   due_date__lte=until or timezone.localdate())
           .select_related('card__contact', 'card__company', 'card__assignee'))
@@ -302,7 +344,7 @@ def agenda_service(*, user: User, assignee_id=None, until: dt.date | None = None
 def productivity_service(*, user: User, start: dt.date, end: dt.date) -> dict:
     today = timezone.localdate()
     companies = list_companies_service(user=user)
-    acts = Activity.objects.filter(card__company__in=companies)
+    acts = Activity.objects.filter(card__company__in=companies, skipped=False)
     done = acts.filter(done_at__date__range=(start, end))
     pending = acts.filter(done_at__isnull=True, card__closed_at__isnull=True)
     rows: dict[int | None, dict] = {}

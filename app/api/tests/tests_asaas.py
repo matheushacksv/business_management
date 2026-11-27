@@ -29,7 +29,7 @@ class FakeAsaas:
             return {'data': []}
         self.n += 1
         prefix = {'/customers': 'cus', '/payments': 'pay', '/invoices': 'inv'}.get(path, 'x')
-        return {'id': f'{prefix}_{self.n}'}
+        return {'id': f'{prefix}_{self.n}', **({'invoiceUrl': f'https://www.asaas.com/i/{self.n}'} if prefix == 'pay' else {})}
 
     def made(self, method, path):
         return [c for c in self.calls if c[0] == method and c[1] == path]
@@ -118,6 +118,7 @@ class AsaasTests(TestCase):
         self.configure()
         self.client.post(f'/api/sale/{self.sale.pk}/asaas-charges', headers=self.auth())
         first, second = Transaction.objects.filter(sale=self.sale).exclude(asaas_id='').order_by('date')[:2]
+        self.assertTrue(first.asaas_url.startswith('https://www.asaas.com/i/'))  # {link} of the dunning messages
         finance.update_transaction_service(user=self.admin, transaction_id=first.pk, status=TransactionStatus.REALIZED,
                                            date=date(2026, 11, 27))  # Pix straight to the account
         self.assertEqual(self.fake.made('POST', f'/payments/{first.asaas_id}/receiveInCash')[0][2],

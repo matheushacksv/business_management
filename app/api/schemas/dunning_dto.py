@@ -13,6 +13,7 @@ class StageIn(Schema):
     name: str = Field(min_length=1, max_length=60)
     position: int = Field(0, ge=0)
     severity: Severity = Severity.ATTENTION
+    starts_cadence: bool = False
 
 
 class StageOut(StageIn):
@@ -80,6 +81,7 @@ class InstallmentOut(Schema):
     amount: Decimal
     reference: str
     sale_id: int | None
+    asaas_url: str  # charge link (boleto / Pix): {link} in the messages
 
 
 class ActivityIn(Schema):

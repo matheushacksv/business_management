@@ -5214,6 +5214,8 @@ export interface components {
             reference: string;
             /** Sale Id */
             sale_id: number | null;
+            /** Asaas Url */
+            asaas_url: string;
         };
         /**
          * ActivityKind
@@ -5397,6 +5399,11 @@ export interface components {
             position: number;
             /** @default attention */
             severity: components["schemas"]["Severity"];
+            /**
+             * Starts Cadence
+             * @default false
+             */
+            starts_cadence: boolean;
             /** Id */
             id: number;
         };
@@ -5411,6 +5418,11 @@ export interface components {
             position: number;
             /** @default attention */
             severity: components["schemas"]["Severity"];
+            /**
+             * Starts Cadence
+             * @default false
+             */
+            starts_cadence: boolean;
         };
         /** StepOut */
         StepOut: {

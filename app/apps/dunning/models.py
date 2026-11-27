@@ -33,6 +33,7 @@ class Stage(models.Model):
     name = models.CharField(max_length=60)
     position = models.PositiveSmallIntegerField(default=0)
     severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.ATTENTION)
+    starts_cadence = models.BooleanField(default=False)  # entering it starts the card's message cadence (day 1)
 
     class Meta:
         ordering = ['position', 'id']
@@ -96,6 +97,7 @@ class Activity(models.Model):
     done_at = models.DateTimeField(null=True, blank=True)
     done_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     answered = models.BooleanField(null=True, blank=True)  # did the customer answer? (no answer = "sem retorno")
+    skipped = models.BooleanField(default=False)  # cadence step deleted by hand: hidden, and not created again
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

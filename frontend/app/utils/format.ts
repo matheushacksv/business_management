@@ -93,19 +93,40 @@ export function daysLate(date: string): number {
 }
 
 /** Fills the cadence message placeholders with the card values */
+// Placeholders of the dunning messages (cadence): filled with the card's data
+export const TEMPLATE_VARIABLES = [
+  { label: 'Primeiro nome', value: '{primeiro_nome}' },
+  { label: 'Nome do cliente', value: '{cliente}' },
+  { label: 'Empresa do grupo', value: '{empresa}' },
+  { label: 'Valor em atraso', value: '{valor}' },
+  { label: 'Parcelas em atraso', value: '{parcelas}' },
+  { label: 'Vencimento', value: '{vencimento}' },
+  { label: 'Dias de atraso', value: '{dias}' },
+  { label: 'Link do boleto', value: '{link}' },
+]
+
+const TITLES = new Set(['dr', 'dra', 'sr', 'sra', 'srta'])
+/** "JAQUELINE TSUCHIYA" -> "Jaqueline"; "Dra Paula Carolina | Clínica" -> "Paula". */
+export function firstName(name: string): string {
+  const words = name.split(/[\s|]+/).filter(Boolean)
+  const word = words.find(w => !TITLES.has(w.toLowerCase().replace('.', ''))) ?? words[0] ?? ''
+  return word.charAt(0).toLocaleUpperCase('pt-BR') + word.slice(1).toLocaleLowerCase('pt-BR')
+}
+
 export function fillTemplate(text: string, card: {
   contact_name: string; company_name: string; overdue_amount: string | number; overdue_count: number; overdue_since: string
-}): string {
+}, link = ''): string {
   const values: Record<string, string> = {
-    cliente: card.contact_name, empresa: card.company_name, valor: formatMoney(card.overdue_amount),
-    parcelas: String(card.overdue_count), vencimento: formatDate(card.overdue_since), dias: String(daysLate(card.overdue_since)),
+    primeiro_nome: firstName(card.contact_name), cliente: card.contact_name, empresa: card.company_name,
+    valor: formatMoney(card.overdue_amount), parcelas: String(card.overdue_count), vencimento: formatDate(card.overdue_since),
+    dias: String(daysLate(card.overdue_since)), link,
   }
   return text.replace(/\{(\w+)\}/g, (m, key: string) => values[key] ?? m)
 }
 
-/** Sellers and advisors earn a % of the sale after tax; the other kinds a fixed value (same rule as the backend). */
 export const LEGAL_FEE_RATE = 0.2  // lawyer fees: always 20% of what the customer pays on an agreement
 
+/** Sellers and advisors earn a % of the sale after tax; the other kinds a fixed value (same rule as the backend). */
 export const PERCENT_COMMISSION_KINDS = ['seller', 'advisor']
 
 export const TYPE_OPTIONS = [

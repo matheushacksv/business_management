@@ -179,6 +179,7 @@ class Transaction(models.Model):
     # False = defaulted installment, suspended while the lawsuit claims its own amount
     agreement_installment = models.BooleanField(default=False)
     asaas_id = models.CharField(max_length=40, blank=True, db_index=True)  # charge (pay_...)
+    asaas_url = models.URLField(max_length=300, blank=True)  # charge page for the customer (boleto / Pix)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

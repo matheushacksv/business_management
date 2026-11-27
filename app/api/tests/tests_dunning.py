@@ -53,14 +53,25 @@ class DunningTests(TestCase):
         self.assertEqual((Decimal(card['overdue_amount']), card['overdue_count']), (Decimal('1500'), 2))
         self.assertEqual(card['stage_id'], Stage.objects.first().pk)
         self.assertEqual(card['oldest_overdue'], '2026-11-10')
-        # backlog (10/11) starts the cadence today; each step is created when its day comes
-        dues = lambda: sorted(Activity.objects.values_list('due_date', flat=True))  # noqa: E731
-        self.assertEqual(dues(), [TODAY])
+        # "Nova pendência" waits; moving to "Em cobrança" starts the cadence on the next business day:
+        # Fri 20/11 is a holiday (Consciência Negra), so day 1 = Mon 23/11, day 3 = Wed 25, day 4 = Thu 26
+        dues = lambda: sorted(Activity.objects.filter(skipped=False).values_list('due_date', flat=True))  # noqa: E731
+        self.assertEqual(dues(), [])
+        r = self.api('patch', f'/dunning/card/{card["id"]}', {'stage_id': Stage.objects.get(starts_cadence=True).pk})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(dues(), [])
         self.cards()
         self.assertEqual(Card.objects.count(), 1)
-        services.sync_cards_service(today=TODAY + dt.timedelta(days=3))  # day 4: steps of days 3 and 4
-        services.sync_cards_service(today=TODAY + dt.timedelta(days=3))
-        self.assertEqual(dues(), [TODAY, TODAY + dt.timedelta(days=2), TODAY + dt.timedelta(days=3)])
+        services.sync_cards_service(today=dt.date(2026, 11, 23))
+        self.assertEqual(dues(), [dt.date(2026, 11, 23)])
+        services.sync_cards_service(today=dt.date(2026, 11, 26))
+        services.sync_cards_service(today=dt.date(2026, 11, 26))
+        self.assertEqual(dues(), [dt.date(2026, 11, 23), dt.date(2026, 11, 25), dt.date(2026, 11, 26)])
+        # a cadence activity deleted by hand is not created again
+        first = Activity.objects.get(due_date=dt.date(2026, 11, 23))
+        self.assertEqual(self.api('delete', f'/dunning/activity/{first.pk}').status_code, 204)
+        services.sync_cards_service(today=dt.date(2026, 11, 26))
+        self.assertEqual(dues(), [dt.date(2026, 11, 25), dt.date(2026, 11, 26)])
 
     def test_team_notes(self):
         self.installment(dt.date(2026, 11, 19))
@@ -158,7 +169,9 @@ class DunningTests(TestCase):
     def test_activities_and_productivity(self):
         self.installment(dt.date(2026, 11, 19))
         card = self.cards()[0]
-        self.api('patch', f'/dunning/card/{card["id"]}', {'assignee_id': self.admin.pk})
+        self.api('patch', f'/dunning/card/{card["id"]}', {'assignee_id': self.admin.pk,
+                                                         'stage_id': Stage.objects.get(starts_cadence=True).pk})
+        services.sync_cards_service(today=dt.date(2026, 11, 23))  # 20/11 is a holiday: day 1 is Monday
         acts = self.api('get', f'/dunning/card/{card["id"]}/activities').json()
         first = acts[0]
         r = self.api('patch', f'/dunning/activity/{first["id"]}', {'done': True, 'answered': False, 'notes': 'não atendeu'})

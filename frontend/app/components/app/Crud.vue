@@ -16,6 +16,7 @@ export interface CrudField {
   span?: 2
   step?: number             // number fields: decimals allowed
   default?: unknown         // initial value when creating
+  variables?: { label: string; value: string }[]  // textarea: menu that inserts {placeholders} at the cursor
 }
 
 const props = defineProps<{
@@ -76,6 +77,16 @@ const tableColumns = computed(() => props.selectable ? [selection.column, ...pro
 const open = ref(false)
 const editingId = ref<number | null>(null)
 const state = reactive<Record<string, any>>({})
+
+// Textarea variables: inserted where the cursor is (end of the text if it never had focus)
+const textareas: Record<string, { textareaRef: HTMLTextAreaElement | null } | null> = {}
+function insertVariable(key: string, token: string) {
+  const el = textareas[key]?.textareaRef
+  const text: string = state[key] ?? ''
+  const at = el ? el.selectionStart : text.length
+  state[key] = text.slice(0, at) + token + text.slice(el ? el.selectionEnd : at)
+  nextTick(() => { el?.focus(); el?.setSelectionRange(at + token.length, at + token.length) })
+}
 const saving = ref(false)
 const isRequired = (f: CrudField) => typeof f.required === 'function' ? f.required(state) : !!f.required
 const visibleFields = computed(() => props.fields.filter(f => !(editingId.value && f.createOnly)))
@@ -177,7 +188,15 @@ async function destroy() {
                          multiple :placeholder="f.placeholder" class="w-full" />
             <USwitch v-else-if="f.type === 'switch'" v-model="state[f.key]" />
             <UInputTags v-else-if="f.type === 'tags'" v-model="state[f.key]" :placeholder="f.placeholder" class="w-full" />
-            <UTextarea v-else-if="f.type === 'textarea'" v-model="state[f.key]" :rows="3" class="w-full" />
+            <div v-else-if="f.type === 'textarea'" class="flex flex-col gap-1.5">
+              <UDropdownMenu v-if="f.variables" :items="f.variables.map(v => ({ label: v.label, suffix: v.value, onSelect: () => insertVariable(f.key, v.value) }))"
+                             :content="{ align: 'start' }">
+                <UButton label="Inserir campo" icon="i-lucide-braces" trailing-icon="i-lucide-chevron-down" size="xs" color="neutral"
+                         variant="outline" class="self-start" />
+              </UDropdownMenu>
+              <UTextarea :ref="(c: any) => (textareas[f.key] = c)" v-model="state[f.key]" :rows="f.variables ? 6 : 3" autoresize
+                         :placeholder="f.placeholder" class="w-full" />
+            </div>
             <UInputNumber v-else-if="f.type === 'money'" v-model="state[f.key]" :step="0.01" :increment="false" :decrement="false"
                           :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
             <UInputNumber v-else-if="f.type === 'number'" v-model="state[f.key]" :step="f.step" class="w-full" />
