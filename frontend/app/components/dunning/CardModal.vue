@@ -93,6 +93,24 @@ async function renegotiate() {
   }
 }
 
+// Customer data (phone, e-mail...) edited right here: same form as the customer page
+const contactEdit = reactive({ open: false, loading: false, contact: null as components['schemas']['ContactOut'] | null })
+async function editContact() {
+  contactEdit.loading = true
+  try {
+    contactEdit.contact = await unwrap(api.GET('/api/contact/{contact_id}', { params: { path: { contact_id: card.value!.contact_id } } }))
+    contactEdit.open = true
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    contactEdit.loading = false
+  }
+}
+async function contactSaved() {
+  emit('changed')
+  await load()
+}
+
 // Partial payment: the installment becomes two (this part, maybe paid now, + the rest on a new date)
 const split = reactive({ open: false, saving: false, item: null as Installment | null, amount: undefined as number | undefined,
   date: '', paid: true, rest_date: '' })
@@ -251,6 +269,8 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
             <span v-else-if="card.contact_phone"><UIcon name="i-lucide-phone" class="align-middle" /> {{ card.contact_phone }}</span>
             <span v-if="card.contact_email"><UIcon name="i-lucide-mail" class="align-middle" /> {{ card.contact_email }}</span>
             <NuxtLink :to="`/registers/contacts/${card.contact_id}`" class="hover:text-primary">Ficha do cliente</NuxtLink>
+            <UButton v-if="auth.can('contacts', 'change')" label="Editar cliente" icon="i-lucide-pencil" size="xs" color="neutral"
+                     variant="link" class="p-0" :loading="contactEdit.loading" @click="editContact" />
             <NuxtLink v-if="card.legal_case_id" to="/legal" class="text-warning hover:text-primary">Ação no jurídico</NuxtLink>
             <div class="ms-auto flex flex-wrap items-center gap-2">
               <UBadge v-if="!isOpen" :label="`${DUNNING_LABELS.outcome[card.outcome]} · ${formatDate(card.closed_at)}`"
@@ -476,4 +496,5 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
       </div>
     </template>
   </UModal>
+  <AppContactFormModal v-model:open="contactEdit.open" :contact="contactEdit.contact" @saved="contactSaved" />
 </template>
