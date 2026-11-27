@@ -4613,6 +4613,11 @@ export interface components {
              * @default false
              */
             requires_process_number: boolean;
+            /**
+             * Breaks Agreement
+             * @default false
+             */
+            breaks_agreement: boolean;
             /** Id */
             id: number;
         };
@@ -4640,6 +4645,11 @@ export interface components {
              * @default false
              */
             requires_process_number: boolean;
+            /**
+             * Breaks Agreement
+             * @default false
+             */
+            breaks_agreement: boolean;
         };
         /** CaseFilters */
         CaseFilters: {

@@ -112,6 +112,7 @@ class LegalStageIn(Schema):
     requires_agreement: bool = False
     requires_checklist: bool = False
     requires_process_number: bool = False
+    breaks_agreement: bool = False
 
 
 class LegalStageOut(LegalStageIn):

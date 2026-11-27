@@ -11,6 +11,7 @@ class LegalStage(models.Model):
     requires_agreement = models.BooleanField(default=False)  # entering it needs the agreement/sentence text
     requires_checklist = models.BooleanField(default=False)  # entering it (from one without) needs the required checklist (PDF 11.2)
     requires_process_number = models.BooleanField(default=False)  # entering it needs the lawsuit number
+    breaks_agreement = models.BooleanField(default=False)  # entering it = agreement not kept (unpaid ones back to legal)
 
     class Meta:
         ordering = ['position', 'id']

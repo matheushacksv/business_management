@@ -8,6 +8,7 @@ definePageMeta({ permission: ['legal', 'view'] })
 
 const { api, unwrap, notifyError } = useApi()
 const auth = useAuth()
+const confirm = useConfirm()
 const lookups = useLookups()
 lookups.ensure('companies', 'legalStages').catch(notifyError)
 const UBadge = resolveComponent('UBadge')
@@ -83,11 +84,21 @@ function onDrop(stage: number) {
     Object.assign(agreement, { case: card, stage, open: true })
     return
   }
+  if (lookups.cache.value.legalStages?.find(s => s.id === stage)?.breaks_agreement && hasAgreement(card)) {
+    confirmBroken(card, stage)
+    return
+  }
   if (lookups.cache.value.legalStages?.find(s => s.id === stage)?.requires_process_number && !card.process_number) {
     Object.assign(protocol, { case: card, stage, number: '', open: true })
     return
   }
   move(card, stage)
+}
+
+// Stage marked "acordo descumprido": the unpaid agreement installments go back to the legal debt
+async function confirmBroken(card: Case, stage: number) {
+  if (await confirm({ title: 'Acordo descumprido?', description: 'As parcelas do acordo não pagas voltam para o jurídico.',
+    confirmLabel: 'Mover', color: 'warning' })) move(card, stage)
 }
 
 // Stages marked "requires process number": asked when the card is dropped there

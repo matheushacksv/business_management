@@ -17763,6 +17763,11 @@
       "title": "Requires Process Number",
       "type": "boolean"
      },
+     "breaks_agreement": {
+      "default": false,
+      "title": "Breaks Agreement",
+      "type": "boolean"
+     },
      "id": {
       "title": "Id",
       "type": "integer"
@@ -17802,6 +17807,11 @@
      "requires_process_number": {
       "default": false,
       "title": "Requires Process Number",
+      "type": "boolean"
+     },
+     "breaks_agreement": {
+      "default": false,
+      "title": "Breaks Agreement",
       "type": "boolean"
      }
     },

@@ -14,6 +14,7 @@ const columns = [
   { accessorKey: 'requires_agreement', header: 'Exige acordo', cell: ({ row }: any) => yes(row.original.requires_agreement) },
   { accessorKey: 'requires_checklist', header: 'Exige checklist', cell: ({ row }: any) => yes(row.original.requires_checklist) },
   { accessorKey: 'requires_process_number', header: 'Exige nº do processo', cell: ({ row }: any) => yes(row.original.requires_process_number) },
+  { accessorKey: 'breaks_agreement', header: 'Acordo descumprido', cell: ({ row }: any) => yes(row.original.breaks_agreement) },
 ]
 const fields = [
   { key: 'name', label: 'Nome', required: true },
@@ -21,9 +22,10 @@ const fields = [
   { key: 'requires_agreement', label: 'Exige acordo', type: 'switch' as const },
   { key: 'requires_checklist', label: 'Exige checklist', type: 'switch' as const },
   { key: 'requires_process_number', label: 'Exige nº do processo', type: 'switch' as const },
+  { key: 'breaks_agreement', label: 'Acordo descumprido', type: 'switch' as const },
 ]
 const body = (d: Record<string, any>) => ({
-  name: d.name, position: Number(d.position ?? 0), requires_agreement: !!d.requires_agreement, requires_checklist: !!d.requires_checklist, requires_process_number: !!d.requires_process_number,
+  name: d.name, position: Number(d.position ?? 0), requires_agreement: !!d.requires_agreement, requires_checklist: !!d.requires_checklist, requires_process_number: !!d.requires_process_number, breaks_agreement: !!d.breaks_agreement,
 })
 </script>
 

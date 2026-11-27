@@ -176,6 +176,17 @@ class CollectionCaseTests(TestCase):
         self.assertIn('empresa B', str(r.json()))
         self.assertEqual(self.create(company_id=self.b.pk).status_code, 201)
 
+    def test_moving_to_broken_agreement_stage(self):
+        case_id = self.create().json()['id']
+        self.client.post(f'/api/collection-case/{case_id}/agreement', data={'total': '1000', 'count': 2, 'first_due': '2027-01-10'},
+                         content_type='application/json', headers=self.auth)
+        broken = LegalStage.objects.create(name='Acordo Descumprido', position=9, breaks_agreement=True)
+        r = self.patch(case_id, stage_id=broken.pk)
+        self.assertEqual((r.status_code, r.json()['agreement']), (200, ''))
+        self.assertFalse(Transaction.objects.filter(collection_case_id=case_id, agreement_installment=True).exists())
+        self.assertIn('Acordo descumprido: 2 parcela(s)', CollectionCase.objects.get(pk=case_id).comments.first().text + ''.join(
+            CollectionCase.objects.get(pk=case_id).comments.values_list('text', flat=True)))
+
     def test_suspended_installments_are_not_expected_money(self):
         self.create()  # open1 / open2 suspended in the case
         planned = services.list_transactions_service(user=self.admin, status=[TransactionStatus.PLANNED], company_id=[self.a.pk])

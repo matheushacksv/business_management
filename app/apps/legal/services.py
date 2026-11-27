@@ -122,6 +122,9 @@ def update_case_service(*, user: User, case_id: int, **fields) -> CollectionCase
         raise ValidationError(f'Informe o número do processo para mover para "{case.stage.name}"')
     with transaction.atomic(), pghistory.context(user=user.pk):
         case.save(update_fields=[*fields, 'updated_at'])  # responsible_id: Django accepts the attname
+        if case.stage != old_stage and case.stage.breaks_agreement:  # moved to "Acordo descumprido"
+            log.append(_break_agreement(case))
+            case.save(update_fields=['agreement', 'updated_at'])
         if case.stage != old_stage:
             text = f'Etapa: {old_stage.name} → {case.stage.name}'
             if case.stage.requires_agreement:
@@ -337,14 +340,21 @@ def broken_agreement_service(*, user: User, case_id: int, stage_id: int) -> Coll
     if stage is None:
         raise ValidationError('Escolha uma etapa sem acordo')
     with transaction.atomic(), pghistory.context(user=user.pk):
-        unpaid = Transaction.objects.filter(collection_case=case, type=TransactionType.INFLOW, status=TransactionStatus.PLANNED,
-                                            agreement_installment=True).update(agreement_installment=False)
-        old_stage, previous = case.stage, case.agreement
-        case.stage, case.agreement = stage, ''
+        old_stage = case.stage
+        case.stage = stage
+        _log(user, case, _break_agreement(case) + f'\nEtapa: {old_stage.name} → {stage.name}')
         case.save(update_fields=['stage', 'agreement', 'updated_at'])
-        _log(user, case, f'Acordo descumprido: {unpaid} parcela(s) não paga(s) voltaram para o jurídico\n'
-                         f'Etapa: {old_stage.name} → {stage.name}' + (f'\nAcordo anterior: {previous}' if previous else ''))
     return get_case_service(user=user, case_id=case.pk)
+
+
+def _break_agreement(case: CollectionCase) -> str:
+    """Unpaid agreement installments become defaulted ones (shown as "Jurídico"); the agreement text goes to the log.
+    The caller saves the case."""
+    unpaid = Transaction.objects.filter(collection_case=case, type=TransactionType.INFLOW, status=TransactionStatus.PLANNED,
+                                        agreement_installment=True).update(agreement_installment=False)
+    previous, case.agreement = case.agreement, ''
+    return f'Acordo descumprido: {unpaid} parcela(s) não paga(s) voltaram para o jurídico' \
+        + (f'\nAcordo anterior: {previous}' if previous else '')
 
 
 def agreement_case_for(company_id: int, contact_id: int | None, type: str) -> int | None:
