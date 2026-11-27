@@ -73,6 +73,12 @@ def create_case_service(*, user: User, company_id: int, contact_id: int, **field
     _check(case)
     if stage.requires_checklist:
         raise ValidationError(f'Abra o caso numa etapa sem checklist obrigatório e complete o checklist antes de "{stage.name}"')
+    open_ = Transaction.objects.filter(contact_id=contact_id, type=TransactionType.INFLOW, status=TransactionStatus.PLANNED,
+                                       collection_case__isnull=True)
+    if not open_.filter(company=company).exists():  # wrong company picked: the installments would not come along
+        other = open_.filter(company__in=list_companies_service(user=user)).values_list('company__name', flat=True).first()
+        if other:
+            raise ValidationError(f'As parcelas em aberto deste cliente são da empresa {other}: escolha essa empresa')
     with transaction.atomic(), pghistory.context(user=user.pk):
         case.save()
         linked = Transaction.objects.filter(

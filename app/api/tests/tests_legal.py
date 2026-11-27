@@ -169,6 +169,13 @@ class CollectionCaseTests(TestCase):
         comments = self.client.get(f'/api/collection-case/{case_id}/comments', headers=self.auth).json()
         self.assertEqual([(c['text'][:11], c['is_log']) for c in comments], [('Ligou o adv', False), ('Caso aberto', True)])
 
+    def test_case_in_the_company_of_the_installments(self):
+        Transaction.objects.filter(company=self.a).delete()  # Maria owes only to company B
+        r = self.create()
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('empresa B', str(r.json()))
+        self.assertEqual(self.create(company_id=self.b.pk).status_code, 201)
+
     def test_suspended_installments_are_not_expected_money(self):
         self.create()  # open1 / open2 suspended in the case
         planned = services.list_transactions_service(user=self.admin, status=[TransactionStatus.PLANNED], company_id=[self.a.pk])
