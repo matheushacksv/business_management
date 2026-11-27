@@ -181,7 +181,7 @@ async function addActivity() {
 
 // API4COM: an answered call (real conversation) completes the activity; calls listed in the "Ligações" panel
 const { calling, call } = usePhoneCall()
-const callsList = ref<{ load: () => void } | null>(null)
+const callsList = ref<{ load: () => void; dial: () => void; calling: boolean } | null>(null)
 const callingId = ref<number | null>(null)
 function callFor(a: Activity) {
   callingId.value = a.id
@@ -219,7 +219,10 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
                          @update:model-value="(v: any) => patchCard({ assignee_id: v ?? null })" />
           </UFormField>
           <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted sm:col-span-4">
-            <span v-if="card.contact_phone"><UIcon name="i-lucide-phone" class="align-middle" /> {{ card.contact_phone }}</span>
+            <UButton v-if="card.contact_phone && auth.me.value?.has_phone_line" :label="card.contact_phone" icon="i-lucide-phone"
+                     size="xs" color="neutral" variant="link" class="p-0" aria-label="Ligar pela API4COM"
+                     :loading="callsList?.calling" @click="callsList?.dial()" />
+            <span v-else-if="card.contact_phone"><UIcon name="i-lucide-phone" class="align-middle" /> {{ card.contact_phone }}</span>
             <span v-if="card.contact_email"><UIcon name="i-lucide-mail" class="align-middle" /> {{ card.contact_email }}</span>
             <NuxtLink :to="`/registers/contacts/${card.contact_id}`" class="hover:text-primary">Ficha do cliente</NuxtLink>
             <NuxtLink v-if="card.legal_case_id" to="/legal" class="text-warning hover:text-primary">Ação no jurídico</NuxtLink>
