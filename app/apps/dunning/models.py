@@ -33,7 +33,6 @@ class Stage(models.Model):
     name = models.CharField(max_length=60)
     position = models.PositiveSmallIntegerField(default=0)
     severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.ATTENTION)
-    starts_cadence = models.BooleanField(default=False)  # entering it starts the card's message cadence (day 1)
 
     class Meta:
         ordering = ['position', 'id']
@@ -49,18 +48,34 @@ class ActivityKind(models.TextChoices):
 
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
-class CadenceStep(models.Model):
-    """Activity created on each new card, on the `day`-th day late.
-    Template placeholders: {cliente} {empresa} {valor} {parcelas} {vencimento} {dias}."""
+class Cadence(models.Model):
+    """Activities a card gets while in `stage`, one at a time: each step is created when the previous one is done
+    (the 1st when the card enters the stage). Moving to another stage stops it; coming back restarts it."""
 
-    day = models.PositiveSmallIntegerField()
+    name = models.CharField(max_length=80)
+    stage = models.OneToOneField(Stage, on_delete=models.CASCADE, related_name='cadence')
+    skip_weekends = models.BooleanField(default=True)  # due dates move to Monday
+    skip_holidays = models.BooleanField(default=True)  # national holidays + Carnival and Corpus Christi
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['stage__position', 'id']
+
+
+@pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
+class CadenceStep(models.Model):
+    """Placeholders in `template`: see TEMPLATE_VARIABLES in the frontend ({primeiro_nome}, {valor}, {link}...)."""
+
+    cadence = models.ForeignKey(Cadence, on_delete=models.CASCADE, related_name='steps')
+    position = models.PositiveSmallIntegerField(default=0)
+    interval_days = models.PositiveSmallIntegerField(default=0)  # after the previous step was done (1st: after entering)
     kind = models.CharField(max_length=10, choices=ActivityKind.choices)
     title = models.CharField(max_length=120)
     template = models.TextField(blank=True)
     active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ['day', 'id']
+        ordering = ['position', 'id']
 
 
 @pghistory.track(pghistory.InsertEvent(), pghistory.UpdateEvent(), pghistory.DeleteEvent())
@@ -70,7 +85,8 @@ class Card(models.Model):
     stage = models.ForeignKey(Stage, on_delete=models.PROTECT, related_name='cards')
     assignee = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     overdue_since = models.DateField()  # oldest overdue due date when the card opened
-    cadence_start = models.DateField(null=True, blank=True)  # cadence day 1; each step is created when its day comes
+    cadence = models.ForeignKey(Cadence, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')  # running now
+    cadence_started_at = models.DateTimeField(null=True, blank=True)  # this run's steps: created from then on
     outcome = models.CharField(max_length=12, choices=Outcome.choices, default=Outcome.OPEN)
     closed_at = models.DateField(null=True, blank=True)  # when the outcome was set
     legal_case = models.ForeignKey('legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')

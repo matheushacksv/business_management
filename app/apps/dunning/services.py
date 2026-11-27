@@ -9,7 +9,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.companies.services import list_companies_service
-from apps.dunning.models import Activity, CadenceStep, Card, CardNote, Config, Outcome, Severity, Stage
+from apps.dunning.models import Activity, Cadence, CadenceStep, Card, CardNote, Config, Outcome, Severity, Stage
 from apps.finance.models import Transaction, TransactionStatus, TransactionType
 from apps.legal.models import CollectionCase
 from apps.users.models import User
@@ -53,46 +53,59 @@ def _holidays(year: int) -> set[dt.date]:
     return {dt.date(year, mo, day) for mo, day in fixed} | {easter + dt.timedelta(days=n) for n in (-48, -47, -2, 60)}
 
 
-def _business_day(day: dt.date) -> dt.date:
-    """The day itself, or the next one off weekends and holidays."""
-    while day.weekday() >= 5 or day in _holidays(day.year):
+def _shift(day: dt.date, cadence: Cadence) -> dt.date:
+    """The day itself, or the next one the cadence works on (weekends / holidays skipped if set so)."""
+    while (cadence.skip_weekends and day.weekday() >= 5) or (cadence.skip_holidays and day in _holidays(day.year)):
         day += dt.timedelta(days=1)
     return day
 
 
-def add_business_days(day: dt.date, n: int) -> dt.date:
-    day = _business_day(day)
-    for _ in range(n):
-        day = _business_day(day + dt.timedelta(days=1))
+def _due(base: dt.date, days: int, cadence: Cadence) -> dt.date:
+    """`days` working days after `base` (0: base itself, moved to a working day)."""
+    day = _shift(base, cadence)
+    for _ in range(days):
+        day = _shift(day + dt.timedelta(days=1), cadence)
     return day
 
 
+def _advance(card: Card) -> None:
+    """Creates the next step of the card's running cadence when nothing of it is pending: the 1st counts from today
+    (the card just entered the stage), the next ones from the day the previous one was done (or deleted)."""
+    cadence = card.cadence
+    if card.closed_at or cadence is None or not cadence.active:
+        return
+    run = Activity.objects.filter(card=card, step__cadence=cadence, created_at__gte=card.cadence_started_at)
+    if run.filter(done_at__isnull=True, skipped=False).exists():
+        return
+    steps = list(cadence.steps.filter(active=True))
+    last = run.select_related('step').order_by('-step__position', '-step_id').first()
+    if last is None:
+        nxt, base = (steps[0] if steps else None), timezone.localdate()  # created when the card enters the stage
+    else:
+        later = [s for s in steps if (s.position, s.pk) > (last.step.position, last.step.pk)]  # type:ignore
+        nxt, base = (later[0] if later else None), timezone.localtime(last.done_at or timezone.now()).date()
+    if nxt:
+        Activity.objects.create(card=card, step=nxt, kind=nxt.kind, title=nxt.title, message=nxt.template,
+                                due_date=_due(base, nxt.interval_days, cadence))
+
+
+def _start_cadence(card: Card) -> None:
+    """Card entered its stage: the stage's cadence starts from step 1 (a previous run's pending step is dropped)."""
+    Activity.objects.filter(card=card, step__isnull=False, done_at__isnull=True, skipped=False).update(skipped=True)
+    card.cadence = Cadence.objects.filter(stage_id=card.stage_id, active=True).first()  # type:ignore
+    card.cadence_started_at = timezone.now() if card.cadence else None
+    card.save(update_fields=['cadence', 'cadence_started_at', 'updated_at'])
+    _advance(card)
+
+
 def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date, stage: Stage) -> Card:
-    # cadence day 1: when the card enters a stage that starts it (here, or later on the move)
-    card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since,
-                               cadence_start=_business_day(today) if stage.starts_cadence else None)
+    card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since)
     renegotiated = (Card.objects.filter(company_id=company_id, contact_id=contact_id, outcome=Outcome.RENEGOTIATED)
                     .order_by('-closed_at').values_list('closed_at', flat=True).first())
     if renegotiated:  # late again after renegotiating: the assignee should know
         CardNote.objects.create(card=card, text=f'Cliente já renegociou em {renegotiated:%d/%m/%Y}')
+    _start_cadence(card)
     return card
-
-
-def _run_cadence(today: dt.date, cards=None) -> None:
-    """Creates each step's activity when its business day comes (day 1 → step 1, day 2 → step 2...; weekends and
-    holidays skipped). No cadence_start: the card has not entered a stage that starts the cadence yet."""
-    steps = list(CadenceStep.objects.filter(active=True))
-    if not steps:
-        return
-    cards = cards if cards is not None else Card.objects.filter(closed_at__isnull=True, cadence_start__isnull=False)
-    cards = [c for c in cards if c.cadence_start]
-    done = set(Activity.objects.filter(card__in=cards, step__isnull=False).values_list('card_id', 'step_id'))
-    due = {(c.pk, s.pk): add_business_days(c.cadence_start, s.day - 1) for c in cards for s in steps}
-    Activity.objects.bulk_create(
-        Activity(card=c, step=s, kind=s.kind, title=s.title, message=s.template, due_date=due[c.pk, s.pk])
-        for c in cards for s in steps
-        if (c.pk, s.pk) not in done and due[c.pk, s.pk] <= today
-    )
 
 
 # Sync: open cards on the 1st day late, resolve the ones with nothing overdue
@@ -129,7 +142,9 @@ def sync_cards_service(*, today: dt.date | None = None) -> None:
     Card.objects.bulk_update(paid_off, ['outcome', 'closed_at', 'updated_at'])
     CardNote.objects.bulk_create(CardNote(card=c, text=_paid_note(c)) for c in paid_off)
 
-    _run_cadence(today)
+    # ponytail: one query per running card; fine for tens of cards, track "pending" on the card if it grows
+    for card in Card.objects.filter(closed_at__isnull=True, cadence__isnull=False).select_related('cadence'):
+        _advance(card)
 
 
 def _brl(v: Decimal) -> str:
@@ -165,7 +180,6 @@ def send_to_dunning_service(*, user: User, contact_id: int) -> list[Card]:
             card = Card.objects.filter(company_id=r['company_id'], contact_id=contact_id, closed_at__isnull=True).first() \
                 or _open_card(r['company_id'], contact_id, r['since'], today, first)  # type:ignore
             ids.append(card.pk)
-        _run_cadence(today, Card.objects.filter(pk__in=ids, closed_at__isnull=True))
     return list(_cards_for(user, today).filter(pk__in=ids))
 
 
@@ -183,7 +197,8 @@ def _cards_for(user: User, today: dt.date):
                                         Value(ZERO), output_field=MONEY),
                 overdue_count=Coalesce(Subquery(overdue.values('contact_id').annotate(n=Count('id')).values('n')), 0),
                 oldest_overdue=Subquery(overdue.order_by('date').values('date')[:1]),
-                next_activity=Subquery(pending.order_by('due_date').values('due_date')[:1]),
+                next_activity=Subquery(pending.order_by('due_date', 'id').values('due_date')[:1]),
+                next_activity_title=Subquery(pending.order_by('due_date', 'id').values('title')[:1]),
                 late_activities=Coalesce(Subquery(pending.filter(due_date__lt=today).values('card')
                                                   .annotate(n=Count('id')).values('n')), 0),
                 critical=Case(When(Q(stage__severity=Severity.CRITICAL) | Q(overdue_since__lte=critical_since), then=True),
@@ -237,21 +252,21 @@ def update_card_service(*, user: User, card_id: int, **fields) -> Card:
     if 'assignee_id' in fields and fields['assignee_id'] is not None:
         if fields['assignee_id'] not in {u.pk for u in assignees_service()}:
             raise ValidationError('This user cannot be responsible for collections')
+    moved = False
     with transaction.atomic(), pghistory.context(user=user.pk):
         if 'stage_id' in fields:
             if card.closed_at:
                 raise ValidationError('Este card já está fechado')
-            card.stage = Stage.objects.get(pk=fields.pop('stage_id'))
-            if card.stage.starts_cadence and not card.cadence_start:  # moved to "Em cobrança": day 1 is today
-                card.cadence_start = _business_day(timezone.localdate())
+            new_stage = Stage.objects.get(pk=fields.pop('stage_id'))
+            moved, card.stage = new_stage != card.stage, new_stage
         paid_on = fields.pop('paid_on', None)
         if 'outcome' in fields:
             _close(user, card, fields.pop('outcome'), fields.pop('legal_case_id', None), paid_on)
         for field, value in fields.items():
             setattr(card, field, value)
         card.save()
-        if not card.closed_at:
-            _run_cadence(timezone.localdate(), [card])
+        if moved and not card.closed_at:
+            _start_cadence(card)
     return get_card_service(user=user, card_id=card_id)
 
 
@@ -316,15 +331,20 @@ def update_activity_service(*, user: User, activity_id: int, done: bool | None =
         setattr(activity, field, value)
     with transaction.atomic(), pghistory.context(user=user.pk):
         activity.save()
+        if done is False and activity.step_id:  # type:ignore  # reopened: the step created after it goes away
+            Activity.objects.filter(card_id=activity.card_id, step__isnull=False, done_at__isnull=True, skipped=False,  # type:ignore
+                                    created_at__gt=activity.created_at).update(skipped=True)
+        _advance(activity.card)
     return activity
 
 
 def delete_activity_service(*, user: User, activity_id: int) -> None:
     activity = _activity_for(user, activity_id)
     with transaction.atomic(), pghistory.context(user=user.pk):
-        if activity.step_id:  # type:ignore  # cadence step: hidden, so the cadence does not create it again
-            activity.skipped = True
-            activity.save(update_fields=['skipped'])
+        if activity.step_id:  # type:ignore  # cadence step: hidden (not created again); the cadence moves on
+            activity.skipped, activity.done_at = True, timezone.now()
+            activity.save(update_fields=['skipped', 'done_at'])
+            _advance(activity.card)
         else:
             activity.delete()
 
@@ -399,18 +419,32 @@ def delete_stage_service(*, user: User, stage_id: int) -> None:
         stage.delete()
 
 
-def save_step_service(*, user: User, step_id: int | None = None, **fields) -> CadenceStep:
-    step = CadenceStep.objects.get(pk=step_id) if step_id else CadenceStep()
+def save_cadence_service(*, user: User, cadence_id: int | None = None, steps: list[dict], **fields) -> Cadence:
+    """Cadence + its steps in one go: steps keep their id (activities point to them), missing ones are removed."""
+    cadence = Cadence.objects.get(pk=cadence_id) if cadence_id else Cadence()
+    if Cadence.objects.filter(stage_id=fields['stage_id']).exclude(pk=cadence.pk).exists():
+        raise ValidationError('Esta etapa já tem uma cadência')
+    if not steps:
+        raise ValidationError('A cadência precisa de pelo menos um passo')
     for field, value in fields.items():
-        setattr(step, field, value)
+        setattr(cadence, field, value)
     with transaction.atomic(), pghistory.context(user=user.pk):
-        step.save()
-    return step
+        cadence.save()
+        keep = []
+        for position, data in enumerate(steps):
+            step = cadence.steps.filter(pk=data.pop('id', None)).first() or CadenceStep(cadence=cadence)
+            for field, value in data.items():
+                setattr(step, field, value)
+            step.position = position
+            step.save()
+            keep.append(step.pk)
+        cadence.steps.exclude(pk__in=keep).delete()
+    return cadence
 
 
-def delete_step_service(*, user: User, step_id: int) -> None:
+def delete_cadence_service(*, user: User, cadence_id: int) -> None:
     with transaction.atomic(), pghistory.context(user=user.pk):
-        CadenceStep.objects.get(pk=step_id).delete()
+        Cadence.objects.get(pk=cadence_id).delete()
 
 
 def update_config_service(*, start_date: dt.date | None, critical_days: int, attention_days: int,

@@ -10,8 +10,6 @@ const columns = [
   { accessorKey: 'position', header: 'Ordem' },
   { accessorKey: 'name', header: 'Etapa' },
   { accessorKey: 'severity', header: 'Cor', cell: ({ row }: any) => h(SStatusBadge, { kind: 'situation', value: row.original.severity }) },
-  { accessorKey: 'starts_cadence', header: 'Inicia cadência', cell: ({ row }: any) =>
-    h('span', { class: row.original.starts_cadence ? 'text-highlighted' : 'text-dimmed' }, row.original.starts_cadence ? 'Sim' : '—') },
 ]
 const SStatusBadge = resolveComponent('SStatusBadge')
 const fields = [
@@ -19,9 +17,8 @@ const fields = [
   { key: 'position', label: 'Ordem', type: 'number' as const, default: 0 },
   { key: 'severity', label: 'Cor', type: 'select' as const, required: true, default: 'attention',
     options: [{ label: 'Amarelo · atenção', value: 'attention' }, { label: 'Vermelho · crítico', value: 'critical' }] },
-  { key: 'starts_cadence', label: 'Inicia cadência', type: 'switch' as const },
 ]
-const body = (d: Record<string, any>) => ({ name: d.name, position: Number(d.position ?? 0), severity: d.severity, starts_cadence: !!d.starts_cadence })
+const body = (d: Record<string, any>) => ({ name: d.name, position: Number(d.position ?? 0), severity: d.severity })
 
 // Traffic light rules
 const auth = useAuth()

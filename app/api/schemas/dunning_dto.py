@@ -13,23 +13,38 @@ class StageIn(Schema):
     name: str = Field(min_length=1, max_length=60)
     position: int = Field(0, ge=0)
     severity: Severity = Severity.ATTENTION
-    starts_cadence: bool = False
 
 
 class StageOut(StageIn):
     id: int
 
 
-class StepIn(Schema):
-    day: int = Field(ge=1, le=365)
+class StepIO(Schema):
+    id: int | None = None  # existing step (keeps the activities linked to it); none = new
     kind: ActivityKind
     title: str = Field(min_length=1, max_length=120)
     template: str = ''
+    interval_days: int = Field(0, ge=0, le=365)  # after the previous step was done (1st: after entering the stage)
     active: bool = True
 
 
-class StepOut(StepIn):
+class CadenceIn(Schema):
+    name: str = Field(min_length=1, max_length=80)
+    stage_id: int
+    skip_weekends: bool = True
+    skip_holidays: bool = True
+    active: bool = True
+    steps: list[StepIO]  # in order
+
+
+class CadenceOut(CadenceIn):
     id: int
+    stage_name: str = Field(alias='stage.name')
+
+    @staticmethod
+    def resolve_steps(obj) -> list[dict]:
+        return [{'id': s.pk, 'kind': s.kind, 'title': s.title, 'template': s.template, 'interval_days': s.interval_days,
+                 'active': s.active} for s in obj.steps.all()]
 
 
 class CardFilters(Schema):
@@ -58,7 +73,8 @@ class CardOut(Schema):
     overdue_amount: Decimal
     overdue_count: int
     oldest_overdue: dt.date | None = None  # days late count from here
-    next_activity: dt.date | None
+    next_activity: dt.date | None  # first pending activity: late (red), today (green) or later (grey)
+    next_activity_title: str | None
     late_activities: int
     critical: bool
 

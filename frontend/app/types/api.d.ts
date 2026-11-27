@@ -2008,18 +2008,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Steps Endpoint */
-        get: operations["api_endpoints_dunning_list_steps_endpoint"];
+        /** List Cadences Endpoint */
+        get: operations["api_endpoints_dunning_list_cadences_endpoint"];
         put?: never;
-        /** Create Step Endpoint */
-        post: operations["api_endpoints_dunning_create_step_endpoint"];
+        /** Create Cadence Endpoint */
+        post: operations["api_endpoints_dunning_create_cadence_endpoint"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/dunning/cadence/{step_id}": {
+    "/api/dunning/cadence/{cadence_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2027,14 +2027,14 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** Update Cadence Endpoint */
+        put: operations["api_endpoints_dunning_update_cadence_endpoint"];
         post?: never;
-        /** Delete Step Endpoint */
-        delete: operations["api_endpoints_dunning_delete_step_endpoint"];
+        /** Delete Cadence Endpoint */
+        delete: operations["api_endpoints_dunning_delete_cadence_endpoint"];
         options?: never;
         head?: never;
-        /** Update Step Endpoint */
-        patch: operations["api_endpoints_dunning_update_step_endpoint"];
+        patch?: never;
         trace?: never;
     };
     "/api/dunning/config": {
@@ -5160,6 +5160,8 @@ export interface components {
             oldest_overdue?: string | null;
             /** Next Activity */
             next_activity: string | null;
+            /** Next Activity Title */
+            next_activity_title: string | null;
             /** Late Activities */
             late_activities: number;
             /** Critical */
@@ -5399,11 +5401,6 @@ export interface components {
             position: number;
             /** @default attention */
             severity: components["schemas"]["Severity"];
-            /**
-             * Starts Cadence
-             * @default false
-             */
-            starts_cadence: boolean;
             /** Id */
             id: number;
         };
@@ -5418,36 +5415,39 @@ export interface components {
             position: number;
             /** @default attention */
             severity: components["schemas"]["Severity"];
-            /**
-             * Starts Cadence
-             * @default false
-             */
-            starts_cadence: boolean;
         };
-        /** StepOut */
-        StepOut: {
-            /** Day */
-            day: number;
-            kind: components["schemas"]["ActivityKind"];
-            /** Title */
-            title: string;
+        /** CadenceOut */
+        CadenceOut: {
+            /** Name */
+            name: string;
+            /** Stage Id */
+            stage_id: number;
             /**
-             * Template
-             * @default
+             * Skip Weekends
+             * @default true
              */
-            template: string;
+            skip_weekends: boolean;
+            /**
+             * Skip Holidays
+             * @default true
+             */
+            skip_holidays: boolean;
             /**
              * Active
              * @default true
              */
             active: boolean;
+            /** Steps */
+            steps: components["schemas"]["StepIO"][];
             /** Id */
             id: number;
+            /** Stage Name */
+            stage_name: string;
         };
-        /** StepIn */
-        StepIn: {
-            /** Day */
-            day: number;
+        /** StepIO */
+        StepIO: {
+            /** Id */
+            id?: number | null;
             kind: components["schemas"]["ActivityKind"];
             /** Title */
             title: string;
@@ -5457,10 +5457,39 @@ export interface components {
              */
             template: string;
             /**
+             * Interval Days
+             * @default 0
+             */
+            interval_days: number;
+            /**
              * Active
              * @default true
              */
             active: boolean;
+        };
+        /** CadenceIn */
+        CadenceIn: {
+            /** Name */
+            name: string;
+            /** Stage Id */
+            stage_id: number;
+            /**
+             * Skip Weekends
+             * @default true
+             */
+            skip_weekends: boolean;
+            /**
+             * Skip Holidays
+             * @default true
+             */
+            skip_holidays: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Steps */
+            steps: components["schemas"]["StepIO"][];
         };
         /** ConfigIO */
         ConfigIO: {
@@ -9842,7 +9871,7 @@ export interface operations {
             };
         };
     };
-    api_endpoints_dunning_list_steps_endpoint: {
+    api_endpoints_dunning_list_cadences_endpoint: {
         parameters: {
             query?: never;
             header?: never;
@@ -9857,12 +9886,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StepOut"][];
+                    "application/json": components["schemas"]["CadenceOut"][];
                 };
             };
         };
     };
-    api_endpoints_dunning_create_step_endpoint: {
+    api_endpoints_dunning_create_cadence_endpoint: {
         parameters: {
             query?: never;
             header?: never;
@@ -9871,7 +9900,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StepIn"];
+                "application/json": components["schemas"]["CadenceIn"];
             };
         };
         responses: {
@@ -9881,17 +9910,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StepOut"];
+                    "application/json": components["schemas"]["CadenceOut"];
                 };
             };
         };
     };
-    api_endpoints_dunning_delete_step_endpoint: {
+    api_endpoints_dunning_update_cadence_endpoint: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                step_id: number;
+                cadence_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CadenceIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CadenceOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_delete_cadence_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cadence_id: number;
             };
             cookie?: never;
         };
@@ -9903,32 +9958,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    api_endpoints_dunning_update_step_endpoint: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                step_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StepIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StepOut"];
-                };
             };
         };
     };

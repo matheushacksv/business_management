@@ -7,7 +7,7 @@ from ninja_jwt.tokens import AccessToken
 
 from apps.companies.models import Company
 from apps.dunning import services
-from apps.dunning.models import Activity, Card, Config, Outcome, Stage
+from apps.dunning.models import Activity, Cadence, Card, Config, Outcome, Stage
 from apps.finance import services as finance
 from apps.finance.models import Contact, Group, Transaction, TransactionStatus, TransactionType
 from apps.legal.models import CollectionCase
@@ -53,25 +53,43 @@ class DunningTests(TestCase):
         self.assertEqual((Decimal(card['overdue_amount']), card['overdue_count']), (Decimal('1500'), 2))
         self.assertEqual(card['stage_id'], Stage.objects.first().pk)
         self.assertEqual(card['oldest_overdue'], '2026-11-10')
-        # "Nova pendência" waits; moving to "Em cobrança" starts the cadence on the next business day:
-        # Fri 20/11 is a holiday (Consciência Negra), so day 1 = Mon 23/11, day 3 = Wed 25, day 4 = Thu 26
-        dues = lambda: sorted(Activity.objects.filter(skipped=False).values_list('due_date', flat=True))  # noqa: E731
-        self.assertEqual(dues(), [])
-        r = self.api('patch', f'/dunning/card/{card["id"]}', {'stage_id': Stage.objects.get(starts_cadence=True).pk})
-        self.assertEqual(r.status_code, 200, r.content)
-        self.assertEqual(dues(), [])
         self.cards()
         self.assertEqual(Card.objects.count(), 1)
-        services.sync_cards_service(today=dt.date(2026, 11, 23))
-        self.assertEqual(dues(), [dt.date(2026, 11, 23)])
-        services.sync_cards_service(today=dt.date(2026, 11, 26))
-        services.sync_cards_service(today=dt.date(2026, 11, 26))
-        self.assertEqual(dues(), [dt.date(2026, 11, 23), dt.date(2026, 11, 25), dt.date(2026, 11, 26)])
-        # a cadence activity deleted by hand is not created again
-        first = Activity.objects.get(due_date=dt.date(2026, 11, 23))
-        self.assertEqual(self.api('delete', f'/dunning/activity/{first.pk}').status_code, 204)
-        services.sync_cards_service(today=dt.date(2026, 11, 26))
-        self.assertEqual(dues(), [dt.date(2026, 11, 25), dt.date(2026, 11, 26)])
+
+    def test_cadence_runs_step_by_step_in_its_stage(self):
+        from django.utils import timezone as tz
+        cadence = Cadence.objects.get()  # migrated: "Em cobrança", steps 0 / 2 / 1 / 1 working days apart
+        self.installment(dt.date(2026, 11, 19))
+        card_id = self.cards()[0]['id']
+        pending = lambda: list(Activity.objects.filter(done_at__isnull=True, skipped=False).values_list('step__position', 'due_date'))  # noqa: E731
+        self.assertEqual(pending(), [])  # "Nova pendência" has no cadence
+        move = lambda stage: self.api('patch', f'/dunning/card/{card_id}', {'stage_id': stage.pk})  # noqa: E731
+        self.assertEqual(move(cadence.stage).status_code, 200)
+        self.assertEqual(pending(), [(0, dt.date(2026, 11, 23))])  # Fri 20/11 is a holiday: Monday
+        self.assertEqual(self.cards()[0]['next_activity'], '2026-11-23')
+        # done on Friday 27/11: the next step (2 working days later) is due Tuesday 01/12
+        first = Activity.objects.get(done_at__isnull=True)
+        r = self.api('patch', f'/dunning/activity/{first.pk}', {'done': True})
+        self.assertEqual(r.status_code, 200, r.content)
+        Activity.objects.filter(done_at__isnull=True).delete()
+        Activity.objects.filter(pk=first.pk).update(done_at=tz.make_aware(dt.datetime(2026, 11, 27, 15)))
+        services.sync_cards_service()
+        self.assertEqual(pending(), [(1, dt.date(2026, 12, 1))])
+        # deleted by hand: not created again, the cadence moves on to the next step
+        second = Activity.objects.get(done_at__isnull=True)
+        self.assertEqual(self.api('delete', f'/dunning/activity/{second.pk}').status_code, 204)
+        self.assertEqual([p[0] for p in pending()], [2])
+        # leaving the stage drops the pending step; coming back restarts at step 1
+        move(Stage.objects.first())
+        self.assertEqual(pending(), [])
+        move(cadence.stage)
+        self.assertEqual([p[0] for p in pending()], [0])
+        # without weekend / holiday skipping the 1st step is due the very day
+        cadence.skip_weekends = cadence.skip_holidays = False
+        cadence.save()
+        move(Stage.objects.first())
+        move(cadence.stage)
+        self.assertEqual(pending(), [(0, TODAY)])
 
     def test_team_notes(self):
         self.installment(dt.date(2026, 11, 19))
@@ -170,8 +188,7 @@ class DunningTests(TestCase):
         self.installment(dt.date(2026, 11, 19))
         card = self.cards()[0]
         self.api('patch', f'/dunning/card/{card["id"]}', {'assignee_id': self.admin.pk,
-                                                         'stage_id': Stage.objects.get(starts_cadence=True).pk})
-        services.sync_cards_service(today=dt.date(2026, 11, 23))  # 20/11 is a holiday: day 1 is Monday
+                                                         'stage_id': Cadence.objects.get().stage_id})
         acts = self.api('get', f'/dunning/card/{card["id"]}/activities').json()
         first = acts[0]
         r = self.api('patch', f'/dunning/activity/{first["id"]}', {'done': True, 'answered': False, 'notes': 'não atendeu'})
@@ -180,7 +197,7 @@ class DunningTests(TestCase):
         self.assertEqual(self.api('get', '/dunning/agenda').json(), [])  # day 1 done, the rest is in the future
         p = self.api('get', '/dunning/productivity?start=2026-11-01&end=2026-11-30').json()
         me = p['people'][0]
-        self.assertEqual((me['done'], me['messages'], me['no_answer'], me['pending']), (1, 1, 1, 0))  # later steps not created yet
+        self.assertEqual((me['done'], me['messages'], me['no_answer'], me['pending']), (1, 1, 1, 1))  # step 2 created on completion
         self.assertEqual((p['open_cards'], Decimal(p['overdue_amount'])), (1, Decimal('1000')))
 
     def test_assignee_must_be_able_to_collect(self):

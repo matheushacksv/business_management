@@ -9764,8 +9764,8 @@
   },
   "/api/dunning/cadence": {
    "get": {
-    "operationId": "api_endpoints_dunning_list_steps_endpoint",
-    "summary": "List Steps Endpoint",
+    "operationId": "api_endpoints_dunning_list_cadences_endpoint",
+    "summary": "List Cadences Endpoint",
     "parameters": [],
     "responses": {
      "200": {
@@ -9774,7 +9774,7 @@
        "application/json": {
         "schema": {
          "items": {
-          "$ref": "#/components/schemas/StepOut"
+          "$ref": "#/components/schemas/CadenceOut"
          },
          "title": "Response",
          "type": "array"
@@ -9793,8 +9793,8 @@
     ]
    },
    "post": {
-    "operationId": "api_endpoints_dunning_create_step_endpoint",
-    "summary": "Create Step Endpoint",
+    "operationId": "api_endpoints_dunning_create_cadence_endpoint",
+    "summary": "Create Cadence Endpoint",
     "parameters": [],
     "responses": {
      "201": {
@@ -9802,7 +9802,7 @@
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/StepOut"
+         "$ref": "#/components/schemas/CadenceOut"
         }
        }
       }
@@ -9815,7 +9815,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/StepIn"
+        "$ref": "#/components/schemas/CadenceIn"
        }
       }
      },
@@ -9828,16 +9828,16 @@
     ]
    }
   },
-  "/api/dunning/cadence/{step_id}": {
-   "patch": {
-    "operationId": "api_endpoints_dunning_update_step_endpoint",
-    "summary": "Update Step Endpoint",
+  "/api/dunning/cadence/{cadence_id}": {
+   "put": {
+    "operationId": "api_endpoints_dunning_update_cadence_endpoint",
+    "summary": "Update Cadence Endpoint",
     "parameters": [
      {
       "in": "path",
-      "name": "step_id",
+      "name": "cadence_id",
       "schema": {
-       "title": "Step Id",
+       "title": "Cadence Id",
        "type": "integer"
       },
       "required": true
@@ -9849,7 +9849,7 @@
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/StepOut"
+         "$ref": "#/components/schemas/CadenceOut"
         }
        }
       }
@@ -9862,7 +9862,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/StepIn"
+        "$ref": "#/components/schemas/CadenceIn"
        }
       }
      },
@@ -9875,14 +9875,14 @@
     ]
    },
    "delete": {
-    "operationId": "api_endpoints_dunning_delete_step_endpoint",
-    "summary": "Delete Step Endpoint",
+    "operationId": "api_endpoints_dunning_delete_cadence_endpoint",
+    "summary": "Delete Cadence Endpoint",
     "parameters": [
      {
       "in": "path",
-      "name": "step_id",
+      "name": "cadence_id",
       "schema": {
-       "title": "Step Id",
+       "title": "Cadence Id",
        "type": "integer"
       },
       "required": true
@@ -19460,6 +19460,17 @@
       ],
       "title": "Next Activity"
      },
+     "next_activity_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Next Activity Title"
+     },
      "late_activities": {
       "title": "Late Activities",
       "type": "integer"
@@ -19486,6 +19497,7 @@
      "overdue_amount",
      "overdue_count",
      "next_activity",
+     "next_activity_title",
      "late_activities",
      "critical"
     ],
@@ -20184,11 +20196,6 @@
       ],
       "default": "attention"
      },
-     "starts_cadence": {
-      "default": false,
-      "title": "Starts Cadence",
-      "type": "boolean"
-     },
      "id": {
       "title": "Id",
       "type": "integer"
@@ -20222,11 +20229,6 @@
        }
       ],
       "default": "attention"
-     },
-     "starts_cadence": {
-      "default": false,
-      "title": "Starts Cadence",
-      "type": "boolean"
      }
     },
     "required": [
@@ -20235,54 +20237,71 @@
     "title": "StageIn",
     "type": "object"
    },
-   "StepOut": {
+   "CadenceOut": {
     "properties": {
-     "day": {
-      "maximum": 365,
-      "minimum": 1,
-      "title": "Day",
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "stage_id": {
+      "title": "Stage Id",
       "type": "integer"
      },
-     "kind": {
-      "$ref": "#/components/schemas/ActivityKind"
+     "skip_weekends": {
+      "default": true,
+      "title": "Skip Weekends",
+      "type": "boolean"
      },
-     "title": {
-      "maxLength": 120,
-      "minLength": 1,
-      "title": "Title",
-      "type": "string"
-     },
-     "template": {
-      "default": "",
-      "title": "Template",
-      "type": "string"
+     "skip_holidays": {
+      "default": true,
+      "title": "Skip Holidays",
+      "type": "boolean"
      },
      "active": {
       "default": true,
       "title": "Active",
       "type": "boolean"
+     },
+     "steps": {
+      "items": {
+       "$ref": "#/components/schemas/StepIO"
+      },
+      "title": "Steps",
+      "type": "array"
      },
      "id": {
       "title": "Id",
       "type": "integer"
+     },
+     "stage_name": {
+      "title": "Stage Name",
+      "type": "string"
      }
     },
     "required": [
-     "day",
-     "kind",
-     "title",
-     "id"
+     "name",
+     "stage_id",
+     "steps",
+     "id",
+     "stage_name"
     ],
-    "title": "StepOut",
+    "title": "CadenceOut",
     "type": "object"
    },
-   "StepIn": {
+   "StepIO": {
     "properties": {
-     "day": {
-      "maximum": 365,
-      "minimum": 1,
-      "title": "Day",
-      "type": "integer"
+     "id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
      },
      "kind": {
       "$ref": "#/components/schemas/ActivityKind"
@@ -20298,6 +20317,13 @@
       "title": "Template",
       "type": "string"
      },
+     "interval_days": {
+      "default": 0,
+      "maximum": 365,
+      "minimum": 0,
+      "title": "Interval Days",
+      "type": "integer"
+     },
      "active": {
       "default": true,
       "title": "Active",
@@ -20305,11 +20331,53 @@
      }
     },
     "required": [
-     "day",
      "kind",
      "title"
     ],
-    "title": "StepIn",
+    "title": "StepIO",
+    "type": "object"
+   },
+   "CadenceIn": {
+    "properties": {
+     "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "stage_id": {
+      "title": "Stage Id",
+      "type": "integer"
+     },
+     "skip_weekends": {
+      "default": true,
+      "title": "Skip Weekends",
+      "type": "boolean"
+     },
+     "skip_holidays": {
+      "default": true,
+      "title": "Skip Holidays",
+      "type": "boolean"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "steps": {
+      "items": {
+       "$ref": "#/components/schemas/StepIO"
+      },
+      "title": "Steps",
+      "type": "array"
+     }
+    },
+    "required": [
+     "name",
+     "stage_id",
+     "steps"
+    ],
+    "title": "CadenceIn",
     "type": "object"
    },
    "ConfigIO": {

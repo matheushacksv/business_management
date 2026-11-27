@@ -5,6 +5,8 @@ from api.schemas.dunning_dto import (
     ActivityOut,
     AgendaOut,
     AssigneeOut,
+    CadenceIn,
+    CadenceOut,
     CardFilters,
     CardOut,
     ConfigIO,
@@ -18,11 +20,9 @@ from api.schemas.dunning_dto import (
     RenegotiateIn,
     StageIn,
     StageOut,
-    StepIn,
-    StepOut,
 )
 from apps.dunning import services
-from apps.dunning.models import CadenceStep, Config, Stage
+from apps.dunning.models import Cadence, Config, Stage
 from apps.users.permissions import CHANGE, DELETE, VIEW, require_permission
 
 router = Router(tags=['Dunning'])
@@ -163,28 +163,28 @@ def delete_stage_endpoint(request, stage_id: int):
     return 204, None
 
 
-@router.get('/dunning/cadence', response=list[StepOut])
+@router.get('/dunning/cadence', response=list[CadenceOut])
 @require_permission('dunning', VIEW)
-def list_steps_endpoint(request):
-    return CadenceStep.objects.all()
+def list_cadences_endpoint(request):
+    return Cadence.objects.select_related('stage').prefetch_related('steps')
 
 
-@router.post('/dunning/cadence', response={201: StepOut})
+@router.post('/dunning/cadence', response={201: CadenceOut})
 @require_permission('dunning', CHANGE)
-def create_step_endpoint(request, data: StepIn):
-    return 201, services.save_step_service(user=request.user, **data.dict())
+def create_cadence_endpoint(request, data: CadenceIn):
+    return 201, services.save_cadence_service(user=request.user, **data.dict())
 
 
-@router.patch('/dunning/cadence/{step_id}', response=StepOut)
+@router.put('/dunning/cadence/{cadence_id}', response=CadenceOut)
 @require_permission('dunning', CHANGE)
-def update_step_endpoint(request, step_id: int, data: StepIn):
-    return services.save_step_service(user=request.user, step_id=step_id, **data.dict())
+def update_cadence_endpoint(request, cadence_id: int, data: CadenceIn):
+    return services.save_cadence_service(user=request.user, cadence_id=cadence_id, **data.dict())
 
 
-@router.delete('/dunning/cadence/{step_id}', response={204: None})
+@router.delete('/dunning/cadence/{cadence_id}', response={204: None})
 @require_permission('dunning', DELETE)
-def delete_step_endpoint(request, step_id: int):
-    services.delete_step_service(user=request.user, step_id=step_id)
+def delete_cadence_endpoint(request, cadence_id: int):
+    services.delete_cadence_service(user=request.user, cadence_id=cadence_id)
     return 204, None
 
 

@@ -139,9 +139,10 @@ const initials = (name: string | null | undefined) => (name ?? '').split(/[\s@.]
             </p>
             <div class="mt-2 flex flex-wrap items-end justify-between gap-x-2 text-xs">
               <span v-if="card.closed_at" class="text-dimmed">{{ formatDate(card.closed_at) }}</span>
-              <span v-else-if="card.next_activity" class="flex items-center gap-1 tabular"
-                    :class="card.late_activities ? 'text-error' : card.next_activity === today() ? 'text-warning' : 'text-dimmed'">
-                <UIcon name="i-lucide-calendar-clock" /> {{ formatDate(card.next_activity) }}
+              <span v-else-if="card.next_activity" class="flex min-w-0 items-center gap-1 tabular" :title="card.next_activity_title ?? undefined"
+                    :class="card.next_activity < today() ? 'text-error' : card.next_activity === today() ? 'text-success' : 'text-dimmed'">
+                <UIcon name="i-lucide-calendar-clock" class="shrink-0" />
+                <span class="truncate">{{ formatDate(card.next_activity) }} · {{ card.next_activity_title }}</span>
               </span>
               <span class="tabular text-error">{{ formatMoney(card.overdue_amount) }}</span>
             </div>
