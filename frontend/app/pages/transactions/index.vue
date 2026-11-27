@@ -14,6 +14,8 @@ lookups.ensure('companies', 'subgroups', 'groups').catch(notifyError)
 const SMoney = resolveComponent('SMoney')
 const SStatusBadge = resolveComponent('SStatusBadge')
 const UBadge = resolveComponent('UBadge')
+// Planned and past due (not the ones suspended in a legal case): highlighted in red
+const isOverdue = (t: Transaction) => t.status === 'planned' && t.date < today() && !(t.collection_case_id && !t.agreement_installment)
 const UButton = resolveComponent('UButton')
 
 // One click settles a planned transaction (transfer legs go through the drawer: both sides change together)
@@ -96,7 +98,10 @@ function exportXlsx() {
 }
 
 const columns: TableColumn<Transaction>[] = [
-  { accessorKey: 'date', header: 'Data', cell: ({ row }) => formatDate(row.original.date) },
+  { accessorKey: 'date', header: 'Data', cell: ({ row }) => isOverdue(row.original)
+    ? h('div', { class: 'text-error' }, [h('p', { class: 'font-medium' }, formatDate(row.original.date)),
+        h('p', { class: 'text-xs' }, `${daysLate(row.original.date)} dia(s) de atraso`)])
+    : formatDate(row.original.date) },
   {
     accessorKey: 'contact_name',
     header: 'Cliente/Fornecedor',
