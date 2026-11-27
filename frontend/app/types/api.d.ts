@@ -1809,6 +1809,23 @@ export interface paths {
         patch: operations["api_endpoints_dunning_update_card_endpoint"];
         trace?: never;
     };
+    "/api/dunning/card/{card_id}/renegotiate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Renegotiate Card Endpoint */
+        post: operations["api_endpoints_dunning_renegotiate_card_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dunning/card/{card_id}/installments": {
         parameters: {
             query?: never;
@@ -5062,7 +5079,7 @@ export interface components {
          * @description Like won/lost on Pipedrive: closed cards leave the board, the filter brings them back.
          * @enum {string}
          */
-        Outcome: "open" | "resolved" | "legal" | "dismissed";
+        Outcome: "open" | "resolved" | "legal" | "renegotiated" | "dismissed";
         /** CardOut */
         CardOut: {
             /** Id */
@@ -5120,6 +5137,27 @@ export interface components {
             legal_case_id?: number | null;
             /** Paid On */
             paid_on?: string | null;
+        };
+        /** RenegotiateIn */
+        RenegotiateIn: {
+            /** Total */
+            total: number | string;
+            /** Count */
+            count: number;
+            /**
+             * First Due
+             * Format: date
+             */
+            first_due: string;
+            /** Down Payment */
+            down_payment?: number | string | null;
+            /** Down Payment Date */
+            down_payment_date?: string | null;
+            /**
+             * Close Contract
+             * @default false
+             */
+            close_contract: boolean;
         };
         /** InstallmentOut */
         InstallmentOut: {
@@ -9367,6 +9405,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PatchCard"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_dunning_renegotiate_card_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenegotiateIn"];
             };
         };
         responses: {

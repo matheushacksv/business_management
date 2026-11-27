@@ -13,7 +13,7 @@ const canChange = computed(() => auth.can('dunning', 'change'))
 
 // Board = open cards; resolved / legal leave it (like won/lost on Pipedrive) and come back with the filter
 const route = useRoute()
-const filters = reactive({ outcome: (route.query.outcome === 'resolved' ? 'resolved' : 'open') as 'open' | 'resolved' | 'legal', search: '', company_id: [] as number[], assignee_id: undefined as number | undefined })
+const filters = reactive({ outcome: (route.query.outcome === 'resolved' ? 'resolved' : 'open') as 'open' | 'resolved' | 'renegotiated' | 'legal', search: '', company_id: [] as number[], assignee_id: undefined as number | undefined })
 const items = ref<Card[]>([])
 const loading = ref(false)
 async function load() {
@@ -33,7 +33,7 @@ watch(filters, () => { clearTimeout(timer); timer = setTimeout(load, 300) }, { d
 onMounted(load)
 onMounted(() => notifyPaidOff(() => { filters.outcome = 'resolved' }).catch(notifyError))
 
-const OUTCOMES = [{ label: 'Em aberto', value: 'open' }, { label: 'Resolvidos', value: 'resolved' }, { label: 'Jurídico', value: 'legal' }]
+const OUTCOMES = [{ label: 'Em aberto', value: 'open' }, { label: 'Pagos', value: 'resolved' }, { label: 'Renegociados', value: 'renegotiated' }, { label: 'Jurídico', value: 'legal' }]
 const sum = (list: Card[]) => list.reduce((s, c) => s + Number(c.overdue_amount), 0)
 const openCards = computed(() => items.value.filter(c => !c.closed_at))
 const columns = computed(() => stages.value.map(s => {

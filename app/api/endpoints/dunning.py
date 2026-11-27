@@ -15,6 +15,7 @@ from api.schemas.dunning_dto import (
     PatchCard,
     ProductivityOut,
     ProductivityParams,
+    RenegotiateIn,
     StageIn,
     StageOut,
     StepIn,
@@ -55,6 +56,12 @@ def update_card_endpoint(request, card_id: int, data: PatchCard):
         if fields.get(key, ...) is None:
             fields.pop(key, None)
     return services.update_card_service(user=request.user, card_id=card_id, **fields)
+
+
+@router.post('/dunning/card/{card_id}/renegotiate', response=CardOut)
+@require_permission('dunning', CHANGE)
+def renegotiate_card_endpoint(request, card_id: int, data: RenegotiateIn):
+    return services.renegotiate_card_service(user=request.user, card_id=card_id, **data.dict())
 
 
 @router.delete('/dunning/card/{card_id}', response={204: None})

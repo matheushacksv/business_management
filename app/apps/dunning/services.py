@@ -40,8 +40,13 @@ def _overdue_of(card: Card, today: dt.date):
 
 def _open_card(company_id: int, contact_id: int, since: dt.date, today: dt.date, stage: Stage) -> Card:
     # day 1 = first day late; an old backlog starts its cadence today instead of all late at once
-    return Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since,
+    card = Card.objects.create(company_id=company_id, contact_id=contact_id, stage=stage, overdue_since=since,
                                cadence_start=max(since + dt.timedelta(days=1), today))
+    renegotiated = (Card.objects.filter(company_id=company_id, contact_id=contact_id, outcome=Outcome.RENEGOTIATED)
+                    .order_by('-closed_at').values_list('closed_at', flat=True).first())
+    if renegotiated:  # late again after renegotiating: the assignee should know
+        CardNote.objects.create(card=card, text=f'Cliente já renegociou em {renegotiated:%d/%m/%Y}')
+    return card
 
 
 def _run_cadence(today: dt.date, cards=None) -> None:
@@ -323,7 +328,7 @@ def productivity_service(*, user: User, start: dt.date, end: dt.date) -> dict:
     return {
         'open_cards': cards.filter(closed_at__isnull=True).count(),
         'overdue_amount': _overdue(today).filter(company__in=companies).aggregate(s=Coalesce(Sum('amount'), Value(ZERO), output_field=MONEY))['s'],
-        'resolved': closed.filter(outcome=Outcome.RESOLVED).count(),
+        'resolved': closed.filter(outcome__in=[Outcome.RESOLVED, Outcome.RENEGOTIATED]).count(),  # paid or renegotiated
         'to_legal': closed.filter(outcome=Outcome.LEGAL).count(),
         'people': sorted(rows.values(), key=lambda x: x['name']),
     }
@@ -426,3 +431,55 @@ def add_note_service(*, user: User, card_id: int, text: str) -> CardNote:
     card = get_card_service(user=user, card_id=card_id)
     with transaction.atomic(), pghistory.context(user=user.pk):
         return CardNote.objects.create(card=card, author=user, text=text.strip())
+
+
+def renegotiate_card_service(*, user: User, card_id: int, total: Decimal, count: int, first_due: dt.date,
+                             down_payment: Decimal | None = None, down_payment_date: dt.date | None = None,
+                             close_contract: bool = False) -> Card:
+    """New terms: every open installment of the customer (late and future, not with legal) is replaced,
+    in the transactions and on Asaas; the card closes as renegotiated."""
+    from apps.finance.services import add_months, delete_transaction_service, split_amount
+    from apps.integrations import asaas
+    from apps.sales.models import Sale, SaleStatus
+
+    check_permission(user, 'transactions', CHANGE)
+    card = get_card_service(user=user, card_id=card_id)
+    if card.closed_at:
+        raise ValidationError('Este card já está fechado')
+    if down_payment and not down_payment_date:
+        raise ValidationError('Informe a data da entrada')
+    rest = total - (down_payment or 0)
+    if rest < Decimal('0.01') * count:
+        raise ValidationError('O valor total precisa ser maior que a entrada')
+    old = list(Transaction.objects.filter(company_id=card.company_id, contact_id=card.contact_id, type=TransactionType.INFLOW,  # type:ignore
+                                          status=TransactionStatus.PLANNED, collection_case__isnull=True).order_by('date', 'id'))
+    if not old:
+        raise ValidationError('O cliente não tem parcelas em aberto para renegociar')
+    sale_ids = {t.sale_id for t in old if t.sale_id}  # type:ignore
+    sale_id = sale_ids.pop() if len(sale_ids) == 1 else None
+    charged = any(t.asaas_id for t in old)
+    subgroup_id = old[-1].subgroup_id  # type:ignore
+    amounts = split_amount(rest, count)
+    rows = [('Entrada', down_payment_date, down_payment)] if down_payment else []
+    rows += [(f'{i + 1}/{count}', add_months(first_due, i), value) for i, value in enumerate(amounts)]
+    terms = f'Renegociação de {_brl(total)}: ' \
+        + (f'entrada de {_brl(down_payment)} em {down_payment_date:%d/%m/%Y} + ' if down_payment else '') \
+        + f'{count}x de {_brl(amounts[-1])} a partir de {first_due:%d/%m/%Y}' \
+        + f' (substituiu {len(old)} parcela(s) em aberto, {_brl(sum(t.amount for t in old))})' \
+        + ('; contrato encerrado' if close_contract else '')
+    for t in old:  # each one also cancels its open charge on Asaas
+        delete_transaction_service(user=user, transaction_id=t.pk)
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        Transaction.objects.bulk_create(
+            Transaction(company_id=card.company_id, contact_id=card.contact_id, subgroup_id=subgroup_id, sale_id=sale_id,  # type:ignore
+                        type=TransactionType.INFLOW, status=TransactionStatus.PLANNED, date=date, amount=value, reference=ref)
+            for ref, date, value in rows
+        )
+        if close_contract and sale_id:
+            Sale.objects.filter(pk=sale_id).update(status=SaleStatus.CANCELED)
+        card.outcome, card.closed_at = Outcome.RENEGOTIATED, timezone.localdate()
+        card.save(update_fields=['outcome', 'closed_at', 'updated_at'])
+        CardNote.objects.create(card=card, author=user, text=terms)
+    if charged and sale_id:  # the old ones were charged on Asaas: the new ones are too
+        asaas.create_charges_service(user=user, sale_id=sale_id)
+    return get_card_service(user=user, card_id=card_id)

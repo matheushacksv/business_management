@@ -69,7 +69,7 @@ class CardOut(Schema):
 class PatchCard(Schema):
     stage_id: int | None = None
     assignee_id: int | None = None
-    outcome: Literal[Outcome.RESOLVED, Outcome.LEGAL] | None = None
+    outcome: Literal[Outcome.RESOLVED, Outcome.LEGAL] | None = None  # renegotiated: its own endpoint
     legal_case_id: int | None = None  # outcome legal: the case opened with the legal form
     paid_on: dt.date | None = None  # outcome resolved: settles the late installments on this date
 
@@ -176,3 +176,12 @@ class NoteOut(Schema):
     @staticmethod
     def resolve_author_name(obj) -> str | None:
         return (obj.author.name or obj.author.email) if obj.author else None
+
+
+class RenegotiateIn(Schema):
+    total: Decimal = Field(gt=0, max_digits=14, decimal_places=2)  # whole renegotiated amount, down payment included
+    count: int = Field(ge=1, le=120)
+    first_due: dt.date
+    down_payment: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    down_payment_date: dt.date | None = None
+    close_contract: bool = False  # cancellation settled by agreement: the sale becomes canceled

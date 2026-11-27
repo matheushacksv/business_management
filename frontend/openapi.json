@@ -9108,6 +9108,53 @@
     ]
    }
   },
+  "/api/dunning/card/{card_id}/renegotiate": {
+   "post": {
+    "operationId": "api_endpoints_dunning_renegotiate_card_endpoint",
+    "summary": "Renegotiate Card Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "card_id",
+      "schema": {
+       "title": "Card Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CardOut"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Dunning"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RenegotiateIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/dunning/card/{card_id}/installments": {
    "get": {
     "operationId": "api_endpoints_dunning_card_installments_endpoint",
@@ -19198,6 +19245,7 @@
      "open",
      "resolved",
      "legal",
+     "renegotiated",
      "dismissed"
     ],
     "title": "Outcome",
@@ -19418,6 +19466,72 @@
      }
     },
     "title": "PatchCard",
+    "type": "object"
+   },
+   "RenegotiateIn": {
+    "properties": {
+     "total": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Total"
+     },
+     "count": {
+      "maximum": 120,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+     },
+     "first_due": {
+      "format": "date",
+      "title": "First Due",
+      "type": "string"
+     },
+     "down_payment": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Down Payment"
+     },
+     "down_payment_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Down Payment Date"
+     },
+     "close_contract": {
+      "default": false,
+      "title": "Close Contract",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "total",
+     "count",
+     "first_due"
+    ],
+    "title": "RenegotiateIn",
     "type": "object"
    },
    "InstallmentOut": {

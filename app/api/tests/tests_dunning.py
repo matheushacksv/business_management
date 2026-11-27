@@ -101,6 +101,28 @@ class DunningTests(TestCase):
         card = self.cards()[0]
         self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'resolved'}).status_code, 400)
 
+    def test_renegotiation_replaces_open_installments_and_flags_relapse(self):
+        from apps.sales.models import Sale, SaleStatus
+        sale = Sale.objects.create(company=self.company, contact=self.client_, date=dt.date(2026, 1, 1), amount=Decimal('5000'))
+        old = [self.installment(dt.date(2026, 11, 19)), self.installment(dt.date(2026, 12, 19))]  # late + future
+        Transaction.objects.filter(pk__in=[t.pk for t in old]).update(sale=sale)
+        card = self.cards()[0]
+        r = self.api('post', f'/dunning/card/{card["id"]}/renegotiate', {
+            'total': '1500', 'down_payment': '500', 'down_payment_date': '2026-11-25', 'count': 2, 'first_due': '2026-12-25',
+            'close_contract': True})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(r.json()['outcome'], 'renegotiated')
+        self.assertFalse(Transaction.objects.filter(pk__in=[t.pk for t in old]).exists())
+        new = Transaction.objects.filter(contact=self.client_).order_by('date')
+        self.assertEqual([(t.reference, t.amount, t.sale_id) for t in new],
+                         [('Entrada', Decimal('500'), sale.pk), ('1/2', Decimal('500'), sale.pk), ('2/2', Decimal('500'), sale.pk)])
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, SaleStatus.CANCELED)
+        self.assertIn('Renegociação de R$ 1.500,00', Card.objects.get().notes.get().text)
+        services.sync_cards_service(today=dt.date(2026, 11, 26))  # entrada not paid: a new card says it relapsed
+        relapse = Card.objects.get(closed_at__isnull=True)
+        self.assertEqual(relapse.notes.get().text, 'Cliente já renegociou em 20/11/2026')
+
     def test_resolve_with_payment_date_settles_late_installments(self):
         tx = self.installment(dt.date(2026, 11, 19), '2000')
         card = self.cards()[0]

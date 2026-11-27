@@ -22,6 +22,7 @@ class Outcome(models.TextChoices):
     OPEN = 'open', 'Em aberto'
     RESOLVED = 'resolved', 'Resolvido'  # only when nothing is overdue (or paid off: automatic)
     LEGAL = 'legal', 'Jurídico'  # opens a legal case
+    RENEGOTIATED = 'renegotiated', 'Renegociado'  # open installments replaced by new terms
     DISMISSED = 'dismissed', 'Excluído'  # hidden; the customer comes back only with a newer late installment
 
 
@@ -69,7 +70,7 @@ class Card(models.Model):
     assignee = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     overdue_since = models.DateField()  # oldest overdue due date when the card opened
     cadence_start = models.DateField(null=True, blank=True)  # cadence day 1; each step is created when its day comes
-    outcome = models.CharField(max_length=10, choices=Outcome.choices, default=Outcome.OPEN)
+    outcome = models.CharField(max_length=12, choices=Outcome.choices, default=Outcome.OPEN)
     closed_at = models.DateField(null=True, blank=True)  # when the outcome was set
     legal_case = models.ForeignKey('legal.CollectionCase', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)

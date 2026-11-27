@@ -65,6 +65,34 @@ async function patchCard(body: { stage_id?: number; assignee_id?: number | null;
 }
 const changeStage = (stageId: number) => patchCard({ stage_id: stageId })
 
+// Resolver: paid | renegotiated (new terms replace the open installments) | legal
+const resolveItems = computed(() => [
+  { label: 'Pagou', icon: 'i-lucide-badge-check', onSelect: resolve },
+  { label: 'Renegociação', icon: 'i-lucide-refresh-cw', onSelect: () => Object.assign(reneg, { open: true, total: undefined, down_payment: undefined, down_payment_date: '', count: 1, first_due: '', close_contract: false }) },
+  ...(auth.can('legal', 'create') ? [{ label: 'Jurídico', icon: 'i-lucide-scale', onSelect: () => { legalOpen.value = true } }] : []),
+])
+const reneg = reactive({ open: false, saving: false, total: undefined as number | undefined, down_payment: undefined as number | undefined,
+  down_payment_date: '', count: 1, first_due: '', close_contract: false })
+const renegInstallment = computed(() => reneg.total ? Math.max(reneg.total - (reneg.down_payment ?? 0), 0) / reneg.count : 0)
+const renegReady = computed(() => renegInstallment.value > 0 && !!reneg.first_due && (!reneg.down_payment || !!reneg.down_payment_date))
+async function renegotiate() {
+  reneg.saving = true
+  try {
+    card.value = await unwrap(api.POST('/api/dunning/card/{card_id}/renegotiate', {
+      params: { path: { card_id: props.cardId! } },
+      body: { total: reneg.total!.toFixed(2), count: reneg.count, first_due: reneg.first_due, close_contract: reneg.close_contract,
+        down_payment: reneg.down_payment ? reneg.down_payment.toFixed(2) : null, down_payment_date: reneg.down_payment ? reneg.down_payment_date : null },
+    }))
+    reneg.open = false
+    emit('changed')
+    await load()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    reneg.saving = false
+  }
+}
+
 // Resolved = paid: late installments are settled on the payment date (shows them first)
 const resolving = reactive({ open: false, date: '', saving: false })
 function resolve() {
@@ -197,13 +225,10 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
             <NuxtLink v-if="card.legal_case_id" to="/legal" class="text-warning hover:text-primary">Ação no jurídico</NuxtLink>
             <div class="ms-auto flex flex-wrap items-center gap-2">
               <UBadge v-if="!isOpen" :label="`${DUNNING_LABELS.outcome[card.outcome]} · ${formatDate(card.closed_at)}`"
-                      :color="card.outcome === 'resolved' ? 'success' : 'warning'" variant="subtle" />
-              <template v-else-if="canChange">
-                <UButton label="Resolvido" icon="i-lucide-circle-check" size="sm" color="success" variant="soft"
-                         @click="resolve" />
-                <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" size="sm"
-                         color="warning" variant="soft" @click="legalOpen = true" />
-              </template>
+                      :color="card.outcome === 'legal' ? 'warning' : card.outcome === 'renegotiated' ? 'info' : 'success'" variant="subtle" />
+              <UDropdownMenu v-else-if="canChange" :items="resolveItems" :content="{ align: 'end' }">
+                <UButton label="Resolver" icon="i-lucide-circle-check" trailing-icon="i-lucide-chevron-down" size="sm" color="success" variant="soft" />
+              </UDropdownMenu>
               <UButton v-if="isOpen && auth.can('dunning', 'delete')" icon="i-lucide-trash-2" size="sm" color="error"
                        variant="ghost" aria-label="Excluir card" @click="dismiss" />
             </div>
@@ -349,6 +374,41 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
       <div class="flex w-full justify-end gap-2">
         <UButton label="Cancelar" color="neutral" variant="ghost" @click="resolving.open = false" />
         <UButton label="Dar baixa e resolver" color="success" :loading="resolving.saving" :disabled="!resolving.date" @click="confirmResolve" />
+      </div>
+    </template>
+  </UModal>
+  <UModal v-model:open="reneg.open" title="Renegociação" :ui="{ content: 'max-w-xl' }">
+    <template #body>
+      <form id="reneg-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="renegotiate">
+        <UFormField label="Valor total renegociado" required class="sm:col-span-2">
+          <UInputNumber v-model="reneg.total" :min="0" :step="0.01" :increment="false" :decrement="false"
+                        :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
+        </UFormField>
+        <UFormField label="Entrada">
+          <UInputNumber v-model="reneg.down_payment" :min="0" :step="0.01" :increment="false" :decrement="false"
+                        :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
+        </UFormField>
+        <UFormField label="Data da entrada" :required="!!reneg.down_payment">
+          <UInput v-model="reneg.down_payment_date" type="date" class="w-full" />
+        </UFormField>
+        <UFormField label="Parcelas" required>
+          <UInputNumber v-model="reneg.count" :min="1" :max="120" class="w-full" />
+        </UFormField>
+        <UFormField label="Valor de cada parcela">
+          <p class="py-1.5 text-sm text-highlighted tabular">{{ formatMoney(renegInstallment) }}</p>
+        </UFormField>
+        <UFormField label="Primeiro vencimento" required>
+          <UInput v-model="reneg.first_due" type="date" class="w-full" />
+        </UFormField>
+        <UFormField label="Contrato encerrado">
+          <USwitch v-model="reneg.close_contract" class="py-1.5" />
+        </UFormField>
+      </form>
+    </template>
+    <template #footer>
+      <div class="flex w-full justify-end gap-2">
+        <UButton label="Cancelar" color="neutral" variant="ghost" @click="reneg.open = false" />
+        <UButton type="submit" form="reneg-form" label="Renegociar" :loading="reneg.saving" :disabled="!renegReady" />
       </div>
     </template>
   </UModal>
