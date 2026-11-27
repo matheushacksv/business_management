@@ -99,7 +99,7 @@ const saleOpen = ref(false)
 
 // Transactions
 const PAGE_SIZE = 50
-const txStatus = ref<'all' | 'planned' | 'realized'>('all')
+const txStatus = ref<'all' | 'planned' | 'realized' | 'overdue'>('all')  // overdue: planned, due before today
 const txPage = ref(1)
 const txs = ref<Transaction[]>([])
 const txCount = ref(0)
@@ -109,7 +109,9 @@ async function loadTransactions() {
   try {
     const query = {
       contact_id: [id.value], ordering: '-date', page: txPage.value,
-      ...(txStatus.value !== 'all' ? { status: [txStatus.value] } : {}),
+      ...(txStatus.value === 'overdue'
+        ? { status: ['planned'], date_to: new Date(Date.now() - 864e5).toLocaleDateString('sv-SE') }
+        : txStatus.value !== 'all' ? { status: [txStatus.value] } : {}),
     }
     const data = await unwrap(api.GET('/api/transaction', { params: { query: query as any } }))
     txs.value = data.items
@@ -353,7 +355,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
     </div>
 
     <template v-else-if="tab === 'transactions'">
-      <UTabs v-model="txStatus" :items="[{ label: 'Todos', value: 'all' }, ...STATUS_OPTIONS]" :content="false" size="xs" class="w-fit" />
+      <UTabs v-model="txStatus" :items="[{ label: 'Todos', value: 'all' }, ...STATUS_OPTIONS, { label: 'Vencidas', value: 'overdue' }]" :content="false" size="xs" class="w-fit" />
       <div class="s-panel overflow-hidden">
         <UTable :data="txs" :columns="txColumns" :loading="txLoading" empty="Nenhum lançamento"
                 @select="(_: Event, row: any) => { txId = row.original.id; txOpen = true }" />
