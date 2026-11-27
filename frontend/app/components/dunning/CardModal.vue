@@ -182,9 +182,9 @@ const whatsapp = (a: Activity) => {
 const copy = (value: string) => navigator.clipboard.writeText(value).then(() => notifySuccess('Copiado'))
 
 // Complete: did the customer answer? + notes
-const done = reactive({ id: null as number | null, answered: true, notes: '' })
+const done = reactive({ id: null as number | null, answered: null as boolean | null, notes: '' })  // answered: optional (reply may come later)
 function startDone(a: Activity) {
-  Object.assign(done, { id: a.id, answered: true, notes: '' })
+  Object.assign(done, { id: a.id, answered: null, notes: '' })
 }
 async function patchActivity(a: Activity, body: Record<string, unknown>) {
   try {
@@ -330,8 +330,14 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
                 </div>
                 <p v-if="a.message" class="mt-2 whitespace-pre-line rounded-md bg-elevated/60 p-2 text-sm text-toned">{{ text(a) }}</p>
                 <div v-if="done.id === a.id" class="mt-3 flex flex-col gap-2">
-                  <URadioGroup v-model="done.answered" orientation="horizontal"
-                               :items="[{ label: 'Cliente respondeu', value: true }, { label: 'Sem retorno', value: false }]" />
+                  <div class="flex gap-2">
+                    <UButton label="Cliente respondeu" size="xs" icon="i-lucide-message-circle-reply"
+                             :color="done.answered === true ? 'success' : 'neutral'" :variant="done.answered === true ? 'soft' : 'outline'"
+                             @click="done.answered = done.answered === true ? null : true" />
+                    <UButton label="Sem retorno" size="xs" icon="i-lucide-message-circle-off"
+                             :color="done.answered === false ? 'warning' : 'neutral'" :variant="done.answered === false ? 'soft' : 'outline'"
+                             @click="done.answered = done.answered === false ? null : false" />
+                  </div>
                   <UTextarea v-model="done.notes" :rows="2" autoresize placeholder="Observações" class="w-full" />
                   <div class="flex gap-2">
                     <UButton label="Salvar" size="xs" @click="patchActivity(a, { done: true, answered: done.answered, notes: done.notes })" />
