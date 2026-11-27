@@ -221,7 +221,9 @@ class CollectionCaseTests(TestCase):
         self.assertEqual((r.json()['stage_name'], r.json()['agreement']), ('Em andamento', ''))
         agreement = Transaction.objects.filter(collection_case_id=case_id, agreement_installment=True)
         self.assertEqual(list(agreement.values_list('reference', flat=True)), ['Entrada'])
-        self.assertEqual(Decimal(r.json()['due_amount']), Decimal('1000'))  # back to the defaulted ones
+        self.assertEqual(Decimal(r.json()['due_amount']), Decimal('1750'))  # old 2 x 500 + the 3 unpaid of the agreement
+        self.assertEqual(Transaction.objects.filter(collection_case_id=case_id, agreement_installment=False,
+                                                    status=TransactionStatus.PLANNED).count(), 5)  # kept, now "Jurídico"
 
 
 class ChecklistTests(TestCase):

@@ -330,17 +330,19 @@ def register_agreement_service(*, user: User, case_id: int, stage_id: int | None
 
 
 def broken_agreement_service(*, user: User, case_id: int, stage_id: int) -> CollectionCase:
-    """Customer defaulted on the agreement: its open installments are cancelled, the lawsuit goes on."""
+    """Customer defaulted on the agreement: its unpaid installments become defaulted ones (suspended in the case,
+    shown as "Jurídico"), the paid ones stay; the lawsuit goes on."""
     case = get_case_service(user=user, case_id=case_id)
     stage = LegalStage.objects.filter(pk=stage_id, requires_agreement=False).first()
     if stage is None:
         raise ValidationError('Escolha uma etapa sem acordo')
     with transaction.atomic(), pghistory.context(user=user.pk):
-        dropped = _drop_open_installments(case)
+        unpaid = Transaction.objects.filter(collection_case=case, type=TransactionType.INFLOW, status=TransactionStatus.PLANNED,
+                                            agreement_installment=True).update(agreement_installment=False)
         old_stage, previous = case.stage, case.agreement
         case.stage, case.agreement = stage, ''
         case.save(update_fields=['stage', 'agreement', 'updated_at'])
-        _log(user, case, f'Acordo descumprido: {dropped} parcela(s) em aberto cancelada(s)\n'
+        _log(user, case, f'Acordo descumprido: {unpaid} parcela(s) não paga(s) voltaram para o jurídico\n'
                          f'Etapa: {old_stage.name} → {stage.name}' + (f'\nAcordo anterior: {previous}' if previous else ''))
     return get_case_service(user=user, case_id=case.pk)
 

@@ -64,8 +64,10 @@ class CaseOut(ModelSchema):
 
     @staticmethod
     def resolve_due_amount(obj) -> Decimal:
-        if obj.closed_at or obj.stage.requires_agreement or obj.agreement.strip():
+        if obj.closed_at or obj.stage.requires_agreement or obj.open_amount:  # agreement in force
             return obj.open_amount
+        if obj.received_amount:  # broken agreement: what was left unpaid (the form's paid amount predates it)
+            return obj.defaulted_amount
         if obj.proposal_amount is not None and obj.paid_amount is not None:  # balance the customer still owes
             return max(obj.proposal_amount - obj.paid_amount, Decimal('0'))
         return obj.defaulted_amount

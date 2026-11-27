@@ -309,7 +309,7 @@ const incomplete = computed(() => !!item.value && (!item.value.client_company ||
     <template #footer>
       <div class="flex w-full justify-end gap-2">
         <UButton label="Cancelar" color="neutral" variant="ghost" @click="broken.open = false" />
-        <UButton label="Cancelar parcelas em aberto" color="warning" :loading="broken.saving" :disabled="!broken.stage" @click="breakAgreement" />
+        <UButton label="Confirmar" color="warning" :loading="broken.saving" :disabled="!broken.stage" @click="breakAgreement" />
       </div>
     </template>
   </UModal>
