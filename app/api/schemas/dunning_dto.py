@@ -71,6 +71,7 @@ class PatchCard(Schema):
     assignee_id: int | None = None
     outcome: Literal[Outcome.RESOLVED, Outcome.LEGAL] | None = None
     legal_case_id: int | None = None  # outcome legal: the case opened with the legal form
+    paid_on: dt.date | None = None  # outcome resolved: settles the late installments on this date
 
 
 class InstallmentOut(Schema):

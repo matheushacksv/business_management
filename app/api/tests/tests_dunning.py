@@ -101,6 +101,17 @@ class DunningTests(TestCase):
         card = self.cards()[0]
         self.assertEqual(self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'resolved'}).status_code, 400)
 
+    def test_resolve_with_payment_date_settles_late_installments(self):
+        tx = self.installment(dt.date(2026, 11, 19), '2000')
+        card = self.cards()[0]
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.api('patch', f'/dunning/card/{card["id"]}', {'outcome': 'resolved', 'paid_on': '2026-11-20'})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(r.json()['outcome'], 'resolved')
+        tx.refresh_from_db()
+        self.assertEqual((tx.status, tx.date), (TransactionStatus.REALIZED, dt.date(2026, 11, 20)))
+        self.assertEqual(Card.objects.get().notes.get().text, 'Baixa ao resolver: parcela de R$ 2.000,00 paga em 20/11/2026')
+
     def test_legal_stage_opens_case_and_closes_card(self):
         self.installment(dt.date(2026, 11, 19))
         future = self.installment(dt.date(2026, 12, 19))

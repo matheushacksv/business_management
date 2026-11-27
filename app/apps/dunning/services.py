@@ -13,7 +13,7 @@ from apps.dunning.models import Activity, CadenceStep, Card, CardNote, Config, O
 from apps.finance.models import Transaction, TransactionStatus, TransactionType
 from apps.legal.models import CollectionCase
 from apps.users.models import User
-from apps.users.permissions import CHANGE, has_permission
+from apps.users.permissions import CHANGE, check_permission, has_permission
 
 MONEY = DecimalField(max_digits=16, decimal_places=2)
 ZERO = Decimal('0')
@@ -201,32 +201,40 @@ def update_card_service(*, user: User, card_id: int, **fields) -> Card:
     with transaction.atomic(), pghistory.context(user=user.pk):
         if 'stage_id' in fields:
             if card.closed_at:
-                raise ValidationError('This card is closed')
+                raise ValidationError('Este card já está fechado')
             card.stage = Stage.objects.get(pk=fields.pop('stage_id'))
+        paid_on = fields.pop('paid_on', None)
         if 'outcome' in fields:
-            _close(user, card, fields.pop('outcome'), fields.pop('legal_case_id', None))
+            _close(user, card, fields.pop('outcome'), fields.pop('legal_case_id', None), paid_on)
         for field, value in fields.items():
             setattr(card, field, value)
         card.save()
     return get_card_service(user=user, card_id=card_id)
 
 
-def _close(user: User, card: Card, outcome: str, legal_case_id: int | None = None) -> None:
+def _close(user: User, card: Card, outcome: str, legal_case_id: int | None = None, paid_on=None) -> None:
     if card.closed_at:
-        raise ValidationError('This card is closed')
+        raise ValidationError('Este card já está fechado')
     today = timezone.localdate()
     if outcome == Outcome.RESOLVED:
-        if _overdue_of(card, today).exists():
-            raise ValidationError('There are still overdue installments')
+        overdue = list(_overdue_of(card, today).order_by('date', 'id'))
+        if overdue and paid_on is None:
+            raise ValidationError('Ainda há parcelas em atraso: informe a data do pagamento para dar baixa')
+        if overdue:  # resolved = paid: settles the late installments (same path as the transactions screen)
+            from apps.finance.services import bulk_update_transactions_service
+            check_permission(user, 'transactions', CHANGE)
+            bulk_update_transactions_service(user=user, ids=[t.pk for t in overdue], status=TransactionStatus.REALIZED, date=paid_on)
+            CardNote.objects.create(card=card, author=user, text='Baixa ao resolver: ' + '; '.join(
+                f"{t.reference or 'parcela'} de {_brl(t.amount)} paga em {paid_on:%d/%m/%Y}" for t in overdue))
     elif outcome == Outcome.LEGAL:
         # the case is opened first with the legal form (every field required); creating it already
         # linked the customer's open installments (they leave the funnel)
         card.legal_case = CollectionCase.objects.filter(
             pk=legal_case_id, company_id=card.company_id, contact_id=card.contact_id).first()  # type:ignore
         if card.legal_case is None:
-            raise ValidationError('Fill in the legal action form first')
+            raise ValidationError('Preencha antes o formulário da ação no jurídico')
     else:
-        raise ValidationError('Invalid outcome')
+        raise ValidationError('Situação inválida')
     card.outcome, card.closed_at = outcome, today
 
 

@@ -19403,6 +19403,18 @@
        }
       ],
       "title": "Legal Case Id"
+     },
+     "paid_on": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Paid On"
      }
     },
     "title": "PatchCard",

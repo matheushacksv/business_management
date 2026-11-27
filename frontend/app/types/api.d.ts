@@ -5118,6 +5118,8 @@ export interface components {
             outcome?: ("resolved" | "legal") | null;
             /** Legal Case Id */
             legal_case_id?: number | null;
+            /** Paid On */
+            paid_on?: string | null;
         };
         /** InstallmentOut */
         InstallmentOut: {

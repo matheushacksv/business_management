@@ -53,7 +53,7 @@ async function addNote() {
 }
 
 const stageItems = computed(() => props.stages.map(s => ({ label: s.name, value: s.id })))
-async function patchCard(body: { stage_id?: number; assignee_id?: number | null; outcome?: 'resolved' | 'legal'; legal_case_id?: number }) {
+async function patchCard(body: { stage_id?: number; assignee_id?: number | null; outcome?: 'resolved' | 'legal'; legal_case_id?: number; paid_on?: string }) {
   try {
     card.value = await unwrap(api.PATCH('/api/dunning/card/{card_id}', { params: { path: { card_id: props.cardId! } }, body }))
     emit('changed')
@@ -64,6 +64,19 @@ async function patchCard(body: { stage_id?: number; assignee_id?: number | null;
   }
 }
 const changeStage = (stageId: number) => patchCard({ stage_id: stageId })
+
+// Resolved = paid: late installments are settled on the payment date (shows them first)
+const resolving = reactive({ open: false, date: '', saving: false })
+function resolve() {
+  if (!installments.value.length) return patchCard({ outcome: 'resolved' })
+  Object.assign(resolving, { open: true, date: new Date().toLocaleDateString('sv-SE') })
+}
+async function confirmResolve() {
+  resolving.saving = true
+  await patchCard({ outcome: 'resolved', paid_on: resolving.date })
+  resolving.saving = false
+  if (card.value?.closed_at) resolving.open = false
+}
 
 // Outcomes take the card off the board (like won/lost on Pipedrive). Legal: the action form
 // (every field required) opens the case first, then the card closes linked to it
@@ -187,7 +200,7 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
                       :color="card.outcome === 'resolved' ? 'success' : 'warning'" variant="subtle" />
               <template v-else-if="canChange">
                 <UButton label="Resolvido" icon="i-lucide-circle-check" size="sm" color="success" variant="soft"
-                         @click="patchCard({ outcome: 'resolved' })" />
+                         @click="resolve" />
                 <UButton v-if="auth.can('legal', 'create')" label="Enviar ao jurídico" icon="i-lucide-scale" size="sm"
                          color="warning" variant="soft" @click="legalOpen = true" />
               </template>
@@ -318,6 +331,25 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
       <LegalForm v-if="card" :contact-id="card.contact_id" :contact-name="card.contact_name" :company-id="card.company_id"
                  :summary="`Encaminhado pelo funil de cobrança (em atraso desde ${formatDate(card.overdue_since)}).`"
                  @saved="toLegal" @cancel="legalOpen = false" />
+    </template>
+  </UModal>
+  <UModal v-model:open="resolving.open" title="Resolvido: dar baixa nas parcelas">
+    <template #body>
+      <ul class="mb-4 divide-y divide-muted rounded-lg ring ring-default text-sm">
+        <li v-for="i in installments" :key="i.id" class="flex justify-between gap-2 px-3 py-1.5">
+          <span>{{ formatDate(i.date) }} <span class="text-dimmed">{{ i.reference }}</span></span>
+          <SMoney :value="i.amount" />
+        </li>
+      </ul>
+      <UFormField label="Data do pagamento" required>
+        <UInput v-model="resolving.date" type="date" class="w-full" />
+      </UFormField>
+    </template>
+    <template #footer>
+      <div class="flex w-full justify-end gap-2">
+        <UButton label="Cancelar" color="neutral" variant="ghost" @click="resolving.open = false" />
+        <UButton label="Dar baixa e resolver" color="success" :loading="resolving.saving" :disabled="!resolving.date" @click="confirmResolve" />
+      </div>
     </template>
   </UModal>
 </template>
