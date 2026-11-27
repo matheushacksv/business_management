@@ -361,6 +361,9 @@ def list_transactions_service(
             lookups[key] = value
 
     qs = _transactions_for(user).filter(**lookups)
+    if status and set(status if isinstance(status, (list, tuple, set)) else [status]) == {TransactionStatus.PLANNED}:
+        # "Previsto" = money expected: defaulted installments suspended in a legal case are not (shown as "Jurídico")
+        qs = qs.exclude(collection_case__isnull=False, agreement_installment=False)
     if search:
         qs = qs.filter(
             Q(reference__icontains=search)

@@ -169,6 +169,13 @@ class CollectionCaseTests(TestCase):
         comments = self.client.get(f'/api/collection-case/{case_id}/comments', headers=self.auth).json()
         self.assertEqual([(c['text'][:11], c['is_log']) for c in comments], [('Ligou o adv', False), ('Caso aberto', True)])
 
+    def test_suspended_installments_are_not_expected_money(self):
+        self.create()  # open1 / open2 suspended in the case
+        planned = services.list_transactions_service(user=self.admin, status=[TransactionStatus.PLANNED], company_id=[self.a.pk])
+        self.assertEqual(list(planned), [])
+        all_ = services.list_transactions_service(user=self.admin, company_id=[self.a.pk])
+        self.assertEqual({t.pk for t in all_}, {self.paid.pk, self.open1.pk, self.open2.pk})
+
     def test_due_before_agreement_is_the_balance(self):
         case = self.create(proposal_amount='5000.00').json()  # paid 1000; only 1000 of installments in the system
         self.assertEqual((Decimal(case['due_amount']), Decimal(case['defaulted_amount'])), (Decimal('4000'), Decimal('1000')))

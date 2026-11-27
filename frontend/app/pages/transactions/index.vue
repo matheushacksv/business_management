@@ -13,6 +13,7 @@ lookups.ensure('companies', 'subgroups', 'groups').catch(notifyError)
 
 const SMoney = resolveComponent('SMoney')
 const SStatusBadge = resolveComponent('SStatusBadge')
+const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
 // One click settles a planned transaction (transfer legs go through the drawer: both sides change together)
@@ -113,7 +114,9 @@ const columns: TableColumn<Transaction>[] = [
     ]),
   },
   { accessorKey: 'company_name', header: 'Empresa', meta: { class: { td: 'text-muted' } } },
-  { accessorKey: 'status', header: 'Status', cell: ({ row }) => h(SStatusBadge, { kind: 'status', value: row.original.status }) },
+  { accessorKey: 'status', header: 'Status', cell: ({ row }) => row.original.status === 'planned' && row.original.collection_case_id && !row.original.agreement_installment
+    ? h(UBadge, { label: 'Jurídico', icon: 'i-lucide-scale', color: 'warning', variant: 'subtle', size: 'sm' })  // defaulted, suspended in a legal case
+    : h(SStatusBadge, { kind: 'status', value: row.original.status }) },
   {
     accessorKey: 'amount',
     header: () => h('span', { class: 'block text-right' }, 'Valor'),
