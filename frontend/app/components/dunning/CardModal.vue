@@ -93,6 +93,32 @@ async function renegotiate() {
   }
 }
 
+// Partial payment: the installment becomes two (this part, maybe paid now, + the rest on a new date)
+const split = reactive({ open: false, saving: false, item: null as Installment | null, amount: undefined as number | undefined,
+  date: '', paid: true, rest_date: '' })
+function openSplit(i: Installment) {
+  const today = new Date().toLocaleDateString('sv-SE')
+  Object.assign(split, { open: true, item: i, amount: undefined, date: today, paid: true, rest_date: '' })
+}
+const splitRest = computed(() => split.item ? Number(split.item.amount) - (split.amount ?? 0) : 0)
+const splitReady = computed(() => !!split.amount && splitRest.value > 0 && !!split.date && !!split.rest_date)
+async function confirmSplit() {
+  split.saving = true
+  try {
+    await unwrap(api.POST('/api/transaction/{transaction_id}/split', {
+      params: { path: { transaction_id: split.item!.id } },
+      body: { amount: split.amount!.toFixed(2), date: split.date, paid: split.paid, rest_date: split.rest_date },
+    }))
+    split.open = false
+    emit('changed')
+    await load()
+  } catch (e) {
+    notifyError(e)
+  } finally {
+    split.saving = false
+  }
+}
+
 // Resolved = paid: late installments are settled on the payment date (shows them first)
 const resolving = reactive({ open: false, date: '', saving: false })
 function resolve() {
@@ -343,7 +369,11 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
                   <p class="text-toned">{{ formatDate(i.date) }}</p>
                   <p v-if="i.reference" class="truncate text-xs text-dimmed">{{ i.reference }}</p>
                 </div>
-                <span class="text-error">{{ formatMoney(i.amount) }}</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-error">{{ formatMoney(i.amount) }}</span>
+                  <UButton v-if="isOpen && canChange && auth.can('transactions', 'change')" icon="i-lucide-split" size="xs" color="neutral"
+                           variant="ghost" aria-label="Pagamento parcial" title="Pagamento parcial" @click="openSplit(i)" />
+                </div>
               </li>
               <li v-if="!installments.length" class="py-1.5 text-dimmed">Nenhuma.</li>
             </ul>
@@ -412,6 +442,37 @@ const isOpen = computed(() => !!card.value && !card.value.closed_at)
       <div class="flex w-full justify-end gap-2">
         <UButton label="Cancelar" color="neutral" variant="ghost" @click="reneg.open = false" />
         <UButton type="submit" form="reneg-form" label="Renegociar" :loading="reneg.saving" :disabled="!renegReady" />
+      </div>
+    </template>
+  </UModal>
+  <UModal v-model:open="split.open" title="Pagamento parcial">
+    <template #body>
+      <form v-if="split.item" id="split-form" class="grid gap-4 sm:grid-cols-2" @submit.prevent="confirmSplit">
+        <UFormField label="Parcela" class="sm:col-span-2">
+          <p class="text-sm text-highlighted tabular">{{ split.item.reference || formatDate(split.item.date) }} · {{ formatMoney(split.item.amount) }}</p>
+        </UFormField>
+        <UFormField label="Valor da 1ª parte" required>
+          <UInputNumber v-model="split.amount" :min="0" :step="0.01" :increment="false" :decrement="false"
+                        :format-options="{ style: 'currency', currency: 'BRL' }" locale="pt-BR" class="w-full" />
+        </UFormField>
+        <UFormField :label="split.paid ? 'Pago em' : 'Vencimento da 1ª parte'" required>
+          <UInput v-model="split.date" type="date" class="w-full" />
+        </UFormField>
+        <UFormField label="Já foi paga" class="sm:col-span-2">
+          <USwitch v-model="split.paid" />
+        </UFormField>
+        <UFormField label="Restante">
+          <p class="py-1.5 text-sm tabular" :class="splitRest > 0 ? 'text-highlighted' : 'text-error'">{{ formatMoney(splitRest) }}</p>
+        </UFormField>
+        <UFormField label="Vencimento do restante" required>
+          <UInput v-model="split.rest_date" type="date" class="w-full" />
+        </UFormField>
+      </form>
+    </template>
+    <template #footer>
+      <div class="flex w-full justify-end gap-2">
+        <UButton label="Cancelar" color="neutral" variant="ghost" @click="split.open = false" />
+        <UButton type="submit" form="split-form" label="Dividir" :loading="split.saving" :disabled="!splitReady" />
       </div>
     </template>
   </UModal>

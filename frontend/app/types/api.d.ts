@@ -458,6 +458,23 @@ export interface paths {
         patch: operations["api_endpoints_transactions_update_transaction_endpoint"];
         trace?: never;
     };
+    "/api/transaction/{transaction_id}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Split Transaction Endpoint */
+        post: operations["api_endpoints_transactions_split_transaction_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/transaction-series": {
         parameters: {
             query?: never;
@@ -3036,6 +3053,29 @@ export interface components {
             reference?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * SplitTransaction
+         * @description Partial payment: the installment becomes two; the rest keeps its Asaas charge.
+         */
+        SplitTransaction: {
+            /** Amount */
+            amount: number | string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Paid
+             * @default false
+             */
+            paid: boolean;
+            /**
+             * Rest Date
+             * Format: date
+             */
+            rest_date: string;
         };
         /**
          * SeriesKind
@@ -6658,6 +6698,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransactionOut"];
+                };
+            };
+        };
+    };
+    api_endpoints_transactions_split_transaction_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SplitTransaction"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionOut"][];
                 };
             };
         };

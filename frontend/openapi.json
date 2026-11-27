@@ -2016,6 +2016,57 @@
     ]
    }
   },
+  "/api/transaction/{transaction_id}/split": {
+   "post": {
+    "operationId": "api_endpoints_transactions_split_transaction_endpoint",
+    "summary": "Split Transaction Endpoint",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "transaction_id",
+      "schema": {
+       "title": "Transaction Id",
+       "type": "integer"
+      },
+      "required": true
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/TransactionOut"
+         },
+         "title": "Response",
+         "type": "array"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "Transactions"
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SplitTransaction"
+       }
+      }
+     },
+     "required": true
+    },
+    "security": [
+     {
+      "CookieJWTAuth": []
+     }
+    ]
+   }
+  },
   "/api/transaction-series": {
    "post": {
     "operationId": "api_endpoints_transactions_create_series_endpoint",
@@ -12858,6 +12909,45 @@
      }
     },
     "title": "PatchTransaction",
+    "type": "object"
+   },
+   "SplitTransaction": {
+    "description": "Partial payment: the installment becomes two; the rest keeps its Asaas charge.",
+    "properties": {
+     "amount": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0.0,
+        "type": "number"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Amount"
+     },
+     "date": {
+      "format": "date",
+      "title": "Date",
+      "type": "string"
+     },
+     "paid": {
+      "default": false,
+      "title": "Paid",
+      "type": "boolean"
+     },
+     "rest_date": {
+      "format": "date",
+      "title": "Rest Date",
+      "type": "string"
+     }
+    },
+    "required": [
+     "amount",
+     "date",
+     "rest_date"
+    ],
+    "title": "SplitTransaction",
     "type": "object"
    },
    "SeriesKind": {

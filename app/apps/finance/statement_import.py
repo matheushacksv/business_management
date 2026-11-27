@@ -261,6 +261,8 @@ def commit_statement_service(*, user: User, account_id: int, lines: list[dict]) 
                     raise ValidationError(f'A parcela escolhida para "{line["description"]}" não serve '
                                           '(já baixada, outro valor ou outra empresa)')
                 tx.status, tx.date, tx.account = TransactionStatus.REALIZED, line['date'], account
+                from apps.integrations.asaas import receive_in_cash
+                receive_in_cash(tx)
                 tx.save(update_fields=['status', 'date', 'account', 'updated_at'])
                 counts['settled'] += 1
                 from apps.dunning.services import sync_cards_service

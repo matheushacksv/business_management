@@ -8,7 +8,7 @@ from ninja_jwt.tokens import AccessToken
 from api.tests.tests_sales import MEMORY_STORAGES
 from apps.companies.models import Company
 from apps.finance import services as finance
-from apps.finance.models import Contact, Group, Invoice, Transaction
+from apps.finance.models import Contact, Group, Invoice, Transaction, TransactionStatus
 from apps.integrations.models import AsaasConfig, WebhookEvent
 from apps.sales import services as sales
 from apps.sales.models import Product
@@ -113,6 +113,33 @@ class AsaasTests(TestCase):
         self.assertEqual(urlopen.call_count, 1)  # only the asaas.com link
         self.assertEqual([a.name for a in invoice.attachments.all()], ['NFS-e 123.pdf'])
         self.assertEqual(WebhookEvent.objects.filter(source='asaas').count(), 4)
+
+    def test_settled_in_the_system_is_received_on_asaas(self):
+        self.configure()
+        self.client.post(f'/api/sale/{self.sale.pk}/asaas-charges', headers=self.auth())
+        first, second = Transaction.objects.filter(sale=self.sale).exclude(asaas_id='').order_by('date')[:2]
+        finance.update_transaction_service(user=self.admin, transaction_id=first.pk, status=TransactionStatus.REALIZED,
+                                           date=date(2026, 11, 27))  # Pix straight to the account
+        self.assertEqual(self.fake.made('POST', f'/payments/{first.asaas_id}/receiveInCash')[0][2],
+                         {'paymentDate': '2026-11-27', 'value': float(first.amount), 'notifyCustomer': False})
+        finance.bulk_update_transactions_service(user=self.admin, ids=[second.pk], status=TransactionStatus.REALIZED)
+        self.assertEqual(len(self.fake.made('POST', f'/payments/{second.asaas_id}/receiveInCash')), 1)
+
+    def test_partial_payment_splits_installment_and_rest_keeps_charge(self):
+        self.configure()
+        self.client.post(f'/api/sale/{self.sale.pk}/asaas-charges', headers=self.auth())
+        tx = Transaction.objects.get(sale=self.sale, series_index=1)
+        tx.reference = '1/2'
+        tx.save()
+        r = self.client.post(f'/api/transaction/{tx.pk}/split', data={'amount': '400', 'date': '2026-12-10', 'paid': True,
+                             'rest_date': '2026-12-14'}, content_type='application/json', headers=self.auth())
+        self.assertEqual(r.status_code, 200, r.content)
+        part, rest = r.json()
+        self.assertEqual((part['reference'], part['amount'], part['status']), ('1/2a', '400.00', 'realized'))
+        self.assertEqual(Transaction.objects.get(pk=part['id']).sale_id, self.sale.pk)
+        self.assertEqual((rest['id'], rest['reference'], rest['date'], rest['status']), (tx.pk, '1/2b', '2026-12-14', 'planned'))
+        self.assertEqual(self.fake.calls[-1][:3], ('POST', f'/payments/{tx.asaas_id}', {'dueDate': '2026-12-14', 'value': float(Decimal(rest['amount']))}))
+        self.assertFalse([c for c in self.fake.calls if c[1].endswith('/receiveInCash')])  # the paid part had no charge
 
     def test_edits_and_deletes_follow_to_asaas(self):
         self.configure()

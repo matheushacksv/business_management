@@ -400,6 +400,9 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
     if was_planned and tx.asaas_id and {'date', 'amount'} & set(fields):
         from apps.integrations.asaas import sync_charge
         sync_charge(tx)
+    if was_planned and tx.status == TransactionStatus.REALIZED:
+        from apps.integrations.asaas import receive_in_cash
+        receive_in_cash(tx)  # before saving: an Asaas failure keeps both sides as they were
     try:
         with transaction.atomic(), pghistory.context(user=user.pk):
             tx.save(update_fields=[*fields, 'updated_at'])
@@ -411,6 +414,36 @@ def update_transaction_service(*, user: User, transaction_id: int, **fields) -> 
         bling.issue_on_realized([tx.pk])
         transaction.on_commit(sync_cards_service)  # paid: the dunning card closes now, not on the next board load
     return tx
+
+
+def split_transaction_service(*, user: User, transaction_id: int, amount: Decimal, date: dt.date, paid: bool,
+                              rest_date: dt.date) -> list[Transaction]:
+    """Partial payment: "3/10" becomes "3/10a" (this amount, maybe already paid) and "3/10b" (the rest, new due
+    date). The rest keeps the installment's links and its Asaas charge (value / due date updated there)."""
+    tx = get_transaction_service(user=user, transaction_id=transaction_id)
+    _reject_transfer_leg(tx)
+    if tx.status != TransactionStatus.PLANNED:
+        raise ValidationError('Só parcelas previstas podem ser divididas')
+    if not Decimal('0') < amount < tx.amount:
+        raise ValidationError('O valor da 1ª parte precisa ser menor que o da parcela')
+    ref = tx.reference
+    part = Transaction(
+        company_id=tx.company_id, subgroup_id=tx.subgroup_id, account_id=tx.account_id, contact_id=tx.contact_id,  # type:ignore
+        sale_id=tx.sale_id, collection_case_id=tx.collection_case_id, agreement_installment=tx.agreement_installment,  # type:ignore
+        type=tx.type, status=TransactionStatus.PLANNED, date=date, amount=amount, notes=tx.notes,
+        reference=f'{ref}a' if ref else 'Pagamento parcial',
+    )
+    tx.amount, tx.date = tx.amount - amount, rest_date
+    if ref:
+        tx.reference = f'{ref}b'
+    from apps.integrations.asaas import sync_charge
+    sync_charge(tx)  # same charge, now for the rest
+    with transaction.atomic(), pghistory.context(user=user.pk):
+        tx.save(update_fields=['amount', 'date', 'reference', 'updated_at'])
+        part.save()
+    if paid:
+        update_transaction_service(user=user, transaction_id=part.pk, status=TransactionStatus.REALIZED)
+    return [get_transaction_service(user=user, transaction_id=pk) for pk in (part.pk, tx.pk)]
 
 
 def delete_transaction_service(*, user: User, transaction_id: int) -> None:
@@ -463,6 +496,11 @@ def bulk_update_transactions_service(*, user: User, ids: list[int], shift_days: 
             t.date += dt.timedelta(days=shift_days)
         t.updated_at = now
     update_fields = [*fields, *extra, 'updated_at', *(['date'] if shift_days else [])]
+    if realized:
+        from apps.integrations.asaas import receive_in_cash
+        for t in txs:  # ponytail: one Asaas call per charged installment; fine for the handful settled at once
+            if t.pk in realized:
+                receive_in_cash(t)
     with transaction.atomic(), pghistory.context(user=user.pk):
         Transaction.objects.bulk_update(txs, update_fields, batch_size=500)
     if realized:

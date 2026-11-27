@@ -149,6 +149,19 @@ def create_charges_service(*, user: User, sale_id: int) -> int:
     return len(pending)
 
 
+def receive_in_cash(tx: Transaction) -> None:
+    """Settled in the system (Pix to the account, cash...): its open Asaas charge is marked received too,
+    so the customer is not charged again. Already paid / deleted on Asaas: nothing to do."""
+    if not tx.asaas_id:
+        return
+    config = _config(tx.company_id)  # type:ignore
+    payment = request(config, 'GET', f'/payments/{tx.asaas_id}')
+    if payment.get('deleted') or payment.get('status') in {'RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH'}:
+        return
+    request(config, 'POST', f'/payments/{tx.asaas_id}/receiveInCash',
+            {'paymentDate': tx.date.isoformat(), 'value': float(tx.amount), 'notifyCustomer': False})
+
+
 def sync_charge(tx: Transaction, deleted: bool = False) -> None:
     """Due date / value edited, or receivable deleted, in the system: same on Asaas (only open charges)."""
     if not tx.asaas_id or tx.status != TransactionStatus.PLANNED:

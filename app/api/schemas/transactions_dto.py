@@ -321,3 +321,11 @@ class StatementResultOut(Schema):
     settled: int
     transfers: int
     skipped: int
+
+
+class SplitTransaction(Schema):
+    """Partial payment: the installment becomes two; the rest keeps its Asaas charge."""
+    amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)  # first part
+    date: dt.date  # first part: due or paid on
+    paid: bool = False  # first part already received
+    rest_date: dt.date  # new due date of the rest

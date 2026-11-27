@@ -19,6 +19,7 @@ from api.schemas.transactions_dto import (
     PatchTransaction,
     PatchTransfer,
     SeriesChangeOut,
+    SplitTransaction,
     SeriesOut,
     StatementAnalysisOut,
     StatementCommit,
@@ -87,6 +88,12 @@ def update_transaction_endpoint(request, transaction_id: int, data: PatchTransac
     return services.update_transaction_service(
         user=request.user, transaction_id=transaction_id, **data.dict(exclude_unset=True)
     )
+
+
+@router.post('/transaction/{transaction_id}/split', response=list[TransactionOut])
+@require_permission('transactions', CHANGE)
+def split_transaction_endpoint(request, transaction_id: int, data: SplitTransaction):
+    return services.split_transaction_service(user=request.user, transaction_id=transaction_id, **data.dict())
 
 
 @router.delete('/transaction/{transaction_id}', response={204: None})
